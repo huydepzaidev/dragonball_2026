@@ -61,6 +61,7 @@ import nro.models.utils.SkillUtil;
 import nro.models.utils.Util;
 import nro.models.interfaces.IBoss;
 import java.io.IOException;
+import nro.models.server.GameConfigService;
 
 public class Boss extends Player implements IBoss {
 
@@ -104,6 +105,7 @@ public class Boss extends Player implements IBoss {
 
     public boolean isNotifyDisabled;
     public boolean isZone01SpawnDisabled;
+    private boolean configuredDropProcessed;
 
     public Boss(int id, boolean isNotifyDisabled, boolean isZone01SpawnDisabled, BossData... data) throws Exception {
         this(id, data);
@@ -412,7 +414,37 @@ public class Boss extends Player implements IBoss {
             this.currentLevel = 0;
         }
         this.initBase();
+        this.configuredDropProcessed = false;
         this.changeToTypeNonPK();
+    }
+
+    @Override
+    protected void setDie(Player plAtt) {
+        super.setDie(plAtt);
+        if (!this.configuredDropProcessed) {
+            this.configuredDropProcessed = true;
+            GameConfigService.gI().dropConfiguredRewards(this, plAtt);
+        }
+    }
+
+    /**
+     * Đưa boss về trạng thái sạch sau lỗi cập nhật hoặc theo lệnh control panel.
+     */
+    public synchronized void recoverFromRuntimeError() {
+        try {
+            if (this.zone != null) {
+                ChangeMapService.gI().exitMap(this);
+            }
+        } catch (Exception ignored) {
+            this.zone = null;
+        }
+        this.zone = null;
+        this.lastZone = null;
+        this.playerTarger = null;
+        this.prepareBom = false;
+        this.error = 0;
+        this.configuredDropProcessed = false;
+        this.changeStatus(BossStatus.RESPAWN);
     }
 
     @Override

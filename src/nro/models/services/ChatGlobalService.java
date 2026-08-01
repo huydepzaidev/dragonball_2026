@@ -6,6 +6,9 @@ import nro.models.network.Message;
 import nro.models.utils.Logger;
 import nro.models.utils.TimeUtil;
 import nro.models.utils.Util;
+import nro.models.player_system.Template.NpcTemplate;
+import nro.models.server.Manager;
+import nro.models.consts.ConstNpc;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +58,41 @@ public class ChatGlobalService implements Runnable {
 
     public void ThongBaoDapDo(Player player, String text) {
         waitingChat.add(new ChatGlobal(player, text.length() > 100 ? text.substring(0, 100) : text));
+    }
+
+    /** Gửi chat thế giới ngay với hình dạng của một NPC, không trừ ngọc. */
+    public void chatNpcWorld(String name, int npcId, short head, short body, short leg, String text) {
+        try {
+            Message msg = new Message(92);
+            msg.writer().writeUTF(name);
+            msg.writer().writeUTF("|5|" + (text.length() > 100 ? text.substring(0, 100) : text));
+            msg.writer().writeInt(npcId);
+            msg.writer().writeShort(head);
+            msg.writer().writeShort(-1);
+            msg.writer().writeShort(body);
+            msg.writer().writeShort(0);
+            msg.writer().writeShort(leg);
+            msg.writer().writeByte(0);
+            Service.gI().sendMessAllPlayer(msg);
+            msg.cleanup();
+        } catch (Exception e) {
+            Logger.logException(ChatGlobalService.class, e);
+        }
+    }
+
+    public void chatQuyLaoKame(String text) {
+        NpcTemplate template = Manager.NPC_TEMPLATES.stream()
+                .filter(npc -> npc.id == ConstNpc.QUY_LAO_KAME)
+                .findFirst().orElse(null);
+        // Bộ ba chuẩn trong npc_template: Quy Lão Kame (33, 34, 35).
+        // Có fallback để thông báo vẫn hiện nếu lệnh reload đến rất sớm,
+        // trước khi danh sách template hoàn tất.
+        short head = template == null ? 33 : (short) template.head;
+        short body = template == null ? 34 : (short) template.body;
+        short leg = template == null ? 35 : (short) template.leg;
+        // Kênh thế giới của client yêu cầu ID không âm; dùng chính NPC ID
+        // để client tiếp nhận bản tin như một người gửi hợp lệ.
+        chatNpcWorld("Quy Lão Kame", ConstNpc.QUY_LAO_KAME, head, body, leg, text);
     }
 
     public void chatVip(Player player, String text) {

@@ -24,10 +24,9 @@ public class OngGohan extends Npc {
     @Override
     public void openBaseMenu(Player player) {
         if (canOpenNpc(player)) {
-            if (!TaskService.gI().checkDoneTaskTalkNpc(player, this)) {
-                NpcService.gI().createTutorial(player, tempId, this.avartar,
-                        "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.");
-            }
+            createOtherMenu(player, ConstNpc.BASE_MENU,
+                    "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.",
+                    "Nhiệm vụ", "Nhập mã\ngiftcode");
         }
     }
 
@@ -37,7 +36,13 @@ public class OngGohan extends Npc {
             if (player.idMark.isBaseMenu()) {
                 switch (select) {
                     case 0 -> {
-
+                        if (!TaskService.gI().checkDoneTaskTalkNpc(player, this)) {
+                            NpcService.gI().createTutorial(player, tempId, this.avartar,
+                                    "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.");
+                        }
+                    }
+                    case 1 -> {
+                        Input.gI().createFormGiftCode(player);
                     }
                 }
             }

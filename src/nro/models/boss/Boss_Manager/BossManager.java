@@ -96,7 +96,10 @@ import nro.models.boss.event_noel.OngGiaNoel;
 import nro.models.player.Player;
 import nro.models.network.Message;
 import nro.models.map.service.MapService;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.List;
 import nro.models.boss.Baby.Baby;
 import nro.models.boss.Boss_mini.MatTroi;
@@ -107,10 +110,12 @@ import nro.models.server.Maintenance;
 import nro.models.server.ServerManager;
 import nro.models.utils.Functions;
 import nro.models.utils.Logger;
+import nro.models.server.GameConfigService;
 
 public class BossManager implements Runnable {
 
     private static BossManager instance;
+    private static final List<BossManager> MANAGERS = new CopyOnWriteArrayList<>();
     public static byte ratioReward = 10;
 
     public static BossManager gI() {
@@ -121,13 +126,22 @@ public class BossManager implements Runnable {
     }
 
     public BossManager() {
-        this.bosses = new ArrayList<>();
+        this.bosses = new CopyOnWriteArrayList<>();
+        MANAGERS.add(this);
     }
 
     protected final List<Boss> bosses;
 
     public List<Boss> getBosses() {
         return this.bosses;
+    }
+
+    public static List<Boss> getAllManagedBosses() {
+        List<Boss> result = new ArrayList<>();
+        for (BossManager manager : MANAGERS) {
+            result.addAll(manager.bosses);
+        }
+        return result;
     }
 
     public void addBoss(Boss boss) {
@@ -436,16 +450,88 @@ public class BossManager implements Runnable {
         return this.bosses.stream().filter(boss -> boss.id == bossId && boss.zone != null && boss.zone.map.mapId == mapId && boss.zone.zoneId == zoneId && !boss.isDie()).findFirst().orElse(null);
     }
 
+    public int respawnBosses(int bossId) {
+        int count = 0;
+        for (Boss boss : this.bosses) {
+            if (boss != null && boss.id == bossId) {
+                boss.recoverFromRuntimeError();
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public int respawnAllBosses() {
+        int count = 0;
+        for (Boss boss : this.bosses) {
+            if (boss != null) {
+                boss.recoverFromRuntimeError();
+                count++;
+            }
+        }
+        return count;
+    }
+
+    public static int respawnBossesEverywhere(int bossId) {
+        int count = 0;
+        for (BossManager manager : MANAGERS) {
+            for (Boss boss : manager.bosses) {
+                if (boss != null && boss.id == bossId) {
+                    boss.recoverFromRuntimeError();
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    public static int respawnAllBossesEverywhere() {
+        int count = 0;
+        for (BossManager manager : MANAGERS) {
+            count += manager.respawnAllBosses();
+        }
+        return count;
+    }
+
     @Override
     public void run() {
+        Map<Boss, Long> unstableSince = new ConcurrentHashMap<>();
         while (ServerManager.isRunning) {
-            try {
-                long st = System.currentTimeMillis();
-                for (Boss boss : this.bosses) {
-                    boss.update();
+            long st = System.currentTimeMillis();
+            for (Boss boss : this.bosses) {
+                if (boss == null) {
+                    continue;
                 }
-                Thread.sleep(1500 - (System.currentTimeMillis() - st));
-            } catch (Exception ignored) {
+                try {
+                    boss.update();
+                    boolean unstable = boss.bossStatus == nro.models.consts.BossStatus.JOIN_MAP
+                            || boss.bossStatus == nro.models.consts.BossStatus.RESPAWN;
+                    if (unstable) {
+                        long since = unstableSince.computeIfAbsent(boss, key -> System.currentTimeMillis());
+                        long timeout = GameConfigService.gI().getBossStuckSeconds() * 1000L;
+                        if (GameConfigService.gI().isBossWatchdogEnabled()
+                                && System.currentTimeMillis() - since >= timeout) {
+                            GameConfigService.gI().reportBossError(
+                                    boss, "watchdog", new IllegalStateException("kẹt trạng thái " + boss.bossStatus));
+                            boss.recoverFromRuntimeError();
+                            unstableSince.remove(boss);
+                        }
+                    } else {
+                        unstableSince.remove(boss);
+                    }
+                } catch (Throwable error) {
+                    GameConfigService.gI().reportBossError(boss, "update", error);
+                    if (GameConfigService.gI().isBossWatchdogEnabled()) {
+                        boss.recoverFromRuntimeError();
+                    }
+                }
+            }
+            long sleep = Math.max(50L, 1500L - (System.currentTimeMillis() - st));
+            try {
+                Thread.sleep(sleep);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
             }
         }
     }
