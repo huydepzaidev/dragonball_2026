@@ -1028,7 +1028,8 @@ public class ShopService {
                 return;
             }
             int quantity = item.quantity;
-            int cost = item.template.gold;
+            long cost = item.template.id == 457
+                    ? Inventory.GOLD_BAR_SELL_PRICE : item.template.gold;
             if (item.template.id == 457) {
                 if (quantity >= 1) {
                     Input.gI().createFormBanSLL(pl);
@@ -1087,7 +1088,8 @@ public class ShopService {
                 return;
             }
             int quantity = item.quantity;
-            int cost = item.template.gold;
+            long cost = item.template.id == 457
+                    ? Inventory.GOLD_BAR_SELL_PRICE : item.template.gold;
             if (item.template.id == 457) {
                 quantity = 1;
             } else {

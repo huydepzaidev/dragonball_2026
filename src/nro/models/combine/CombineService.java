@@ -48,6 +48,8 @@ public class CombineService {
     public static final int PHAN_RA_SACH = 108;
     public static final int DUI_DUC = 109;
     public static final int DA_MAI = 110;
+    public static final int NANG_SKH_THUONG = 518;
+    public static final int NANG_SKH_VIP = 519;
     public static final int NANG_CAP_VAT_PHAM = 510;
     public static final int NANG_CAP_BONG_TAI = 511;
     public static final int NHAP_NGOC_RONG = 513;
@@ -162,6 +164,10 @@ public class CombineService {
             case DA_MAI:
                 TaoDaMai.showInfoCombine(player);
                 break;
+            case NANG_SKH_THUONG:
+            case NANG_SKH_VIP:
+                NangSKH.showInfoCombine(player);
+                break;
         }
     }
 
@@ -243,6 +249,10 @@ public class CombineService {
                 break;
             case DA_MAI:
                 TaoDaMai.CheTaoDuiDuc(player);
+                break;
+            case NANG_SKH_THUONG:
+            case NANG_SKH_VIP:
+                NangSKH.thucHien(player);
                 break;
         }
         
@@ -655,6 +665,10 @@ public class CombineService {
                 return "Ta sẽ phù phép\nphân rã sách đó cho ngươi";
             case CHE_TAO_TRANG_BI_THIEN_SU:
                 return "Chế tạo\ntrang bị thiên sứ";
+            case NANG_SKH_THUONG:
+                return "Ta sẽ phù phép\nbiến đồ Thần Linh\nthành đồ kích hoạt";
+            case NANG_SKH_VIP:
+                return "Ta sẽ phù phép\ntạo SKH VIP\ncho ngươi";
             case LAM_PHEP_NHAP_DA:
                 return "Ta sẽ phù phép\n"
                         + "cho 10 mảnh đá vụn\n"
@@ -724,6 +738,9 @@ public class CombineService {
                 return "Vào hành trang chọn\nCác Sách Tuyệt Kỹ cần phục hồi";
             case PHAN_RA_SACH:
                 return "Vào hành trang chọn\n1 sách cần phân rã";
+            case NANG_SKH_THUONG:
+            case NANG_SKH_VIP:
+                return "Vào hành trang\nSKH Thường: chọn 1 món chính, có thể thêm 1 món phôi\nSKH VIP: chọn 1 món Thần Linh\nSau đó chọn 'Nâng SKH'";
             case LAM_PHEP_NHAP_DA:
                 return "Vào hành trang\n"
                         + "Chọn 10 mảnh đá vụn\n"

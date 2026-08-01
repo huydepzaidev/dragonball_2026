@@ -45,7 +45,8 @@ public class BaHatMit extends Npc {
                             "Chuyển hóa\nTrang bị",
                             "Võ đài\nSinh tử",
                             "Phân rã\nTrang bị\nKích hoạt",
-                            "Tái tạo\nCapsule\nKích hoạt"
+                            "Tái tạo\nCapsule\nKích hoạt",
+                            "Nâng\nSKH"
                     );
 
                 case 112 -> {
@@ -155,6 +156,15 @@ public class BaHatMit extends Npc {
                                 CombineService.gI().openTabCombine(player, CombineService.PHAN_RA_TRANG_BI_KH);
                             case 4 ->
                                 CombineService.gI().openTabCombine(player, CombineService.TAI_TAO_CAPSULE_KH);
+                            case 5 ->
+                                createOtherMenu(player, ConstNpc.MENU_NANG_SKH,
+                                        "Chọn loại SKH muốn nâng",
+                                        "SKH Thường", "SKH VIP", "Đóng");
+                        }
+                    } else if (player.idMark.getIndexMenu() == ConstNpc.MENU_NANG_SKH) {
+                        switch (select) {
+                            case 0 -> CombineService.gI().openTabCombine(player, CombineService.NANG_SKH_THUONG);
+                            case 1 -> CombineService.gI().openTabCombine(player, CombineService.NANG_SKH_VIP);
                         }
                     } else if (player.idMark.getIndexMenu() == 3) {
                         switch (select) {
@@ -187,7 +197,7 @@ public class BaHatMit extends Npc {
                         }
                     } else if (player.idMark.getIndexMenu() == ConstNpc.MENU_START_COMBINE) {
                         switch (player.combineNew.typeCombine) {
-                            case CombineService.EP_SAO_TRANG_BI, CombineService.PHA_LE_HOA_TRANG_BI, CombineService.CHUYEN_HOA_TRANG_BI_VANG, CombineService.CHUYEN_HOA_TRANG_BI_NGOC, CombineService.PHAN_RA_TRANG_BI_KH, CombineService.TAI_TAO_CAPSULE_KH, CombineService.NANG_CAP_SAO_PHA_LE, CombineService.DANH_BONG_SAO_PHA_LE, CombineService.CUONG_HOA_LO_SAO_PHA_LE, CombineService.TAO_DA_HEMATITE -> {
+                            case CombineService.EP_SAO_TRANG_BI, CombineService.PHA_LE_HOA_TRANG_BI, CombineService.CHUYEN_HOA_TRANG_BI_VANG, CombineService.CHUYEN_HOA_TRANG_BI_NGOC, CombineService.PHAN_RA_TRANG_BI_KH, CombineService.TAI_TAO_CAPSULE_KH, CombineService.NANG_SKH_THUONG, CombineService.NANG_SKH_VIP, CombineService.NANG_CAP_SAO_PHA_LE, CombineService.DANH_BONG_SAO_PHA_LE, CombineService.CUONG_HOA_LO_SAO_PHA_LE, CombineService.TAO_DA_HEMATITE -> {
                                 switch (select) {
                                     case 0 ->
                                         CombineService.gI().startCombine(player);

@@ -10,12 +10,14 @@ import nro.models.map.Zone;
 import nro.models.npc.Npc;
 import nro.models.map.service.NpcManager;
 import nro.models.player.Player;
+import nro.models.player.Inventory;
 import nro.models.network.Message;
 import nro.models.interfaces.ISession;
 import nro.models.item.Item.ItemOption;
 import nro.models.server.Client;
 import nro.models.services.Service;
 import nro.models.services.GiftCodeService;
+import nro.models.managers.GiftCodeManager;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
 import nro.models.map.service.NpcService;
@@ -494,14 +496,14 @@ public class Input {
                 }
                 case BANSLL -> {
                     int sltv = Math.abs(Integer.parseInt(text[0]));
-                    long cost = (long) sltv * 37000000;
+                    long cost = (long) sltv * Inventory.GOLD_BAR_SELL_PRICE;
                     Item ThoiVang = InventoryService.gI().findItemBag(player, 457);
                     if (ThoiVang != null) {
                         if (ThoiVang.quantity < sltv) {
                             Service.gI().sendThongBao(player, "Bạn chỉ có " + ThoiVang.quantity + " Thỏi vàng");
                         } else {
                             if (player.inventory.gold + cost > Inventory.LIMIT_GOLD) {
-                                int slban = (int) ((Inventory.LIMIT_GOLD - player.inventory.gold) / 37000000);
+                                long slban = (Inventory.LIMIT_GOLD - player.inventory.gold) / Inventory.GOLD_BAR_SELL_PRICE;
                                 if (slban < 1) {
                                     Service.gI().sendThongBao(player, "Vàng sau khi bán vượt quá giới hạn");
                                 } else if (slban < 2) {
@@ -634,6 +636,7 @@ public class Input {
     }
 
     public void createFormGiftCode(Player pl) {
+        GiftCodeManager.gI().reloadAllGiftCodes(pl);
         createForm(pl, GIFT_CODE, "Giftcode", new SubInput("Gift-code", ANY));
     }
 

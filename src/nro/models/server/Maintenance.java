@@ -1,6 +1,5 @@
 package nro.models.server;
 
-import java.util.concurrent.Executors;
 import nro.models.services.Service;
 import nro.models.utils.Logger;
 
@@ -9,7 +8,7 @@ import nro.models.utils.Logger;
  * @author By Mr Blue
  *
  */
-public class Maintenance extends Thread {
+public class Maintenance implements Runnable {
 
     private static Maintenance instance;
     private int timeInSeconds;
@@ -25,19 +24,15 @@ public class Maintenance extends Thread {
         return instance;
     }
 
-    public void startCountdown() {
-        if (!isRunning) {
-            isRunning = true;
-            this.timeInSeconds = 60;
-            this.start();
-        }
+    public synchronized void startCountdown() {
+        startSeconds(60);
     }
 
-    public void startSeconds(int seconds) {
+    public synchronized void startSeconds(int seconds) {
         if (!isRunning) {
             isRunning = true;
-            this.timeInSeconds = seconds;
-            this.start();
+            this.timeInSeconds = Math.max(1, seconds);
+            new Thread(this, "Maintenance countdown").start();
         }
     }
 
@@ -51,7 +46,7 @@ public class Maintenance extends Thread {
 
     @Override
     public void run() {
-        Logger.log(Logger.YELLOW, "Bắt đầu đếm ngược 60s bảo trì");
+        Logger.log(Logger.YELLOW, "Bắt đầu đếm ngược " + timeInSeconds + "s bảo trì");
 
         while (timeInSeconds > 0) {
             try {
@@ -59,7 +54,9 @@ public class Maintenance extends Thread {
                 Thread.sleep(1000);
                 timeInSeconds--;
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                isRunning = false;
+                return;
             }
         }
 
