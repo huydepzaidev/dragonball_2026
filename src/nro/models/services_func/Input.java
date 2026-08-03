@@ -8,9 +8,9 @@ import nro.models.database.PlayerDAO;
 import nro.models.item.Item;
 import nro.models.map.Zone;
 import nro.models.npc.Npc;
+import nro.models.npc_list.ChiChi;
 import nro.models.map.service.NpcManager;
 import nro.models.player.Player;
-import nro.models.player.Inventory;
 import nro.models.network.Message;
 import nro.models.interfaces.ISession;
 import nro.models.item.Item.ItemOption;
@@ -82,6 +82,7 @@ public class Input {
     public static final int BOTBOSS = 32;
     public static final int BOTATTACKPLAYER = 33;
     public static final int FIND_PLAYER_GIFT_RUBY = 34;
+    private static final int DOI_THE_MUA_HE_BASE = 20082028;
 
     private static Input intance;
 
@@ -103,6 +104,16 @@ public class Input {
                 text[i] = msg.reader().readUTF();
             }
             switch (player.idMark.getTypeInput()) {
+                case DOI_THE_MUA_HE_BASE, DOI_THE_MUA_HE_BASE + 1,
+                        DOI_THE_MUA_HE_BASE + 2, DOI_THE_MUA_HE_BASE + 3 -> {
+                    try {
+                        int soLanDoi = Integer.parseInt(text[0].trim());
+                        int select = player.idMark.getTypeInput() - DOI_THE_MUA_HE_BASE;
+                        ChiChi.doiQuaMuaHe(player, select, soLanDoi);
+                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                        Service.gI().sendThongBao(player, "Số lần đổi không hợp lệ.");
+                    }
+                }
                 case BOTITEM -> {
                     int slot = Integer.parseInt(text[0]);
                     int idBan = Integer.parseInt(text[1]);
@@ -600,6 +611,15 @@ public class Input {
                 msg.cleanup();
             }
         }
+    }
+
+    public void createFormDoiTheMuaHe(Player player, int select, String itemName, int soLanToiDa) {
+        if (select < 0 || select > 3 || soLanToiDa < 1) {
+            return;
+        }
+        createForm(player, DOI_THE_MUA_HE_BASE + select,
+                "Đổi " + itemName + " (tối đa " + soLanToiDa + " lần)",
+                new SubInput("Nhập số lần đổi", NUMERIC));
     }
 
     public void createForm(ISession session, int typeInput, String title, SubInput... subInputs) {

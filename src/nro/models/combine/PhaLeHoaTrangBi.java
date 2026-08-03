@@ -13,6 +13,9 @@ import nro.models.utils.Util;
  */
 public class PhaLeHoaTrangBi {
 
+    // Ti le nhan truc tiep tu 1 den 9 sao trong moi lan dap (tong = 100%).
+    private static final int[] STAR_RATES = {25, 20, 15, 10, 8, 7, 5, 5, 5};
+
     public static void showInfoCombine(Player player) {
         if (player.combineNew.itemsCombine.size() != 1) {
             CombineService.gI().baHatMit.createOtherMenu(player, ConstNpc.IGNORE_MENU, "Hãy chọn 1 vật phẩm để pha lê hóa", "Đóng");
@@ -42,7 +45,7 @@ public class PhaLeHoaTrangBi {
     private static void QuyTrinh(Player player, Item item, int star) {
         player.combineNew.goldCombine = CombineSystem.getGoldPhaLeHoa(star);
         player.combineNew.gemCombine = CombineSystem.getGemPhaLeHoa(star);
-        player.combineNew.ratioCombine = getFakeRatio(star);
+        player.combineNew.ratioCombine = (int) getRatio(star);
 
         String npcSay = item.template.name + "\n|2|";
         for (Item.ItemOption io : item.itemOptions) {
@@ -63,53 +66,27 @@ public class PhaLeHoaTrangBi {
     }
 
     public static float getRatio(int star) {
-        switch (star) {
-            case 0:
-                return 50f;
-            case 1:
-                return 20f;
-            case 2:
-                return 10f;
-            case 3:
-                return 5f;
-            case 4:
-                return 1f;
-            case 5:
-                return 0.7f;
-            case 6:
-                return 0.5f;
-            case 7:
-                return 0.1f;
-            case 8:
-                return 0.1f;
+        if (star < 0 || star >= STAR_RATES.length) {
+            return 0;
         }
 
-        return 0;
+        int ratio = 0;
+        for (int targetStar = star + 1; targetStar <= STAR_RATES.length; targetStar++) {
+            ratio += STAR_RATES[targetStar - 1];
+        }
+        return ratio;
     }
 
-    private static int getFakeRatio(int star) {
-        return switch (star) {
-            case 0 ->
-                80;
-            case 1 ->
-                40;
-            case 2 ->
-                30;
-            case 3 ->
-                20;
-            case 4 ->
-                10;
-            case 5 ->
-                5;
-            case 6 ->
-                3;
-            case 7 ->
-                2;
-            case 8 ->
-                1;
-            default ->
-                0;
-        };
+    private static int randomTargetStar() {
+        int random = Util.nextInt(1, 100);
+        int cumulativeRate = 0;
+        for (int i = 0; i < STAR_RATES.length; i++) {
+            cumulativeRate += STAR_RATES[i];
+            if (random <= cumulativeRate) {
+                return i + 1;
+            }
+        }
+        return STAR_RATES.length;
     }
 
     public static void phaLeHoa(Player player, int... numm) {
@@ -160,13 +137,12 @@ public class PhaLeHoaTrangBi {
                         player.combineNew.goldCombine = CombineSystem.getGoldPhaLeHoa(star);
                         player.combineNew.gemCombine = CombineSystem.getGemPhaLeHoa(star);
 
-                        float baseRatio = getRatio(star);
+                        int targetStar = randomTargetStar();
                         player.inventory.gold -= gold;
                         player.inventory.gem -= gem;
 
-                        boolean succ = Util.isTrue(baseRatio, 100);
-
-                        if (succ) {
+                        if (targetStar > star) {
+                            star = targetStar;
                             success = true;
                             break;
                         } else {
@@ -179,7 +155,6 @@ public class PhaLeHoaTrangBi {
             }
 
             if (success) {
-                star++;
                 if (item != null) {
                     if (optionStar == null) {
                         item.itemOptions.add(new Item.ItemOption(107, star));

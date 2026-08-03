@@ -790,6 +790,7 @@ public class UseItem {
                             case 1233:
                             case 1532:
                             case 1628:
+                            case ConstItem.TRAI_DUA:
 
                                 useItemTime(pl, item);
                                 break;
@@ -1526,6 +1527,7 @@ public class UseItem {
             case 1635: // co bon la
                 pl.itemTime.lastTimeUseCoBonLa = System.currentTimeMillis();
                 pl.itemTime.isUseCoBonLa = true;
+                Service.gI().sendThongBao(pl, "Cỏ bốn lá tăng 70% tỉ lệ rơi nguyên liệu sự kiện hè trong thời gian sử dụng");
                 break;
             case 1614: // nuoc mia 1
                 if (pl.itemTime.isUseNuocMia2 || pl.itemTime.isUseNuocMia3) {
@@ -1684,16 +1686,18 @@ public class UseItem {
 //                pl.itemTime.isUseMayDo2 = true;
                 break;
             case 1628: //máy dò đồ
-                long currentTime = System.currentTimeMillis();
-
-                // +++
-                if (pl.itemTime.isUseBuaSanta) {
-                    pl.itemTime.lastTimeBuaSanta += 1_800_000; // 30p
-                } else {
-                    //null
-                    pl.itemTime.lastTimeBuaSanta = currentTime + 1; // 0
-                    pl.itemTime.isUseBuaSanta = true;
+                long remainingBuaSanta = pl.itemTime.addBuaSantaTime(System.currentTimeMillis());
+                Service.gI().sendThongBao(pl, "Bùa x2 tn,sm đệ tử còn "
+                        + Math.max(1, remainingBuaSanta / 60_000) + " phút");
+                break;
+            case ConstItem.TRAI_DUA:
+                long addedTime = pl.itemTime.addTraiDuaTime(System.currentTimeMillis());
+                if (addedTime <= 0) {
+                    Service.gI().sendThongBao(pl, "Thời gian sử dụng Trái dừa đã đạt tối đa 500 phút");
+                    return;
                 }
+                Service.gI().sendThongBao(pl, "Trái dừa tăng 70% tỉ lệ rơi nguyên liệu sự kiện hè trong "
+                        + (pl.itemTime.getRemainingTraiDuaTime() / 60_000) + " phút");
                 break;
 
         }

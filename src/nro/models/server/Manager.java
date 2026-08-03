@@ -21,6 +21,8 @@ import nro.models.map.WayPoint;
 import nro.models.npc.Npc;
 import nro.models.npc.NpcFactory;
 import nro.models.shop.Shop;
+import nro.models.shop.ItemShop;
+import nro.models.shop.TabShop;
 import nro.models.skill.NClass;
 import nro.models.skill.Skill;
 import nro.models.task.SideTaskTemplate;
@@ -118,6 +120,10 @@ public final class Manager {
     public static final String queryTopsukien2 = "SELECT id, point_sukien2 FROM player ORDER BY point_sukien2 DESC LIMIT 100";
     public static final String queryTopwhis = "SELECT id, thachdauwhis FROM player ORDER BY thachdauwhis DESC LIMIT 100";
     public static final String queryTopsukien = "SELECT id, point_sukien FROM player ORDER BY point_sukien DESC LIMIT 100";
+    private static final String queryTopBoss = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(JSON_UNQUOTE(JSON_EXTRACT(data_achievement, '$[19]')), '$[0]')) AS UNSIGNED), 0) AS boss_count FROM player ORDER BY boss_count DESC LIMIT 100";
+    private static final String queryTopEvent = "SELECT id, point_summer_cards AS event_points FROM player WHERE point_summer_cards > 0 ORDER BY point_summer_cards DESC, id ASC LIMIT 100";
+    private static final String queryTopPower = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_point, '$[1]')) AS UNSIGNED), 0) AS power FROM player ORDER BY power DESC LIMIT 100";
+    private static final String queryTopTask = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[0]')) AS UNSIGNED), 0) AS task_id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[1]')) AS UNSIGNED), 0) AS task_index, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[2]')) AS UNSIGNED), 0) AS task_count FROM player ORDER BY task_id DESC, task_index DESC, task_count DESC LIMIT 100";
     public static boolean isTopMaydamChanged = false;
     public static boolean isTopSukienChanged = false;
     public static boolean isTopSukien1Changed = false;
@@ -789,6 +795,31 @@ public final class Manager {
                 }
                 BAGES_TEMPLATES.add(template);
             }
+            // Some older databases are missing data_badges rows for items that
+            // are still listed in the title shop. Register them once at startup
+            // so purchases and title stats never mutate this shared list at runtime.
+            for (Shop shop : SHOPS) {
+                for (TabShop tabShop : shop.tabShops) {
+                    if (tabShop.id != 44) {
+                        continue;
+                    }
+                    for (ItemShop itemShop : tabShop.itemShops) {
+                        if (itemShop.temp == null || itemShop.temp.part <= 0
+                                || BagesTemplate.fineBadgesbyIdItem(itemShop.temp.id) != null) {
+                            continue;
+                        }
+                        BagesTemplate template = new BagesTemplate();
+                        template.id = -itemShop.temp.id;
+                        template.idEffect = itemShop.temp.part;
+                        template.idItem = itemShop.temp.id;
+                        template.NAME = itemShop.temp.name;
+                        for (Item.ItemOption option : itemShop.options) {
+                            template.options.add(new Item.ItemOption(option));
+                        }
+                        BAGES_TEMPLATES.add(template);
+                    }
+                }
+            }
             Logger.success(Logger.PURPLE + "Successfully loaded badges template (" + BAGES_TEMPLATES.size() + ")\n");
             //load map template
             ps = ConnectionDatabase.prepareStatement("select count(id) from map_template");
@@ -1010,6 +1041,26 @@ public final class Manager {
                     long totalDame = rs.getLong("total_damage_maydam");
                     top.setInfo1(maydam + " điểm");
                     top.setInfo2(Util.formatNumber(totalDame) + " sát thương");
+                } else if (query.equals(Manager.queryTopBoss)) {
+                    long bossCount = rs.getLong("boss_count");
+                    top.setInfo1(Util.formatNumber(bossCount) + " Boss");
+                    top.setInfo2("Đã kết liễu " + Util.formatNumber(bossCount) + " Boss");
+                } else if (query.equals(Manager.queryTopEvent)) {
+                    top.setParamCompare(rs.getLong("event_points"));
+                    top.setHiddenScore(true);
+                    top.setInfo1("Thành tích sự kiện đang được ẩn");
+                    top.setInfo2("Xếp hạng theo số thẻ đã đổi");
+                } else if (query.equals(Manager.queryTopPower)) {
+                    long power = rs.getLong("power");
+                    String formattedPower = Util.formatCompactVietnamese(power);
+                    top.setInfo1(formattedPower + " sức mạnh");
+                    top.setInfo2("Sức mạnh: " + formattedPower);
+                } else if (query.equals(Manager.queryTopTask)) {
+                    int taskId = rs.getInt("task_id");
+                    int taskIndex = rs.getInt("task_index");
+                    int taskCount = rs.getInt("task_count");
+                    top.setInfo1("Nhiệm vụ " + taskId + " - bước " + (taskIndex + 1));
+                    top.setInfo2("Tiến độ hiện tại: " + Util.formatNumber(taskCount));
                 }
 
                 tops.add(top);
@@ -1023,6 +1074,31 @@ public final class Manager {
         }
 
         return tops;
+    }
+
+    public static List<TOP> loadTop(String query) {
+        try (Connection con = LocalManager.getConnection()) {
+            return realTop(query, con);
+        } catch (Exception e) {
+            Logger.logException(Manager.class, e, "Không thể tải bảng xếp hạng");
+            return new ArrayList<>();
+        }
+    }
+
+    public static List<TOP> loadTopBoss() {
+        return loadTop(queryTopBoss);
+    }
+
+    public static List<TOP> loadTopEvent() {
+        return loadTop(queryTopEvent);
+    }
+
+    public static List<TOP> loadTopPower() {
+        return loadTop(queryTopPower);
+    }
+
+    public static List<TOP> loadTopTask() {
+        return loadTop(queryTopTask);
     }
 
     public void loadProperties() throws IOException {

@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS `game_server_config` (
   `boss_watchdog_enabled` tinyint(1) NOT NULL DEFAULT 1,
   `boss_stuck_seconds` smallint(5) unsigned NOT NULL DEFAULT 120,
   `config_refresh_seconds` tinyint(3) unsigned NOT NULL DEFAULT 5,
+  `login_notice_enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `login_notice_text` varchar(1000) NOT NULL DEFAULT 'X3 Kinh nghiệm đến hết ngày 11/5.\nSự kiện Goku Day.\nĐua TOP nhận quà cực khủng.\nTích điểm đổi quà.\nChi tiết xem tại diễn đàn, fanpage.',
   `updated_by` varchar(20) DEFAULT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   PRIMARY KEY (`id`),
@@ -38,6 +40,10 @@ CREATE TABLE IF NOT EXISTS `game_server_config` (
   CONSTRAINT `chk_game_server_stuck` CHECK (`boss_stuck_seconds` BETWEEN 10 AND 3600),
   CONSTRAINT `chk_game_server_refresh` CHECK (`config_refresh_seconds` BETWEEN 2 AND 60)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE `game_server_config`
+  ADD COLUMN IF NOT EXISTS `login_notice_enabled` tinyint(1) NOT NULL DEFAULT 1 AFTER `config_refresh_seconds`,
+  ADD COLUMN IF NOT EXISTS `login_notice_text` varchar(1000) NOT NULL DEFAULT 'X3 Kinh nghiệm đến hết ngày 11/5.\nSự kiện Goku Day.\nĐua TOP nhận quà cực khủng.\nTích điểm đổi quà.\nChi tiết xem tại diễn đàn, fanpage.' AFTER `login_notice_enabled`;
 
 INSERT INTO `game_server_config` (`id`, `exp_rate`)
 VALUES (1, 3)
@@ -258,3 +264,35 @@ ON DUPLICATE KEY UPDATE
   `boss_group` = VALUES(`boss_group`),
   `boss_name` = IF(`game_boss_catalog`.`boss_name` = '' OR `game_boss_catalog`.`boss_name` IS NULL,
                    VALUES(`boss_name`), `game_boss_catalog`.`boss_name`);
+
+-- Pool đồ Thần Linh ngẫu nhiên 3% cho các boss đang được tạo thật trong code.
+-- Android 20 của source này là DR_KORE (-31). CHILL_1/CHILL_2 chưa có
+-- class/BossData/instance nên không seed rule giả cho hai ID đó.
+UPDATE `game_boss_drop`
+SET `chance_bp` = 300,
+    `quantity_min` = 1,
+    `quantity_max` = 1,
+    `enabled` = 1
+WHERE `drop_kind` = 'DIVINE_RANDOM'
+  AND `boss_id` IN (-100, -101, -203999, -29, -925, -35, -36, -37, -30, -31);
+
+INSERT INTO `game_boss_drop`
+  (`boss_id`, `drop_kind`, `item_id`, `chance_bp`, `quantity_min`, `quantity_max`, `enabled`, `created_by`)
+SELECT c.`boss_id`, 'DIVINE_RANDOM', NULL, 300, 1, 1, 1, 'migration'
+FROM `game_boss_catalog` c
+WHERE c.`boss_id` IN (-100, -101, -203999, -29, -925, -35, -36, -37, -30, -31)
+  AND NOT EXISTS (
+    SELECT 1
+    FROM `game_boss_drop` d
+    WHERE d.`boss_id` = c.`boss_id`
+      AND d.`drop_kind` = 'DIVINE_RANDOM'
+  );
+
+DELETE newer
+FROM `game_boss_drop` newer
+JOIN `game_boss_drop` older
+  ON older.`boss_id` = newer.`boss_id`
+ AND older.`drop_kind` = newer.`drop_kind`
+ AND older.`id` < newer.`id`
+WHERE newer.`drop_kind` = 'DIVINE_RANDOM'
+  AND newer.`boss_id` IN (-100, -101, -203999, -29, -925, -35, -36, -37, -30, -31);

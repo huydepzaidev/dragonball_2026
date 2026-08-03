@@ -60,6 +60,25 @@ public class Util {
         }
     }
 
+    public static String formatCompactVietnamese(long value) {
+        NumberFormat numberFormat = NumberFormat.getInstance(new Locale("vi", "VN"));
+        numberFormat.setGroupingUsed(false);
+        numberFormat.setMaximumFractionDigits(1);
+        numberFormat.setMinimumFractionDigits(0);
+
+        double absoluteValue = Math.abs((double) value);
+        if (absoluteValue >= 1_000_000_000D) {
+            return numberFormat.format(value / 1_000_000_000D) + " tỉ";
+        }
+        if (absoluteValue >= 1_000_000D) {
+            return numberFormat.format(value / 1_000_000D) + " triệu";
+        }
+        if (absoluteValue >= 1_000D) {
+            return numberFormat.format(value / 1_000D) + " nghìn";
+        }
+        return numberFormat.format(value);
+    }
+
     public static String convertSecondsToTime(long totalSeconds) {
         if (totalSeconds < 60) {
             return totalSeconds + "s trước";

@@ -30,6 +30,17 @@ public final class GameConfigServiceSmokeTest {
             if (service.getMaintenanceTime() == null) {
                 throw new AssertionError("Thiếu giờ bảo trì");
             }
+            if (GameConfigService.calculateAdjustedChance(10000, 100) != 10000) {
+                throw new AssertionError("Rule 100% không được giữ nguyên");
+            }
+            for (int roll = 0; roll < 10000; roll++) {
+                if (!GameConfigService.passesChance(10000, roll)) {
+                    throw new AssertionError("Rule 100% bị trượt ở roll " + roll);
+                }
+            }
+            if (GameConfigService.passesChance(0, 0)) {
+                throw new AssertionError("Rule 0% vẫn có thể rơi");
+            }
             try (Connection con = LocalManager.getConnection();
                     PreparedStatement ps = con.prepareStatement(
                             "SELECT COUNT(*), COUNT(DISTINCT boss_id), COUNT(DISTINCT boss_key) "
@@ -40,6 +51,28 @@ public final class GameConfigServiceSmokeTest {
                 }
             } catch (Exception e) {
                 throw new AssertionError("Không kiểm tra được danh mục boss", e);
+            }
+            int databaseRuleTotal = 0;
+            try (Connection con = LocalManager.getConnection();
+                    PreparedStatement ps = con.prepareStatement(
+                            "SELECT boss_id, COUNT(*) FROM game_boss_drop d "
+                            + "LEFT JOIN item_template i ON i.id=d.item_id "
+                            + "WHERE d.enabled=1 AND (d.drop_kind='DIVINE_RANDOM' OR i.id IS NOT NULL) "
+                            + "GROUP BY boss_id");
+                    ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    int bossId = rs.getInt(1);
+                    int count = rs.getInt(2);
+                    databaseRuleTotal += count;
+                    if (service.getConfiguredDropRuleCount(bossId) != count) {
+                        throw new AssertionError("Sai số rule đã nạp của boss " + bossId);
+                    }
+                }
+                if (service.getConfiguredDropRuleTotal() != databaseRuleTotal) {
+                    throw new AssertionError("Server chưa nạp đủ rule rơi đồ");
+                }
+            } catch (Exception e) {
+                throw new AssertionError("Không đối chiếu được rule rơi đồ", e);
             }
             if (BossManager.respawnBossesEverywhere(-108) != 0
                     || !BossManager.getAllManagedBosses().isEmpty()) {

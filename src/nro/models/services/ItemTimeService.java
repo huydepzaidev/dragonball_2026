@@ -111,7 +111,11 @@ public class ItemTimeService {
         //    sendItemTime(player, 12834, (int) ((TIME_MAY_DO - (System.currentTimeMillis() - player.itemTime.lastTimeUseKhoBauX2)) / 1000));
         }
         if (player.itemTime.isUseBuaSanta) {
-            sendItemTime(player, 13540, (int) ((TIME_BUA_SANTA - (System.currentTimeMillis() - player.itemTime.lastTimeBuaSanta)) / 1000));
+            sendItemTime(player, 13540,
+                    (int) (player.itemTime.getRemainingBuaSantaTime() / 1000));
+        }
+        if (player.itemTime.isUseTraiDua) {
+            sendItemTime(player, 6574, (int) (player.itemTime.getRemainingTraiDuaTime() / 1000));
         }
         if (player.itemTime.isEatMeal) {
             sendItemTime(player, player.itemTime.iconMeal, (int) ((TIME_EAT_MEAL - (System.currentTimeMillis() - player.itemTime.lastTimeEatMeal)) / 1000));

@@ -111,6 +111,7 @@ import nro.models.server.ServerManager;
 import nro.models.utils.Functions;
 import nro.models.utils.Logger;
 import nro.models.server.GameConfigService;
+import nro.models.server.EventControlService;
 
 public class BossManager implements Runnable {
 
@@ -185,6 +186,9 @@ public class BossManager implements Runnable {
     }
 
     public Boss createBoss(int bossID) {
+        if (!EventControlService.gI().canCreateBoss(bossID)) {
+            return null;
+        }
         try {
             return switch (bossID) {               
                 case BossID.BROLY ->

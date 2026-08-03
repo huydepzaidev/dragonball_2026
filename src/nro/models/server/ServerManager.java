@@ -6,6 +6,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import nro.models.database.HistoryTransactionDAO;
+import nro.models.database.PlayerDAO;
 import nro.models.boss.Boss_Manager.BossManager;
 import nro.models.boss.Boss_Manager.OtherBossManager;
 import nro.models.boss.Boss_Manager.TreasureUnderSeaManager;
@@ -59,7 +60,7 @@ public class ServerManager {
     public static String DOMAIN = "Server 1";
     public static String NAME = "Ngọc Rồng Online";
     public static String IP = "36.50.135.149";
-    public static int PORT = 14445;
+    public static int PORT = 14446;
     public static int EVENT_SEVER = 0;
     private static ServerManager instance;
     public static boolean isRunning;
@@ -67,6 +68,8 @@ public class ServerManager {
 
     public void init() {
         Manager.gI();
+        PlayerDAO.migrateInitialEventPoints();
+        PlayerDAO.migrateSummerCardPoints();
         //TaskService.gI().loadTask();
         HistoryTransactionDAO.deleteHistory();
     }
@@ -120,6 +123,7 @@ public class ServerManager {
             BossManager.gI().loadBoss();
             Manager.MAPS.forEach(nro.models.map.Map::initBoss);
             EventManager.gI().init();
+            EventControlService.gI().applyStartupState();
 
             // Chỉ nhận lệnh web sau khi toàn bộ boss mặc định/map/event đã được
             // dựng xong, tránh lệnh cứu hộ chạy sớm rồi báo không có instance.

@@ -4,6 +4,7 @@ import nro.models.matches.PVP;
 import nro.models.matches.TYPE_LOSE_PVP;
 import nro.models.matches.TYPE_PVP;
 import nro.models.services.AchievementService;
+import nro.models.services.KOLQuestService;
 import nro.models.player.Player;
 import nro.models.server.Client;
 import nro.models.services.Service;
@@ -47,6 +48,7 @@ public class ThachDau extends PVP {
     public void reward(Player plWin) {
         plWin.inventory.gold += this.goldReward;
         Service.gI().sendMoney(plWin);
+        KOLQuestService.gI().recordChallengeWin(plWin);
     }
 
     @Override

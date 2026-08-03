@@ -50,6 +50,7 @@ public class CombineService {
     public static final int DA_MAI = 110;
     public static final int NANG_SKH_THUONG = 518;
     public static final int NANG_SKH_VIP = 519;
+    public static final int NANG_SKH_THUONG_100 = 520;
     public static final int NANG_CAP_VAT_PHAM = 510;
     public static final int NANG_CAP_BONG_TAI = 511;
     public static final int NHAP_NGOC_RONG = 513;
@@ -165,6 +166,7 @@ public class CombineService {
                 TaoDaMai.showInfoCombine(player);
                 break;
             case NANG_SKH_THUONG:
+            case NANG_SKH_THUONG_100:
             case NANG_SKH_VIP:
                 NangSKH.showInfoCombine(player);
                 break;
@@ -251,6 +253,7 @@ public class CombineService {
                 TaoDaMai.CheTaoDuiDuc(player);
                 break;
             case NANG_SKH_THUONG:
+            case NANG_SKH_THUONG_100:
             case NANG_SKH_VIP:
                 NangSKH.thucHien(player);
                 break;
@@ -667,6 +670,8 @@ public class CombineService {
                 return "Chế tạo\ntrang bị thiên sứ";
             case NANG_SKH_THUONG:
                 return "Ta sẽ phù phép\nbiến đồ Thần Linh\nthành đồ kích hoạt";
+            case NANG_SKH_THUONG_100:
+                return "Ta sẽ dùng món đầu làm chính\nvà món sau làm phôi\nđể tạo đồ kích hoạt";
             case NANG_SKH_VIP:
                 return "Ta sẽ phù phép\ntạo SKH VIP\ncho ngươi";
             case LAM_PHEP_NHAP_DA:
@@ -739,8 +744,11 @@ public class CombineService {
             case PHAN_RA_SACH:
                 return "Vào hành trang chọn\n1 sách cần phân rã";
             case NANG_SKH_THUONG:
+                return "Vào hành trang\nChọn đúng 1 món Thần Linh\nTỉ lệ thành công 50%";
+            case NANG_SKH_THUONG_100:
+                return "Vào hành trang\nChọn 2 món Thần Linh\nMón đầu là món chính, món sau là phôi\nTỉ lệ thành công 100%";
             case NANG_SKH_VIP:
-                return "Vào hành trang\nSKH Thường: chọn 1 món chính, có thể thêm 1 món phôi\nSKH VIP: chọn 1 món Thần Linh\nSau đó chọn 'Nâng SKH'";
+                return "Vào hành trang\nChọn 1 món chính Hủy Diệt\nChọn 1 món phôi Thần Linh\nTỉ lệ 100%, phí 500 triệu vàng\nSau đó chọn 'Nâng SKH'";
             case LAM_PHEP_NHAP_DA:
                 return "Vào hành trang\n"
                         + "Chọn 10 mảnh đá vụn\n"

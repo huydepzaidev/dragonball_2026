@@ -38,6 +38,8 @@ import nro.models.skill.Skill;
 import nro.models.network.Message;
 import nro.models.server.Client;
 import nro.models.map.service.ChangeMapService;
+import nro.models.map.service.ItemMapService;
+import nro.models.server.EventControlService;
 import nro.models.utils.Logger;
 import nro.models.utils.TimeUtil;
 import nro.models.utils.Util;
@@ -250,8 +252,15 @@ public class Service {
                 msg.writer().writeShort(pl.getBody());
                 msg.writer().writeShort(pl.getLeg());
                 msg.writer().writeUTF(pl.name);
-                msg.writer().writeUTF(top.getInfo1());
-                msg.writer().writeUTF(top.getInfo2());
+                String info1 = top.getInfo1() != null ? top.getInfo1() : "";
+                String info2 = top.getInfo2() != null ? top.getInfo2() : "";
+                if (top.isHiddenScore() && top.getId_player() == player.id) {
+                    String eventPoints = Util.formatNumber(top.getParamCompare());
+                    info1 = eventPoints + " thẻ đã đổi";
+                    info2 = "Điểm sự kiện của bạn: " + eventPoints;
+                }
+                msg.writer().writeUTF(info1);
+                msg.writer().writeUTF(info2);
             }
 
             player.sendMessage(msg);
@@ -1537,6 +1546,11 @@ public class Service {
     }
 
     public void dropItemMap(Zone zone, ItemMap item) {
+        if (item != null && item.itemTemplate != null
+                && !EventControlService.gI().canAcquireItem(item.itemTemplate.id)) {
+            ItemMapService.gI().removeItemMap(item);
+            return;
+        }
         Message msg;
         try {
             msg = new Message(68);
@@ -1553,6 +1567,11 @@ public class Service {
     }
 
     public void dropItemMapForMe(Player player, ItemMap item) {
+        if (item != null && item.itemTemplate != null
+                && !EventControlService.gI().canAcquireItem(item.itemTemplate.id)) {
+            ItemMapService.gI().removeItemMap(item);
+            return;
+        }
         Message msg;
         try {
             msg = new Message(68);

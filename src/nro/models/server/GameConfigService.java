@@ -13,9 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import nro.models.boss.Boss;
+import nro.models.boss.BossID;
 import nro.models.boss.Boss_Manager.BossManager;
 import nro.models.data.LocalManager;
 import nro.models.map.ItemMap;
+import nro.models.player.NewPet;
+import nro.models.player.Pet;
 import nro.models.player.Player;
 import nro.models.services.ChatGlobalService;
 import nro.models.services.ItemService;
@@ -32,6 +35,11 @@ import nro.models.utils.Util;
 public final class GameConfigService implements Runnable {
 
     private static final GameConfigService INSTANCE = new GameConfigService();
+    private static final String DEFAULT_LOGIN_NOTICE = "X3 Kinh nghiệm đến hết ngày 11/5."
+            + "\nSự kiện Goku Day."
+            + "\nĐua TOP nhận quà cực khủng."
+            + "\nTích điểm đổi quà."
+            + "\nChi tiết xem tại diễn đàn, fanpage.";
 
     private volatile int dropRatePercent = 100;
     private volatile boolean autoMaintenanceEnabled;
@@ -40,10 +48,13 @@ public final class GameConfigService implements Runnable {
     private volatile boolean bossWatchdogEnabled = true;
     private volatile int bossStuckSeconds = 120;
     private volatile int refreshSeconds = 5;
+    private volatile boolean loginNoticeEnabled = true;
+    private volatile String loginNoticeText = DEFAULT_LOGIN_NOTICE;
     private volatile Map<Integer, List<BossDropRule>> bossDrops = Collections.emptyMap();
     private volatile boolean tablesAvailable = true;
     private volatile long lastCatalogSync;
     private volatile String lastError;
+
     private GameConfigService() {
     }
 
@@ -53,6 +64,19 @@ public final class GameConfigService implements Runnable {
 
     public int getDropRatePercent() {
         return dropRatePercent;
+    }
+
+    public int getConfiguredDropRuleCount(int bossId) {
+        List<BossDropRule> rules = bossDrops.get(bossId);
+        return rules == null ? 0 : rules.size();
+    }
+
+    public int getConfiguredDropRuleTotal() {
+        int total = 0;
+        for (List<BossDropRule> rules : bossDrops.values()) {
+            total += rules.size();
+        }
+        return total;
     }
 
     public boolean isAutoMaintenanceEnabled() {
@@ -75,6 +99,14 @@ public final class GameConfigService implements Runnable {
         return bossStuckSeconds;
     }
 
+    public boolean isLoginNoticeEnabled() {
+        return loginNoticeEnabled;
+    }
+
+    public String getLoginNoticeText() {
+        return loginNoticeText;
+    }
+
     public synchronized boolean loadNow() {
         return loadNow(false);
     }
@@ -83,10 +115,13 @@ public final class GameConfigService implements Runnable {
         try (Connection con = LocalManager.getConnection()) {
             ServerConfigSnapshot config = loadServerConfig(con);
             Map<Integer, List<BossDropRule>> drops = loadBossDrops(con);
+            EventControlService.gI().load(con);
 
             Manager.RATE_EXP_SERVER = config.expRate;
             if (announceExp) {
-                announceExpRate(config.expRate);
+                String message = "Đã tăng EXP toàn server lên x" + config.expRate + "!";
+                ChatGlobalService.gI().chatAdmin(message);
+                Service.gI().sendThongBaoAllPlayer("Admin: " + message);
             }
             dropRatePercent = config.dropRatePercent;
             autoMaintenanceEnabled = config.autoMaintenanceEnabled;
@@ -95,6 +130,8 @@ public final class GameConfigService implements Runnable {
             bossWatchdogEnabled = config.bossWatchdogEnabled;
             bossStuckSeconds = config.bossStuckSeconds;
             refreshSeconds = config.refreshSeconds;
+            loginNoticeEnabled = config.loginNoticeEnabled;
+            loginNoticeText = config.loginNoticeText;
             bossDrops = drops;
             tablesAvailable = true;
             lastError = null;
@@ -108,19 +145,11 @@ public final class GameConfigService implements Runnable {
         }
     }
 
-    private void announceExpRate(int expRate) {
-        String message = "Admin đã tăng EXP toàn server lên x" + expRate + "!";
-        // Kênh thế giới: hiển thị người gửi là Quy Lão Kame.
-        ChatGlobalService.gI().chatQuyLaoKame(message);
-        // Fallback để mọi client vẫn nhận được thông tin kể cả client không
-        // hiển thị đúng avatar NPC trong danh sách chat thế giới.
-        Service.gI().sendThongBaoAllPlayer("Quy Lão Kame: " + message);
-    }
-
     private ServerConfigSnapshot loadServerConfig(Connection con) throws SQLException {
         String sql = "SELECT exp_rate, drop_rate_percent, auto_maintenance_enabled, "
                 + "maintenance_time, maintenance_countdown_seconds, boss_watchdog_enabled, "
-                + "boss_stuck_seconds, config_refresh_seconds "
+                + "boss_stuck_seconds, config_refresh_seconds, login_notice_enabled, "
+                + "login_notice_text "
                 + "FROM game_server_config WHERE id = 1";
         try (PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
             if (!rs.next()) {
@@ -138,9 +167,18 @@ public final class GameConfigService implements Runnable {
                     clamp(rs.getInt("maintenance_countdown_seconds"), 10, 3600),
                     rs.getBoolean("boss_watchdog_enabled"),
                     clamp(rs.getInt("boss_stuck_seconds"), 10, 3600),
-                    clamp(rs.getInt("config_refresh_seconds"), 2, 60)
+                    clamp(rs.getInt("config_refresh_seconds"), 2, 60),
+                    rs.getBoolean("login_notice_enabled"),
+                    normalizeLoginNotice(rs.getString("login_notice_text"))
             );
         }
+    }
+
+    private static String normalizeLoginNotice(String value) {
+        if (value == null || value.isBlank()) {
+            return DEFAULT_LOGIN_NOTICE;
+        }
+        return trim(value.replace("\r\n", "\n").replace('\r', '\n'), 1000);
     }
 
     private Map<Integer, List<BossDropRule>> loadBossDrops(Connection con) throws SQLException {
@@ -177,7 +215,8 @@ public final class GameConfigService implements Runnable {
      * Gọi từ Boss.setDie(), bảo đảm chỉ chạy một lần cho mỗi vòng đời boss.
      */
     public void dropConfiguredRewards(Boss boss, Player killer) {
-        if (boss == null || killer == null || killer.isBot || boss.zone == null) {
+        Player owner = resolveRewardOwner(killer);
+        if (boss == null || owner == null || boss.zone == null) {
             return;
         }
         List<BossDropRule> rules = bossDrops.get((int) boss.id);
@@ -185,29 +224,104 @@ public final class GameConfigService implements Runnable {
             return;
         }
         for (BossDropRule rule : rules) {
+            if (rule.divineRandom && isEncounterManagedDivineBoss((int) boss.id)) {
+                continue;
+            }
             try {
-                long adjustedChance = (long) rule.chanceBp * dropRatePercent / 100L;
-                int chance = (int) Math.min(10000L, Math.max(0L, adjustedChance));
-                if (chance == 0 || ThreadLocalRandom.current().nextInt(10000) >= chance) {
+                int chance = calculateAdjustedChance(rule.chanceBp, dropRatePercent);
+                int roll = ThreadLocalRandom.current().nextInt(10000);
+                if (!passesChance(chance, roll)) {
                     continue;
                 }
                 int quantity = rule.quantityMin == rule.quantityMax
                         ? rule.quantityMin : Util.nextInt(rule.quantityMin, rule.quantityMax);
                 int x = boss.location == null ? 0 : boss.location.x;
-                int y = boss.location == null ? 0 : boss.location.y;
-                ItemMap item;
+                int rawY = boss.location == null ? 0 : boss.location.y - 24;
+                int y = boss.zone.map == null ? rawY : boss.zone.map.yPhysicInTop(x, rawY);
                 if (rule.divineRandom) {
-                    item = ItemService.gI().randDoTLBoss(boss.zone, quantity, x, y, killer.id);
+                    // Equipment cannot be stacked. quantity=N creates N independent
+                    // divine items so every item receives its own random type/options.
+                    for (int i = 0; i < quantity; i++) {
+                        int dropX = quantity == 1 ? x : x + ThreadLocalRandom.current().nextInt(-25, 26);
+                        int dropY = boss.zone.map == null
+                                ? y : boss.zone.map.yPhysicInTop(dropX, rawY);
+                        ItemMap item = ItemService.gI().randDoTLBoss(
+                                boss.zone, 1, dropX, dropY, owner.id);
+                        publishConfiguredDrop(boss, owner, rule, item, chance, roll);
+                    }
                 } else {
-                    item = new ItemMap(boss.zone, rule.itemId, quantity, x, y, killer.id);
-                }
-                if (item != null) {
-                    Service.gI().dropItemMap(boss.zone, item);
+                    ItemMap item = new ItemMap(boss.zone, rule.itemId, quantity, x, y, owner.id);
+                    publishConfiguredDrop(boss, owner, rule, item, chance, roll);
                 }
             } catch (Exception e) {
                 reportBossError(boss, "drop rule #" + rule.id, e);
             }
         }
+    }
+
+    /**
+     * These bosses award exactly one divine item through their encounter state,
+     * so their legacy per-kill DIVINE_RANDOM database rule must not roll again.
+     */
+    static boolean isEncounterManagedDivineBoss(int bossId) {
+        return bossId == BossID.XEN_BO_HUNG || bossId == BossID.SIEU_BO_HUNG;
+    }
+
+    public boolean dropGuaranteedDivine(Boss boss, Player killer, String encounterName) {
+        Player owner = resolveRewardOwner(killer);
+        if (boss == null || owner == null || boss.zone == null) {
+            return false;
+        }
+        int x = boss.location == null ? 0 : boss.location.x;
+        int rawY = boss.location == null ? 0 : boss.location.y - 24;
+        int y = boss.zone.map == null ? rawY : boss.zone.map.yPhysicInTop(x, rawY);
+        ItemMap item = ItemService.gI().randDoTLBoss(boss.zone, 1, x, y, owner.id);
+        if (item == null || item.itemTemplate == null) {
+            return false;
+        }
+        Service.gI().dropItemMap(boss.zone, item);
+        Logger.successln("[ENCOUNTER DIVINE] encounter=" + encounterName
+                + " boss=" + boss.id
+                + " item=" + item.itemTemplate.id
+                + " owner=" + owner.id);
+        return true;
+    }
+
+    private void publishConfiguredDrop(Boss boss, Player owner, BossDropRule rule,
+            ItemMap item, int chance, int roll) {
+        if (item == null || item.itemTemplate == null) {
+            throw new IllegalStateException("Cannot create item for drop rule #" + rule.id);
+        }
+        Service.gI().dropItemMap(boss.zone, item);
+        Logger.successln("[DB DROP] boss=" + boss.id
+                + " rule=" + rule.id
+                + " item=" + item.itemTemplate.id
+                + " quantity=" + item.quantity
+                + " owner=" + owner.id
+                + " chance=" + chance + "/10000"
+                + " roll=" + roll);
+    }
+
+    private static Player resolveRewardOwner(Player attacker) {
+        if (attacker == null || attacker.isBot) {
+            return null;
+        }
+        if (attacker instanceof Pet pet) {
+            return pet.master != null && !pet.master.isBot ? pet.master : null;
+        }
+        if (attacker instanceof NewPet pet) {
+            return pet.master != null && !pet.master.isBot ? pet.master : null;
+        }
+        return attacker.isPl() ? attacker : null;
+    }
+
+    static int calculateAdjustedChance(int chanceBp, int ratePercent) {
+        long adjusted = (long) chanceBp * ratePercent / 100L;
+        return (int) Math.min(10000L, Math.max(0L, adjusted));
+    }
+
+    static boolean passesChance(int chance, int roll) {
+        return chance > 0 && roll >= 0 && roll < 10000 && roll < chance;
     }
 
     public void reportBossError(Boss boss, String phase, Throwable error) {
@@ -225,9 +339,6 @@ public final class GameConfigService implements Runnable {
 
     @Override
     public void run() {
-        // Tách nhịp đọc hàng đợi lệnh khỏi nhịp nạp cấu hình. Nếu admin đặt
-        // config_refresh_seconds lớn (tối đa 60 giây), lệnh RELOAD_CONFIG vẫn
-        // phải được xử lý gần như ngay lập tức thay vì phải chờ hết chu kỳ đó.
         long nextConfigLoad = 0L;
         while (ServerManager.isRunning) {
             long started = System.currentTimeMillis();
@@ -239,6 +350,7 @@ public final class GameConfigService implements Runnable {
                 }
                 if (tablesAvailable) {
                     processCommands();
+                    EventControlService.gI().processCommands();
                     if (System.currentTimeMillis() - lastCatalogSync >= 30_000L) {
                         syncBossCatalog();
                         lastCatalogSync = System.currentTimeMillis();
@@ -248,8 +360,6 @@ public final class GameConfigService implements Runnable {
                 lastError = compactError(e);
                 Logger.error("Lỗi luồng đồng bộ cấu hình game: " + lastError + "\n");
             }
-            // Poll lệnh tối đa mỗi 500ms; việc nạp snapshot vẫn theo
-            // config_refresh_seconds ở phía trên.
             long wait = Math.max(250L, Math.min(500L,
                     nextConfigLoad - System.currentTimeMillis()));
             try {
@@ -296,9 +406,6 @@ public final class GameConfigService implements Runnable {
         try {
             switch (command.type) {
                 case "RELOAD_CONFIG" -> {
-                    // Lệnh này chỉ được tạo từ control panel. Phát thông báo
-                    // ngay sau khi snapshot mới được nạp, kể cả EXP mới trùng
-                    // giá trị cũ, để admin luôn thấy phản hồi trên thế giới.
                     success = loadNow(true);
                     message = success ? "Đã nạp lại cấu hình." : "Nạp cấu hình thất bại.";
                 }
@@ -446,7 +553,9 @@ public final class GameConfigService implements Runnable {
             int maintenanceCountdownSeconds,
             boolean bossWatchdogEnabled,
             int bossStuckSeconds,
-            int refreshSeconds) {
+            int refreshSeconds,
+            boolean loginNoticeEnabled,
+            String loginNoticeText) {
     }
 
     private record BossDropRule(

@@ -1336,6 +1336,8 @@ public class TaskService {
                     Service.gI().sendMoney(player);
                     Service.gI().sendThongBao(player, "Bạn nhận được "
                             + Util.numberToMoney(goldReward) + " vàng");
+                    KOLQuestService.gI().recordHardDailyTaskCompletion(
+                            player, player.playerTask.sideTask.level);
                     player.playerTask.sideTask.reset();
                 } else {
                     Service.gI().sendThongBao(player, "Hành trang không đủ chỗ trống.");

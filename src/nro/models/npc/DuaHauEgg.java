@@ -6,6 +6,7 @@ import nro.models.player.Player;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
 import nro.models.services.Service;
+import nro.models.server.EventControlService;
 import nro.models.utils.Logger;
 
 public class DuaHauEgg {
@@ -25,10 +26,17 @@ public class DuaHauEgg {
     }
 
     public static void createDuaHauEgg(Player player) {
+        if (!EventControlService.gI().isEnabled(EventControlService.HUNG_VUONG)) {
+            return;
+        }
         player.DuaHauEgg = new DuaHauEgg(player, System.currentTimeMillis(), TIME_DONE);
     }
 
     public void sendDuaHauEgg() {
+        if (!EventControlService.gI().isEnabled(EventControlService.HUNG_VUONG)) {
+            destroyEgg();
+            return;
+        }
         Message msg;
         try {
             msg = new Message(-122);
@@ -51,7 +59,7 @@ public class DuaHauEgg {
             msg.writer().writeShort(iconId);
             msg.writer().writeByte(0);
             msg.writer().writeInt(secondsLeft);
-            Service.gI().sendMessAllPlayerInMap(player, msg);
+            player.sendMessage(msg);
             msg.cleanup();
         } catch (Exception e) {
             Logger.logException(DuaHauEgg.class, e);
@@ -64,6 +72,14 @@ public class DuaHauEgg {
     }
 
     public void openEgg() {
+        if (!EventControlService.gI().isEnabled(EventControlService.HUNG_VUONG)) {
+            Player owner = this.player;
+            destroyEgg();
+            if (owner != null) {
+                Service.gI().sendThongBao(owner, "Sự kiện Giỗ Tổ Hùng Vương hiện đang tắt.");
+            }
+            return;
+        }
         try {
             if (getSecondDone() == 0) {
                 Item dua = ItemService.gI().createNewItem((short) 569);
@@ -84,6 +100,25 @@ public class DuaHauEgg {
     public void subTimeDone(int d, int h, int m, int s) {
         this.timeDone -= ((d * 24 * 60 * 60 * 1000) + (h * 60 * 60 * 1000) + (m * 60 * 1000) + (s * 1000));
         this.sendDuaHauEgg();
+    }
+
+    public void destroyEgg() {
+        Player owner = this.player;
+        if (owner == null) {
+            return;
+        }
+        try {
+            Message msg = new Message(-117);
+            msg.writer().writeByte(101);
+            owner.sendMessage(msg);
+            msg.cleanup();
+        } catch (Exception e) {
+            Logger.logException(DuaHauEgg.class, e);
+        }
+        if (owner.DuaHauEgg == this) {
+            owner.DuaHauEgg = null;
+        }
+        this.player = null;
     }
 
     public void dispose() {

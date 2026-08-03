@@ -9,6 +9,7 @@ import nro.models.map.service.MapService;
 import nro.models.services.Service;
 import nro.models.utils.Logger;
 import nro.models.utils.Util;
+import nro.models.server.EventControlService;
 
 public abstract class Npc implements IAtionNpc {
 
@@ -158,6 +159,11 @@ public abstract class Npc implements IAtionNpc {
     }
 
     public boolean canOpenNpc(Player player) {
+        if (!EventControlService.gI().canOpenNpc(this.tempId, this.mapId)) {
+            Service.gI().hideWaitDialog(player);
+            Service.gI().sendThongBao(player, "Sự kiện này hiện đang tắt.");
+            return false;
+        }
         if (this.tempId == ConstNpc.DAU_THAN) {
             if (player.zone.map.mapId == 21
                     || player.zone.map.mapId == 22

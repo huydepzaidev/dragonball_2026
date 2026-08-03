@@ -26,7 +26,7 @@ public class OngGohan extends Npc {
         if (canOpenNpc(player)) {
             createOtherMenu(player, ConstNpc.BASE_MENU,
                     "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.",
-                    "Nhiệm vụ", "Nhập mã\ngiftcode");
+                    "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử");
         }
     }
 
@@ -44,8 +44,20 @@ public class OngGohan extends Npc {
                     case 1 -> {
                         Input.gI().createFormGiftCode(player);
                     }
+                    case 2 -> {
+                        receiveDisciple(player);
+                    }
                 }
             }
         }
+    }
+
+    protected void receiveDisciple(Player player) {
+        if (player.pet != null) {
+            Service.gI().sendThongBao(player, "Con đã có đệ tử rồi!");
+            return;
+        }
+        PetService.gI().createNormalPet(player, player.gender);
+        Service.gI().sendThongBao(player, "Con đã nhận đệ tử thành công!");
     }
 }

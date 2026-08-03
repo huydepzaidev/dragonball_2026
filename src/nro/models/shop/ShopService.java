@@ -26,9 +26,9 @@ import nro.models.services_func.Input;
 import nro.models.services_func.BuyBackService;
 import nro.models.services_func.UseItem;
 import nro.models.map.service.NpcService;
-import nro.models.task.BadgesTaskService;
 import nro.models.utils.SkillUtil;
 import nro.models.utils.TimeUtil;
+import nro.models.server.EventControlService;
 
 /**
  *
@@ -110,7 +110,15 @@ public class ShopService {
         if (shop.tagName != null && (shop.tagName.equals("BUA_1H") || shop.tagName.equals("BUA_8H") || shop.tagName.equals("BUA_1M"))) {
             return this.resolveShopBua(player, new Shop(shop));
         }
-        return allGender ? new Shop(shop) : new Shop(shop, player);
+        Shop resolvedShop = allGender ? new Shop(shop) : new Shop(shop, player);
+        if ("SHOP_CHI_CHI".equals(resolvedShop.tagName)) {
+            for (TabShop tabShop : resolvedShop.tabShops) {
+                tabShop.itemShops.removeIf(item -> item.temp.id == 1609
+                        || item.temp.id == 1613
+                        || item.temp.id == 1631);
+            }
+        }
+        return resolvedShop;
     }
 
     private Shop resolveShopBua(Player player, Shop s) {
@@ -666,6 +674,10 @@ public class ShopService {
             Service.gI().sendThongBao(player, "Không thể thực hiện");
             return;
         }
+        if (!EventControlService.gI().canAcquireItem(itemTempId)) {
+            Service.gI().sendThongBao(player, "Vật phẩm thuộc sự kiện đang tắt.");
+            return;
+        }
 
         // Đổi bằng phiếu giảm giá
         if (is.tabShop.id == 30) {
@@ -713,8 +725,9 @@ public class ShopService {
             return;
         }
 
-        // Hành trang đầy
-        if (InventoryService.gI().getCountEmptyBag(player) == 0) {
+        // Hành trang đầy vẫn cho mua nếu vật phẩm cộng được vào stack hiện có.
+        Item capacityCheckItem = ItemService.gI().createItemFromItemShop(is);
+        if (!InventoryService.gI().canAddItemBag(player, capacityCheckItem)) {
             Service.gI().sendThongBao(player, "Hành trang đã đầy");
             return;
         }
@@ -734,7 +747,7 @@ public class ShopService {
 
         // Đổi bằng điểm sự kiện
         if (is.tabShop.id == 59) {
-            int eventPointPrice = 0;
+            int eventPointPrice;
 
             switch (is.temp.id) {
                 case 1567:
@@ -769,16 +782,26 @@ public class ShopService {
                     eventPointPrice = 99;
                     break;
                 default:
+                    Service.gI().sendThongBao(player, "Vật phẩm này chưa được cấu hình giá điểm sự kiện!");
+                    return;
             }
 
-            if (player.event.getEventPoint() < eventPointPrice) {
+            Item item = ItemService.gI().createItemFromItemShop(is);
+            if (item == null || item.template == null) {
+                Service.gI().sendThongBao(player, "Không thể tạo vật phẩm, vui lòng thử lại!");
+                return;
+            }
+
+            if (!player.event.trySpendEventPoint(eventPointPrice)) {
                 Service.gI().sendThongBao(player, "Không đủ điểm sự kiện để mua vật phẩm này!");
                 return;
             }
 
-            player.event.subEventPoint(eventPointPrice);
-            Item item = ItemService.gI().createItemFromItemShop(is);
-            InventoryService.gI().addItemBag(player, item);
+            if (!InventoryService.gI().addItemBag(player, item)) {
+                player.event.addEventPoint(eventPointPrice);
+                Service.gI().sendThongBao(player, "Không thể thêm vật phẩm, điểm sự kiện đã được hoàn lại!");
+                return;
+            }
             InventoryService.gI().sendItemBags(player);
             Service.gI().sendThongBao(player, "Đã đổi " + is.temp.name + " bằng " + eventPointPrice + " điểm sự kiện.");
             return;
@@ -921,28 +944,75 @@ public class ShopService {
     }
 
     private void buyDanhHieu(Player pl, ItemShop is) {
-        int idEffect = BagesTemplate.fineIdEffectbyIdItem(is.temp.id);
-        int percent = BadgesTaskService.sendPercenBadgesTask(pl, idEffect);
-
-        if (percent < 100) {
-            Service.gI().sendThongBao(pl, "Bạn chưa mở khóa danh hiệu này");
+        BagesTemplate template = resolveShopBadgeTemplate(is);
+        if (template == null) {
+            Service.gI().sendThongBao(pl, "Danh hiệu này chưa được cấu hình");
             return;
         }
+        int idEffect = template.idEffect;
 
-        for (BadgesData badge : pl.dataBadges) {
-            if (badge.idBadGes == idEffect) {
-                Service.gI().sendThongBao(pl, "Bạn đã sở hữu danh hiệu này rồi");
+        synchronized (pl) {
+            for (BadgesData badge : pl.dataBadges) {
+                if (badge.idBadGes == idEffect) {
+                    Service.gI().sendThongBao(pl, "Bạn đã sở hữu danh hiệu này rồi");
+                    return;
+                }
+            }
+
+            // Mua trực tiếp theo đúng loại tiền và giá đã cấu hình trong shop.
+            if (!subMoneyByItemShop(pl, is)) {
                 return;
             }
+
+            // Constructor tự thêm đúng một lần và bật danh hiệu vừa mua.
+            new BadgesData(pl, idEffect, 30);
+            pl.badges.idBadges = idEffect;
         }
 
-        BadgesData danhHieu = new BadgesData(pl, idEffect, 30);
-        pl.dataBadges.add(danhHieu);
+        pl.nPoint.calPoint();
+        pl.nPoint.setHp((int) pl.nPoint.hpMax);
+        pl.nPoint.setMp((int) pl.nPoint.mpMax);
+        Service.gI().point(pl);
+        Service.gI().Send_Info_NV(pl);
+        Service.gI().sendBadgesPlayer(pl, 5, idEffect);
+        Service.gI().sendThongBao(pl, "Bạn đã mua danh hiệu " + template.NAME
+                + " trong 30 ngày");
+    }
 
+    /**
+     * Older data sets are missing the data_badges link for a few shop titles.
+     * Build that link from the shop item so every title in tab 44 remains
+     * directly purchasable and grants its configured options.
+     */
+    private BagesTemplate resolveShopBadgeTemplate(ItemShop is) {
+        if (is == null || is.temp == null) {
+            return null;
+        }
         BagesTemplate template = BagesTemplate.fineBadgesbyIdItem(is.temp.id);
-        String badgeName = template != null ? template.NAME : "không rõ";
+        if (template != null) {
+            return template;
+        }
 
-        Service.gI().sendThongBao(pl, "Bạn đã nhận được danh hiệu " + badgeName);
+        synchronized (Manager.BAGES_TEMPLATES) {
+            template = BagesTemplate.fineBadgesbyIdItem(is.temp.id);
+            if (template != null) {
+                return template;
+            }
+            if (is.temp.part <= 0) {
+                return null;
+            }
+
+            template = new BagesTemplate();
+            template.id = -is.temp.id;
+            template.idItem = is.temp.id;
+            template.idEffect = is.temp.part;
+            template.NAME = is.temp.name;
+            for (ItemOption option : is.options) {
+                template.options.add(new ItemOption(option));
+            }
+            Manager.BAGES_TEMPLATES.add(template);
+            return template;
+        }
     }
 
     private void changeDanhHieu(Player pl, ItemShop is) {

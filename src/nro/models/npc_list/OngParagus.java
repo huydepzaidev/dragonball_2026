@@ -18,7 +18,7 @@ public class OngParagus extends OngGohan {
         if (canOpenNpc(player)) {
             createOtherMenu(player, ConstNpc.BASE_MENU,
                     "Con cố gắng theo Vua Vegeta học thành tài, đừng lo lắng cho ta.",
-                    "Nhiệm vụ", "Nhập mã\ngiftcode");
+                    "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử");
         }
     }
 
@@ -35,6 +35,9 @@ public class OngParagus extends OngGohan {
                     }
                     case 1 -> {
                         Input.gI().createFormGiftCode(player);
+                    }
+                    case 2 -> {
+                        receiveDisciple(player);
                     }
                 }
             }

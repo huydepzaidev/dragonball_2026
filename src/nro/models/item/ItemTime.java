@@ -26,6 +26,8 @@ public class ItemTime {
     public static final int TIME_NUOC_MIA3 = 600_000;
 
     public static final int TIME_BUA_SANTA = 1800000;
+    public static final long TIME_TRAI_DUA_PER_USE = 30 * 60 * 1000L;
+    public static final long MAX_TIME_TRAI_DUA = 500 * 60 * 1000L;
     public static final int TIME_EAT_MEAL = 600000;
     public static final int TIME_CMS = 3600000;
     public static final int TIME_DK = 1800000;
@@ -62,6 +64,9 @@ public class ItemTime {
     public long lastTimeUseKhoBauX2;
     public boolean isUseBuaSanta;
     public long lastTimeBuaSanta;
+    public boolean isUseTraiDua;
+    public long lastTimeUseTraiDua;
+    public long timeLengthTraiDua;
 
     public long lastTimeUseCoBonLa;
     public boolean isUseCoBonLa;
@@ -220,11 +225,8 @@ public class ItemTime {
             }
         }
         if (isUseCoBonLa) {
-            long now = System.currentTimeMillis();
-            long timeLeft = (lastTimeUseCoBonLa + timeLengthCoBonLa) - now;
-            if (timeLeft <= 0) {
+            if (Util.canDoWithTime(lastTimeUseCoBonLa, TIME_CO_BON_LA)) {
                 isUseCoBonLa = false;
-                timeLengthCoBonLa = 0;
             }
         }
         if (isUseKilis) {
@@ -251,9 +253,13 @@ public class ItemTime {
             }
         }
         if (isUseBuaSanta) {
-            if (Util.canDoWithTime(lastTimeBuaSanta, TIME_BUA_SANTA)) {
+            if (getRemainingBuaSantaTime() <= 0) {
                 isUseBuaSanta = false;
             }
+        }
+        if (isUseTraiDua && getRemainingTraiDuaTime() <= 0) {
+            isUseTraiDua = false;
+            timeLengthTraiDua = 0;
         }
         if (isUseKhoBauX2) {
             if (Util.canDoWithTime(lastTimeUseKhoBauX2, TIME_MAY_DO2)) {
@@ -275,5 +281,54 @@ public class ItemTime {
 
     public void dispose() {
         this.player = null;
+    }
+
+    public long getRemainingBuaSantaTime() {
+        return getRemainingBuaSantaTime(System.currentTimeMillis());
+    }
+
+    public long getRemainingBuaSantaTime(long now) {
+        if (!isUseBuaSanta) {
+            return 0;
+        }
+        return Math.max(0, TIME_BUA_SANTA - (now - lastTimeBuaSanta));
+    }
+
+    /**
+     * Mỗi bùa cộng đúng 30 phút vào thời gian còn lại. Nếu trạng thái cũ đã
+     * hết hạn thì bắt đầu lại từ thời điểm hiện tại.
+     */
+    public long addBuaSantaTime(long now) {
+        long remaining = getRemainingBuaSantaTime(now);
+        long newRemaining = remaining + TIME_BUA_SANTA;
+        isUseBuaSanta = true;
+        lastTimeBuaSanta = now - (TIME_BUA_SANTA - newRemaining);
+        return newRemaining;
+    }
+
+    public long getRemainingTraiDuaTime() {
+        return getRemainingTraiDuaTime(System.currentTimeMillis());
+    }
+
+    public long getRemainingTraiDuaTime(long now) {
+        if (!isUseTraiDua) {
+            return 0;
+        }
+        return Math.max(0, lastTimeUseTraiDua + timeLengthTraiDua - now);
+    }
+
+    /**
+     * Adds 30 minutes to the current coconut buff and returns the time actually added.
+     */
+    public long addTraiDuaTime(long now) {
+        long remaining = getRemainingTraiDuaTime(now);
+        long newRemaining = Math.min(MAX_TIME_TRAI_DUA, remaining + TIME_TRAI_DUA_PER_USE);
+        long added = newRemaining - remaining;
+        if (added > 0) {
+            isUseTraiDua = true;
+            lastTimeUseTraiDua = now;
+            timeLengthTraiDua = newRemaining;
+        }
+        return added;
     }
 }
