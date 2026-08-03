@@ -11,15 +11,18 @@ import nro.models.services.ItemService;
 import nro.models.services.Service;
 import nro.models.services_dungeon.NgocRongNamecService;
 import nro.models.map.service.ChangeMapService;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import nro.models.consts.ConstTaskBadges;
 import nro.models.services_dungeon.BlackBallWarService;
 import nro.models.map.service.ItemMapService;
 import nro.models.task.BadgesTaskService;
+import nro.models.server.EventControlService;
 
 /**
  *
@@ -29,6 +32,10 @@ import nro.models.task.BadgesTaskService;
 public class InventoryService {
 
     private static InventoryService I;
+    private static final long MILLIS_PER_DAY = 86_400_000L;
+    private static final int CHILDRENS_GIFT_BOX_ID = 1608;
+    private static final int SANTA_DISCIPLE_CHARM_ID = 1628;
+    private static final int COCONUT_ITEM_ID = 694;
 
     public static InventoryService gI() {
         if (InventoryService.I == null) {
@@ -309,11 +316,14 @@ public class InventoryService {
             return sItem;
         }
 
-        // Kiểm tra các vật phẩm có ID đặc biệt
-        if (item.getId() == 691 || item.getId() == 692 || item.getId() == 693) {
+        // Quần đi biển chỉ được mặc khi đã tháo áo và cải trang.
+        if (SummerEventService.isBeachShorts(item.getId())) {
             List<Item> itemsBody = player.inventory.itemsBody;
-            if (itemsBody.get(0).isNotNullItem() && itemsBody.get(5).isNotNullItem()) {
-                Service.gI().sendThongBaoOK(player.isPet ? ((Pet) player).master : player, "Vui lòng cởi áo để có thể sử dụng!");
+            boolean dangMacAo = itemsBody.size() > 0 && itemsBody.get(0).isNotNullItem();
+            boolean dangDeoCaiTrang = itemsBody.size() > 5 && itemsBody.get(5).isNotNullItem();
+            if (dangMacAo || dangDeoCaiTrang) {
+                Service.gI().sendThongBaoOK(player.isPet ? ((Pet) player).master : player,
+                        "Vui lòng tháo áo và cải trang trước khi mặc Quần đi biển!");
                 return sItem;
             }
         }
@@ -560,6 +570,7 @@ public class InventoryService {
     }
 
     public void sendItemBags(Player player) {
+        mergeDuplicateStackableItems(player.inventory.itemsBag);
         sortItems(player.inventory.itemsBag);
         Message msg;
         try {
@@ -733,6 +744,11 @@ public class InventoryService {
     }
 
     public boolean addItemBag(Player player, Item item) {
+        if (item != null && item.template != null
+                && !EventControlService.gI().canAcquireItem(item.template.id)) {
+            Service.gI().sendThongBao(player, "Vật phẩm thuộc sự kiện đang tắt.");
+            return false;
+        }
         //ngọc rồng đen
         if (ItemMapService.gI().isBlackBall(item.template.id)) {
             return BlackBallWarService.gI().pickBlackBall(player, item);
@@ -815,10 +831,63 @@ public class InventoryService {
     }
 
     public boolean addItemBox(Player player, Item item) {
+        if (item != null && item.template != null
+                && !EventControlService.gI().canAcquireItem(item.template.id)) {
+            Service.gI().sendThongBao(player, "Vật phẩm thuộc sự kiện đang tắt.");
+            return false;
+        }
         return addItemList(player.inventory.itemsBox, item);
     }
 
+    /**
+     * Kiểm tra trước khi shop trừ tiền. Hành trang đầy vẫn được mua nếu vật
+     * phẩm có thể cộng vào một stack hiện có.
+     */
+    public boolean canAddItemBag(Player player, Item itemAdd) {
+        if (player == null || itemAdd == null || itemAdd.template == null) {
+            return false;
+        }
+        if (getCountEmptyBag(player) > 0) {
+            return true;
+        }
+        ItemService.gI().normalizePermanentExpiration(itemAdd);
+        if (!isStackableItem(itemAdd)) {
+            return false;
+        }
+        for (Item item : player.inventory.itemsBag) {
+            ItemService.gI().normalizePermanentExpiration(item);
+            if (item == null
+                    || !item.isNotNullItem()
+                    || item.template.id != itemAdd.template.id
+                    || item.quantity >= 100_000_000
+                    || (!checkListsEqual(item.itemOptions, itemAdd.itemOptions)
+                    && itemAdd.template.id != 2074
+                    && !itemAdd.isDaNangCap()
+                    && !itemAdd.isManhTS())
+                    || !hasCompatibleExpirationForStack(item, itemAdd)) {
+                continue;
+            }
+            if ((itemAdd.template.id >= 1066 && itemAdd.template.id <= 1070)
+                    || itemAdd.template.id == 457
+                    || itemAdd.template.id == 610
+                    || itemAdd.template.type == 14
+                    || itemAdd.template.id == 2048
+                    || itemAdd.template.id > 2049 && itemAdd.template.id < 2056
+                    || itemAdd.template.id == 821
+                    || itemAdd.template.id == 2075
+                    || item.quantity < 99999) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean addItemList(List<Item> items, Item itemAdd) {
+        if (itemAdd != null && itemAdd.template != null
+                && !EventControlService.gI().canAcquireItem(itemAdd.template.id)) {
+            return false;
+        }
+        ItemService.gI().normalizePermanentExpiration(itemAdd);
         if (itemAdd.itemOptions.isEmpty()) {
             itemAdd.itemOptions.add(new Item.ItemOption(73, 0));
         }
@@ -837,11 +906,16 @@ public class InventoryService {
                 }
             }
         }
-        if (itemAdd.template.isUpToUp) {
+        if (isStackableItem(itemAdd)) {
             for (Item it : items) {
                 if (!it.isNotNullItem() || it.template.id != itemAdd.template.id || (!checkListsEqual(it.itemOptions, itemAdd.itemOptions) && itemAdd.template.id != 2074 && !itemAdd.isDaNangCap() && !itemAdd.isManhTS()) || it.quantity >= 100_000_000) {
                     continue;
                 }
+                if (!hasCompatibleExpirationForStack(it, itemAdd)) {
+                    continue;
+                }
+
+                preserveOldestExpirationStart(it, itemAdd);
 
                 //========================ITEM TĂNG SỐ LƯỢNG========================
                 if ((itemAdd.template.id >= 1066 && itemAdd.template.id <= 1070) || itemAdd.template.id == 457
@@ -875,6 +949,135 @@ public class InventoryService {
                     itemAdd.quantity = 0;
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Gộp lại các stack cũ đã bị tách ô. Chỉ gộp cùng ID, cùng toàn bộ option.
+     * Hộp quà có hạn dùng chỉ gộp khi cùng đợt hết hạn.
+     */
+    private void mergeDuplicateStackableItems(List<Item> items) {
+        if (items == null || items.size() < 2) {
+            return;
+        }
+        for (int i = 0; i < items.size(); i++) {
+            Item target = items.get(i);
+            ItemService.gI().normalizePermanentExpiration(target);
+            if (!isStackableItem(target) || target.quantity <= 0) {
+                continue;
+            }
+            for (int j = i + 1; j < items.size() && target.quantity < 99999; j++) {
+                Item source = items.get(j);
+                ItemService.gI().normalizePermanentExpiration(source);
+                if (!isStackableItem(source)
+                        || source.quantity <= 0
+                        || source.template.id != target.template.id
+                        || !checkListsEqual(target.itemOptions, source.itemOptions)
+                        || !hasCompatibleExpirationForStack(target, source)) {
+                    continue;
+                }
+
+                int moveQuantity = Math.min(99999 - target.quantity, source.quantity);
+                if (moveQuantity <= 0) {
+                    continue;
+                }
+                preserveOldestExpirationStart(target, source);
+                target.quantity += moveQuantity;
+                source.quantity -= moveQuantity;
+                if (source.quantity <= 0) {
+                    removeItem(items, source);
+                }
+            }
+        }
+    }
+
+    private boolean isStackableItem(Item item) {
+        if (item == null || item.template == null) {
+            return false;
+        }
+        return item.template.isUpToUp
+                || item.template.id == SANTA_DISCIPLE_CHARM_ID
+                || isGiftContainer(item);
+    }
+
+    /**
+     * Một số hộp quà mới bị cấu hình nhầm is_up_to_up = 0 trong dữ liệu.
+     * Chỉ mở rộng cho nhóm vật phẩm tiêu hao mang tên hộp/gói/rương quà.
+     */
+    private boolean isGiftContainer(Item item) {
+        byte type = item.template.type;
+        if (type != 27 && type != 29 && type != 31 && type != 75) {
+            return false;
+        }
+        String name = item.template.name;
+        if (name == null) {
+            return false;
+        }
+        String normalizedName = Normalizer.normalize(name, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toLowerCase(Locale.ROOT)
+                .trim();
+        return normalizedName.startsWith("hop")
+                || normalizedName.startsWith("goi")
+                || normalizedName.startsWith("ruong");
+    }
+
+    /**
+     * Vật phẩm vĩnh viễn cộng dồn như cũ. Vật phẩm có hạn chỉ được cộng dồn
+     * nếu cả hai là hộp quà cùng option và cùng ngày hết hạn.
+     */
+    private boolean hasCompatibleExpirationForStack(Item first, Item second) {
+        boolean firstExpires = hasExpirationOption(first);
+        boolean secondExpires = hasExpirationOption(second);
+        if (!firstExpires && !secondExpires) {
+            return true;
+        }
+        if (firstExpires != secondExpires) {
+            return false;
+        }
+        boolean isCoconutStack = first.template.id == COCONUT_ITEM_ID
+                && second.template.id == COCONUT_ITEM_ID;
+        if (!isCoconutStack && (!isGiftContainer(first) || !isGiftContainer(second))) {
+            return false;
+        }
+        // Hộp quà thiếu nhi trong shop điểm phải cộng dồn như Cadic VIP.
+        // checkListsEqual ở lớp gọi đã bảo đảm hai hộp có cùng toàn bộ option.
+        if (first.template.id == CHILDRENS_GIFT_BOX_ID
+                && second.template.id == CHILDRENS_GIFT_BOX_ID) {
+            return true;
+        }
+        return expirationDayBucket(first) == expirationDayBucket(second);
+    }
+
+    private long expirationDayBucket(Item item) {
+        int expirationDays = 0;
+        for (ItemOption option : item.itemOptions) {
+            if (option != null && option.optionTemplate != null
+                    && option.optionTemplate.id == 93 && option.param > 0) {
+                expirationDays = option.param;
+                break;
+            }
+        }
+        long expirationTime = item.createTime + expirationDays * MILLIS_PER_DAY;
+        return Math.floorDiv(expirationTime, MILLIS_PER_DAY);
+    }
+
+    private void preserveOldestExpirationStart(Item target, Item source) {
+        if (hasExpirationOption(target) && hasExpirationOption(source)) {
+            target.createTime = Math.min(target.createTime, source.createTime);
+        }
+    }
+
+    private boolean hasExpirationOption(Item item) {
+        if (item == null || item.itemOptions == null) {
+            return false;
+        }
+        for (ItemOption option : item.itemOptions) {
+            if (option != null && option.optionTemplate != null
+                    && option.optionTemplate.id == 93 && option.param > 0) {
+                return true;
             }
         }
         return false;

@@ -45,7 +45,8 @@ public class BaHatMit extends Npc {
                             "Chuyển hóa\nTrang bị",
                             "Võ đài\nSinh tử",
                             "Phân rã\nTrang bị\nKích hoạt",
-                            "Tái tạo\nCapsule\nKích hoạt"
+                            "Tái tạo\nCapsule\nKích hoạt",
+                            "Nâng\nSKH"
                     );
 
                 case 112 -> {
@@ -137,13 +138,9 @@ public class BaHatMit extends Npc {
                         switch (select) {
                             case 0 ->
                                 createOtherMenu(player, 3,
-                                        "Ta có thể giúp gì cho ngươi ?",
-                                        "Ép sao\ntrang bị",
-                                        "Pha lê\nhóa\ntrang bị",
-                                        "Nâng cấp\nSao pha lê",
-                                        "Đánh bóng\nSao pha lê",
-                                        "Cường hóa\nlỗ sao\npha lê",
-                                        "Tạo đá\nHematite");
+                                         "Ta có thể giúp gì cho ngươi ?",
+                                         "Ép sao\ntrang bị",
+                                         "Pha lê\nhóa\ntrang bị");
                             case 1 ->
                                 createOtherMenu(player, 4,
                                         "Ta có thể giúp gì cho ngươi ?",
@@ -155,6 +152,24 @@ public class BaHatMit extends Npc {
                                 CombineService.gI().openTabCombine(player, CombineService.PHAN_RA_TRANG_BI_KH);
                             case 4 ->
                                 CombineService.gI().openTabCombine(player, CombineService.TAI_TAO_CAPSULE_KH);
+                            case 5 ->
+                                createOtherMenu(player, ConstNpc.MENU_NANG_SKH,
+                                        "Chọn loại SKH muốn nâng",
+                                        "SKH Thường", "SKH VIP", "Đóng");
+                        }
+                    } else if (player.idMark.getIndexMenu() == ConstNpc.MENU_NANG_SKH) {
+                        switch (select) {
+                            case 0 -> createOtherMenu(player, ConstNpc.MENU_NANG_SKH_THUONG,
+                                    "Chọn công thức SKH Thường",
+                                    "1 món Thần Linh\n50%",
+                                    "2 món Thần Linh\n100%",
+                                    "Đóng");
+                            case 1 -> CombineService.gI().openTabCombine(player, CombineService.NANG_SKH_VIP);
+                        }
+                    } else if (player.idMark.getIndexMenu() == ConstNpc.MENU_NANG_SKH_THUONG) {
+                        switch (select) {
+                            case 0 -> CombineService.gI().openTabCombine(player, CombineService.NANG_SKH_THUONG);
+                            case 1 -> CombineService.gI().openTabCombine(player, CombineService.NANG_SKH_THUONG_100);
                         }
                     } else if (player.idMark.getIndexMenu() == 3) {
                         switch (select) {
@@ -163,18 +178,6 @@ public class BaHatMit extends Npc {
                                 break;
                             case 1:
                                 CombineService.gI().openTabCombine(player, CombineService.PHA_LE_HOA_TRANG_BI);
-                                break;
-                            case 2:
-                                CombineService.gI().openTabCombine(player, CombineService.NANG_CAP_SAO_PHA_LE);
-                                break;
-                            case 3:
-                                CombineService.gI().openTabCombine(player, CombineService.DANH_BONG_SAO_PHA_LE);
-                                break;
-                            case 4:
-                                CombineService.gI().openTabCombine(player, CombineService.CUONG_HOA_LO_SAO_PHA_LE);
-                                break;
-                            case 5:
-                                CombineService.gI().openTabCombine(player, CombineService.TAO_DA_HEMATITE);
                                 break;
                         }
                     } else if (player.idMark.getIndexMenu() == 4) {
@@ -187,7 +190,7 @@ public class BaHatMit extends Npc {
                         }
                     } else if (player.idMark.getIndexMenu() == ConstNpc.MENU_START_COMBINE) {
                         switch (player.combineNew.typeCombine) {
-                            case CombineService.EP_SAO_TRANG_BI, CombineService.PHA_LE_HOA_TRANG_BI, CombineService.CHUYEN_HOA_TRANG_BI_VANG, CombineService.CHUYEN_HOA_TRANG_BI_NGOC, CombineService.PHAN_RA_TRANG_BI_KH, CombineService.TAI_TAO_CAPSULE_KH, CombineService.NANG_CAP_SAO_PHA_LE, CombineService.DANH_BONG_SAO_PHA_LE, CombineService.CUONG_HOA_LO_SAO_PHA_LE, CombineService.TAO_DA_HEMATITE -> {
+                            case CombineService.EP_SAO_TRANG_BI, CombineService.PHA_LE_HOA_TRANG_BI, CombineService.CHUYEN_HOA_TRANG_BI_VANG, CombineService.CHUYEN_HOA_TRANG_BI_NGOC, CombineService.PHAN_RA_TRANG_BI_KH, CombineService.TAI_TAO_CAPSULE_KH, CombineService.NANG_SKH_THUONG, CombineService.NANG_SKH_THUONG_100, CombineService.NANG_SKH_VIP, CombineService.NANG_CAP_SAO_PHA_LE, CombineService.DANH_BONG_SAO_PHA_LE, CombineService.CUONG_HOA_LO_SAO_PHA_LE, CombineService.TAO_DA_HEMATITE -> {
                                 switch (select) {
                                     case 0 ->
                                         CombineService.gI().startCombine(player);

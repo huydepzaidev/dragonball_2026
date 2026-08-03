@@ -5,6 +5,7 @@ import nro.models.services.Service;
 import nro.models.services.TaskService;
 import nro.models.map.service.ItemMapService;
 import nro.models.consts.ConstMap;
+import nro.models.consts.ConstItem;
 import nro.models.consts.ConstMob;
 import nro.models.consts.ConstTask;
 import nro.models.item.Item;
@@ -26,12 +27,17 @@ import nro.models.services.AchievementService;
 import nro.models.services_dungeon.TrainingService;
 import nro.models.services.ChatGlobalService;
 import nro.models.services.ItemService;
+import nro.models.services.KOLQuestService;
+import nro.models.services.SummerEventService;
 import nro.models.map.service.MapService;
 import nro.models.skill.Skill;
 import nro.models.task.BadgesTaskService;
 import nro.models.utils.TimeUtil;
+import nro.models.server.EventControlService;
 
 public class Mob {
+
+    private static final int[] CRYSTAL_STAR_ITEM_IDS = {441, 442, 443, 444, 445, 446, 447};
 
     public int id;
     public Zone zone;
@@ -169,6 +175,7 @@ public class Mob {
                     TaskService.gI().checkDoneSideTaskKillMob(plAtt, this);
                     TaskService.gI().checkDoneClanTaskKillMob(plAtt, this);
                     AchievementService.gI().checkDoneTaskKillMob(plAtt, this);
+                    KOLQuestService.gI().recordAutoTrainMobKill(plAtt, this);
                 }
                 if (this.id == 13) {
                     this.zone.isbulon1Alive = false;
@@ -610,6 +617,26 @@ public class Mob {
             return list;
         }
         int mapid = player.zone.map.mapId;
+        boolean killedByPet = player.isPet;
+        Player crystalHunter = player;
+        Player petMaster = killedByPet ? ((Pet) player).master : null;
+        Player summerPlayer = petMaster != null ? petMaster : player;
+
+        // Summer materials drop while wearing the correct beach shorts without
+        // a shirt or costume; other equipment does not disable the effect.
+        if (EventControlService.gI().isEnabled(EventControlService.SUMMER)
+                && MapService.gI().AllMap(mapid)
+                && SummerEventService.isMapWithWater(zone.map)
+                && SummerEventService.isWearingBeachShortsWithoutShirtOrCostume(summerPlayer)
+                && Util.isTrue(SummerEventService.getMaterialDropRate(summerPlayer),
+                        SummerEventService.MATERIAL_DROP_RATE_SCALE)) {
+            int materialId = SummerEventService.getBalancedMaterialDropId(summerPlayer);
+            if (materialId != -1) {
+                ItemMap summerMaterial = new ItemMap(zone, materialId, 1, x, yEnd, summerPlayer.id);
+                summerMaterial.options.add(new Item.ItemOption(SummerEventService.SUMMER_MATERIAL_OPTION_ID, 0));
+                list.add(summerMaterial);
+            }
+        }
         //========================Capsul Kì Bí========================
         if (player.itemTime.isUseMayDo
                 && (Util.isTrue(20, 100))
@@ -678,10 +705,6 @@ public class Mob {
             }
         }
         if (MapService.gI().AllMap(mapid)) {
-            if (player != null) {
-                player.monsterKillCountAutoTrain++;
-            }
-
             if (player.event.luotNhanNgocMienPhi == 1) {
                 ItemMap item1 = new ItemMap(zone, 77, 1, x, yEnd, player.id);
                 ItemMap item2 = new ItemMap(zone, 77, 1, x + 10, yEnd, player.id);
@@ -690,31 +713,12 @@ public class Mob {
                 player.event.luotNhanNgocMienPhi = 0;
             }
         }
-        if (MapService.gI().AllMap(mapid)) {
-            if (Util.isTrue(5, 100)) {
-                ItemMap it = new ItemMap(zone, 1798, 1, x, yEnd, player.id);
-                list.add(it);
-            }
-            if (Util.isTrue(5, 100)) {
-                ItemMap it = new ItemMap(zone, 1799, 1, x, yEnd, player.id);
-                list.add(it);
-            }
-            if (Util.isTrue(5, 100)) {
-                ItemMap it = new ItemMap(zone, 1800, 1, x, yEnd, player.id);
-                list.add(it);
-            }
-            if (Util.isTrue(5, 100)) {
-                ItemMap it = new ItemMap(zone, 1612, 1, x, yEnd, player.id);
-                list.add(it);
-            }
-            if (Util.isTrue(1, 100)) {
-                ItemMap it = new ItemMap(zone, 1801, 1, x, yEnd, player.id);
-                list.add(it);
-            }
-            if (Util.isTrue(1, 130)) {
-                ItemMap it = new ItemMap(zone, 1802, 1, x, yEnd, player.id);
-                list.add(it);
-            }
+
+        // Legacy sugarcane material is available only while its own event is on.
+        EventControlService eventControl = EventControlService.gI();
+        if (eventControl.isAvailable() && eventControl.isEnabled("sugarcane")
+                && MapService.gI().AllMap(mapid) && Util.isTrue(5, 100)) {
+            list.add(new ItemMap(zone, 1612, 1, x, yEnd, player.id));
         }
 
         if (MapService.gI().isMapCold(mapid)) {
@@ -1055,19 +1059,45 @@ public class Mob {
             }
         }
 
-        if (this.zone.map.mapId >= 0) {
-            int dropRate = 10;
+        if (this.zone.map.mapId >= 0
+                && hasCrystalDetectionCostume(crystalHunter)) {
+            int dropRate = killedByPet ? 100 : 10;
             if (player.itemTime.isUseCoBonLa) {
                 dropRate = (int) (dropRate * 1.15);
             }
 
             if (Util.isTrue(dropRate, 100)) { // spl
-                list.add(new ItemMap(Util.spl(zone, Util.nextInt(441, 447), 1, x, this.location.y, player.id)));
+                int crystalStarId = CRYSTAL_STAR_ITEM_IDS[Util.nextInt(CRYSTAL_STAR_ITEM_IDS.length)];
+                list.add(new ItemMap(Util.spl(zone, crystalStarId, 1, x, this.location.y, player.id)));
             }
         }
 
+        // Never create or expose drops that belong to an event currently disabled
+        // in the web control panel. Active summer materials remain available.
+        list.removeIf(itemMap -> itemMap != null && itemMap.itemTemplate != null
+                && !eventControl.canAcquireItem(itemMap.itemTemplate.id));
+
         return list;
 
+    }
+
+    private boolean hasCrystalDetectionCostume(Player player) {
+        if (player == null || player.inventory == null || player.inventory.itemsBody == null
+                || player.inventory.itemsBody.size() <= 5) {
+            return false;
+        }
+
+        Item costume = player.inventory.itemsBody.get(5);
+        if (costume == null || !costume.isNotNullItem() || costume.itemOptions == null) {
+            return false;
+        }
+
+        for (Item.ItemOption option : costume.itemOptions) {
+            if (option != null && option.optionTemplate != null && option.optionTemplate.id == 110) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ItemMap dropItemTask(Player player) {

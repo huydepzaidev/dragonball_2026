@@ -9,6 +9,7 @@ import static nro.models.npc.NpcFactory.PLAYERID_OBJECT;
 import nro.models.player.Player;
 import nro.models.services.ItemService;
 import nro.models.services.InventoryService;
+import nro.models.services.KOLQuestService;
 import nro.models.map.service.NpcService;
 import nro.models.services.RewardService;
 import nro.models.services.Service;
@@ -43,16 +44,12 @@ public class QuyLaoKame extends Npc {
 
     private static class KOLQuestData {
 
-        int questType;
-        int itemId;
-        int requiredQuantity;
+        long requiredQuantity;
 
         List<RewardItem> rewards;
         String description;
 
-        public KOLQuestData(int questType, int itemId, int requiredQuantity, List<RewardItem> rewards, String description) {
-            this.questType = questType;
-            this.itemId = itemId;
+        public KOLQuestData(long requiredQuantity, List<RewardItem> rewards, String description) {
             this.requiredQuantity = requiredQuantity;
             this.rewards = rewards;
             this.description = description;
@@ -62,25 +59,24 @@ public class QuyLaoKame extends Npc {
     private static final Map<Integer, KOLQuestData> KOL_QUESTS = new HashMap<>();
 
     static {
-        KOL_QUESTS.put(1, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION, 1778, 100, Arrays.asList(new RewardItem(1821, 5)), "Nhiệm vụ 1:\nThu thập 100 cuốn chả giò (Quái doanh trại)"));
-        KOL_QUESTS.put(2, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION, 1824, 10, Arrays.asList(new RewardItem(1592, 5), new RewardItem(1757, 5)), "Nhiệm vụ 2:\nThu thập 10 chai cuke 2 lít (Boss doanh trại)"));
-        KOL_QUESTS.put(3, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_DUNGEON_COMPLETION, -1, 20, Arrays.asList(new RewardItem(1360, 1)), "Nhiệm vụ 3:\nHoàn thành phó bản Destron Gas cấp 70 trên 20 lần"));
-        KOL_QUESTS.put(4, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_PVP_WINS, -1, 10, Arrays.asList(new RewardItem(1654, 1)), "Nhiệm vụ 4:\nĐánh bại 10 người trong đại hội võ thuật"));
-        KOL_QUESTS.put(5, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_DAILY_QUEST_COMPLETION, -1, 30, Arrays.asList(new RewardItem(1822, 10)), "Nhiệm vụ 5:\nHoàn thành 30 nhiệm vụ siêu khó hàng ngày"));
-        KOL_QUESTS.put(6, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_BOSS_DEFEAT_PARTICIPATION, -1, 5, Arrays.asList(new RewardItem(1797, 1), new RewardItem(1592, 5), new RewardItem(1757, 5)), "Nhiệm vụ 6:\nTham gia hạ gục boss baby 5 lần"));
-        KOL_QUESTS.put(7, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_MONSTER_KILL_COUNT, -1, 100000, Arrays.asList(new RewardItem(1592, 10), new RewardItem(664, 9999), new RewardItem(1757, 5)), "Nhiệm vụ 7:\nHạ 100.000 quái (dùng tự động luyện tập)"));
-    }
-
-    private static final Map<Integer, KOLQuestData> KOL_VIP_QUESTS = new HashMap<>();
-
-    static {
-        KOL_VIP_QUESTS.put(1, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION, 1778, 100, Arrays.asList(new RewardItem(1821, 10)), "Nhiệm vụ 1:\nThu thập 100 cuốn chả giò (Quái doanh trại)"));
-        KOL_VIP_QUESTS.put(2, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION, 1824, 10, Arrays.asList(new RewardItem(1592, 10), new RewardItem(1757, 10)), "Nhiệm vụ 2:\nThu thập 10 chai cuke 2 lít (Boss doanh trại)"));
-        KOL_VIP_QUESTS.put(3, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_DUNGEON_COMPLETION, -1, 20, Arrays.asList(new RewardItem(1360, 1)), "Nhiệm vụ 3:\nHoàn thành phó bản Destron Gas cấp 70 trên 20 lần"));
-        KOL_VIP_QUESTS.put(4, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_PVP_WINS, -1, 10, Arrays.asList(new RewardItem(1654, 1)), "Nhiệm vụ 4:\nĐánh bại 10 người trong đại hội võ thuật"));
-        KOL_VIP_QUESTS.put(5, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_DAILY_QUEST_COMPLETION, -1, 30, Arrays.asList(new RewardItem(1822, 20)), "Nhiệm vụ 5:\nHoàn thành 30 nhiệm vụ siêu khó hàng ngày"));
-        KOL_VIP_QUESTS.put(6, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_BOSS_DEFEAT_PARTICIPATION, -1, 5, Arrays.asList(new RewardItem(1797, 1), new RewardItem(1592, 10), new RewardItem(1757, 10)), "Nhiệm vụ 6:\nTham gia hạ gục boss baby 5 lần"));
-        KOL_VIP_QUESTS.put(7, new KOLQuestData(ConstNpc.KOL_QUEST_TYPE_MONSTER_KILL_COUNT, -1, 100000, Arrays.asList(new RewardItem(1592, 20), new RewardItem(1757, 10)), "Nhiệm vụ 7:\nHạ 100.000 quái (dùng tự động luyện tập)"));
+        KOL_QUESTS.put(1, new KOLQuestData(KOLQuestService.REQUIRED_WOOD_DUMMY,
+                Arrays.asList(new RewardItem(1821, 5)),
+                "Nhiệm vụ 1:\nTiêu diệt 1.000 Mộc Nhân bằng tự động luyện tập"));
+        KOL_QUESTS.put(2, new KOLQuestData(KOLQuestService.REQUIRED_BIRD_DEMON,
+                Arrays.asList(new RewardItem(1592, 5), new RewardItem(1757, 5)),
+                "Nhiệm vụ 2:\nTiêu diệt 10.000 Quỷ Chim bằng tự động luyện tập (khu vực Nappa)"));
+        KOL_QUESTS.put(3, new KOLQuestData(KOLQuestService.REQUIRED_FIDE_WAVE,
+                Arrays.asList(new RewardItem(1360, 1)),
+                "Nhiệm vụ 3:\nTiêu diệt 10 đợt Fide. Cùng một người chơi phải kết liễu đủ Fide 1, Fide 2 và Fide 3 mới tính 1 đợt"));
+        KOL_QUESTS.put(4, new KOLQuestData(KOLQuestService.REQUIRED_CHALLENGE,
+                Arrays.asList(new RewardItem(1654, 1)),
+                "Nhiệm vụ 4:\nĐánh thắng 100 người qua lời mời thách đấu"));
+        KOL_QUESTS.put(5, new KOLQuestData(KOLQuestService.REQUIRED_HARD_DAILY_TASK,
+                Arrays.asList(new RewardItem(1822, 10)),
+                "Nhiệm vụ 5:\nHoàn thành 20 nhiệm vụ khó hằng ngày tại Bò Mộng"));
+        KOL_QUESTS.put(6, new KOLQuestData(KOLQuestService.REQUIRED_SUPER_BROLY,
+                Arrays.asList(new RewardItem(1797, 1), new RewardItem(1592, 5), new RewardItem(1757, 5)),
+                "Nhiệm vụ 6:\nTiêu diệt 20 Super Broly"));
     }
 
     public QuyLaoKame(int mapId, int status, int cx, int cy, int tempId, int avartar) {
@@ -96,7 +92,6 @@ public class QuyLaoKame extends Npc {
                 menu.add("Nói\nchuyện");
                 menu.add("Đổi điểm\nsự kiện\n[" + player.event.getEventPoint() + "]");
                 menu.add("Nhận quà\nKOL");
-                menu.add("Nhận quà\nKOL VIP");
                 if (ruacon != null && ruacon.quantity >= 1) {
                     menu.add("Giao\nRùa con");
                 }
@@ -144,10 +139,7 @@ public class QuyLaoKame extends Npc {
                 handleMenuAcceptGoToBDKB(player, select);
                 break;
             case ConstNpc.KOL_QUEST_MENU:
-                handleKOLQuestRewardConfirm(player, select, false);
-                break;
-            case ConstNpc.KOL_VIP_REWARD_MENU:
-                handleKOLQuestRewardConfirm(player, select, true);
+                handleKOLQuestRewardConfirm(player, select);
                 break;
         }
     }
@@ -161,12 +153,9 @@ public class QuyLaoKame extends Npc {
                 ShopService.gI().opendShop(player, "SHOP_DOI_DIEM", false);
                 break;
             case 2:
-                handleKOLQuest(player, false);
+                handleKOLQuest(player);
                 break;
             case 3:
-                handleKOLQuest(player, true);
-                break;
-            case 4:
                 handleTradeRuacon(player);
                 break;
         }
@@ -362,62 +351,22 @@ public class QuyLaoKame extends Npc {
         }
     }
 
-    private void handleKOLQuest(Player player, boolean isVIP) {
-        int currentStage;
-        Map<Integer, KOLQuestData> questsMap;
-        int menuType;
-
-        if (isVIP) {
-            currentStage = player.kolVIPQuestStage;
-            questsMap = KOL_VIP_QUESTS;
-            menuType = ConstNpc.KOL_VIP_REWARD_MENU;
-        } else {
-            currentStage = player.kolQuestStage;
-            questsMap = KOL_QUESTS;
-            menuType = ConstNpc.KOL_QUEST_MENU;
-        }
+    private void handleKOLQuest(Player player) {
+        int currentStage = player.kolQuestStage;
 
         if (currentStage < 1) {
             currentStage = 1;
-            if (isVIP) {
-                player.kolVIPQuestStage = 1;
-            } else {
-                player.kolQuestStage = 1;
-            }
+            player.kolQuestStage = 1;
         }
 
-        KOLQuestData questData = questsMap.get(currentStage);
+        KOLQuestData questData = KOL_QUESTS.get(currentStage);
 
         if (questData == null) {
-            this.createOtherMenu(player, menuType, "Con đã hoàn thành tất cả nhiệm vụ " + (isVIP ? "KOL VIP" : "KOL") + " rồi! Chúc mừng con!", "Đóng");
+            this.createOtherMenu(player, ConstNpc.KOL_QUEST_MENU, "Con đã hoàn thành tất cả nhiệm vụ KOL rồi! Chúc mừng con!", "Đóng");
             return;
         }
 
-        long currentProgress = 0;
-        switch (questData.questType) {
-            case ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION:
-                Item requiredItem = InventoryService.gI().findItemBag(player, questData.itemId);
-                currentProgress = requiredItem != null ? requiredItem.quantity : 0;
-                break;
-            case ConstNpc.KOL_QUEST_TYPE_DUNGEON_COMPLETION:
-                currentProgress = player.destronGas70CompletionCount;
-                break;
-            case ConstNpc.KOL_QUEST_TYPE_PVP_WINS:
-                currentProgress = player.martialArtsTournamentWins;
-                break;
-            case ConstNpc.KOL_QUEST_TYPE_DAILY_QUEST_COMPLETION:
-                currentProgress = player.dailySuperHardQuestCompletionCount;
-                break;
-            case ConstNpc.KOL_QUEST_TYPE_BOSS_DEFEAT_PARTICIPATION:
-                currentProgress = player.bossBabyDefeatParticipationCount;
-                break;
-            case ConstNpc.KOL_QUEST_TYPE_MONSTER_KILL_COUNT:
-                currentProgress = player.monsterKillCountAutoTrain;
-                break;
-            default:
-                Service.gI().sendThongBao(player, "Lỗi: Loại nhiệm vụ không xác định.");
-                return;
-        }
+        long currentProgress = KOLQuestService.gI().getProgress(player, currentStage);
 
         int percent = (int) ((currentProgress * 100.0) / questData.requiredQuantity);
         if (percent > 100) {
@@ -430,79 +379,37 @@ public class QuyLaoKame extends Npc {
                 + currentProgress + "/" + questData.requiredQuantity + " (" + percent + "%)";
 
         if (currentProgress >= questData.requiredQuantity) {
-            this.createOtherMenu(player, menuType, npcText, "Nhận thưởng", "Đóng");
+            this.createOtherMenu(player, ConstNpc.KOL_QUEST_MENU, npcText, "Nhận thưởng", "Đóng");
         } else {
-            this.createOtherMenu(player, menuType, npcText, "Đóng");
+            this.createOtherMenu(player, ConstNpc.KOL_QUEST_MENU, npcText, "Đóng");
         }
     }
 
-    private void handleKOLQuestRewardConfirm(Player player, int select, boolean isVIP) {
+    private void handleKOLQuestRewardConfirm(Player player, int select) {
         if (select == 0) {
-            int currentStage;
-            Map<Integer, KOLQuestData> questsMap;
-
-            if (isVIP) {
-                Item vipTicket = InventoryService.gI().findItemBag(player, 1825);
-                if (vipTicket == null || vipTicket.quantity < 1) {
-                    Service.gI().sendThongBao(player, "Bạn cần có Vé Nhiệm Vụ VIP để nhận thưởng KOL VIP.");
-                    openBaseMenu(player);
-                    return;
-                }
-                currentStage = player.kolVIPQuestStage;
-                questsMap = KOL_VIP_QUESTS;
-            } else {
-                currentStage = player.kolQuestStage;
-                questsMap = KOL_QUESTS;
-            }
+            int currentStage = player.kolQuestStage;
 
             if (currentStage < 1) {
                 currentStage = 1;
-                if (isVIP) {
-                    player.kolVIPQuestStage = 1;
-                } else {
-                    player.kolQuestStage = 1;
-                }
+                player.kolQuestStage = 1;
             }
 
-            KOLQuestData questData = questsMap.get(currentStage);
+            KOLQuestData questData = KOL_QUESTS.get(currentStage);
 
             if (questData == null) {
-                Service.gI().sendThongBao(player, "Không tìm thấy nhiệm vụ hiện tại.");
+                openBaseMenu(player);
                 return;
             }
 
-            long currentProgress = 0;
-            switch (questData.questType) {
-                case ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION:
-                    Item requiredItem = InventoryService.gI().findItemBag(player, questData.itemId);
-                    currentProgress = requiredItem != null ? requiredItem.quantity : 0;
-                    break;
-                case ConstNpc.KOL_QUEST_TYPE_DUNGEON_COMPLETION:
-                    currentProgress = player.destronGas70CompletionCount;
-                    break;
-                case ConstNpc.KOL_QUEST_TYPE_PVP_WINS:
-                    currentProgress = player.martialArtsTournamentWins;
-                    break;
-                case ConstNpc.KOL_QUEST_TYPE_DAILY_QUEST_COMPLETION:
-                    currentProgress = player.dailySuperHardQuestCompletionCount;
-                    break;
-                case ConstNpc.KOL_QUEST_TYPE_BOSS_DEFEAT_PARTICIPATION:
-                    currentProgress = player.bossBabyDefeatParticipationCount;
-                    break;
-                case ConstNpc.KOL_QUEST_TYPE_MONSTER_KILL_COUNT:
-                    currentProgress = player.monsterKillCountAutoTrain;
-                    break;
-                default:
-                    Service.gI().sendThongBao(player, "Lỗi: Loại nhiệm vụ không xác định.");
-                    return;
-            }
+            long currentProgress = KOLQuestService.gI().getProgress(player, currentStage);
 
             if (currentProgress >= questData.requiredQuantity) {
-                if (questData.questType == ConstNpc.KOL_QUEST_TYPE_ITEM_COLLECTION) {
-                    Item requiredItem = InventoryService.gI().findItemBag(player, questData.itemId);
-                    if (requiredItem != null) {
-                        InventoryService.gI().subQuantityItemsBag(player, requiredItem, questData.requiredQuantity);
-                    }
+                int availableSlots = InventoryService.gI().getCountEmptyBag(player);
+                if (availableSlots < questData.rewards.size()) {
+                    Service.gI().sendThongBao(player, "Bạn cần ít nhất " + questData.rewards.size()
+                            + " ô trống hành trang để nhận đủ phần thưởng KOL.");
+                    openBaseMenu(player);
+                    return;
                 }
 
                 for (RewardItem rewardData : questData.rewards) {
@@ -518,13 +425,9 @@ public class QuyLaoKame extends Npc {
                 }
                 InventoryService.gI().sendItemBags(player);
 
-                Service.gI().sendThongBao(player, "Bạn đã nhận phần thưởng nhiệm vụ " + (isVIP ? "KOL VIP" : "KOL") + " cấp " + currentStage + "!");
+                Service.gI().sendThongBao(player, "Bạn đã nhận phần thưởng nhiệm vụ KOL cấp " + currentStage + "!");
 
-                if (isVIP) {
-                    player.kolVIPQuestStage++;
-                } else {
-                    player.kolQuestStage++;
-                }
+                player.kolQuestStage++;
 
                 openBaseMenu(player);
 

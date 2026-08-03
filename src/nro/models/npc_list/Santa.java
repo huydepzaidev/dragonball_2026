@@ -8,7 +8,6 @@ import java.util.List;
 import nro.models.npc.Npc;
 import nro.models.player.Player;
 import nro.models.shop.ShopService;
-import nro.models.services_func.Input;
 import nro.models.services.InventoryService;
 
 public class Santa extends Npc {
@@ -29,7 +28,6 @@ public class Santa extends Npc {
             List<String> menu = new ArrayList<>(Arrays.asList(
                     "Cửa hàng",
                     "Mở rộng\nHành trang\nRương đồ",
-                    "Nhập mã\nquà tặng",
                     "Cửa hàng\nHạn sử dụng",
                     "Tiệm\nHớt tóc",
                     "Danh\nhiệu"));
@@ -72,35 +70,26 @@ public class Santa extends Npc {
                             if (soLuong >= 1) {
                                 ShopService.gI().opendShop(player, "SANTA_MO_RONG_HANH_TRANG", false);
                             } else {
-                                Input.gI().createFormGiftCode(player);
+                                ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
                             }
                             break;
                         case 3:
                             if (soLuong >= 1) {
-                                Input.gI().createFormGiftCode(player);
-                            } else {
                                 ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
+                            } else {
+                                ShopService.gI().opendShop(player, "SANTA_HEAD", false);
                             }
                             break;
                         case 4:
                             if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
-                            } else {
                                 ShopService.gI().opendShop(player, "SANTA_HEAD", false);
+                            } else {
+                                ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
                             }
                             break;
                         case 5:
                             if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_HEAD", false);
-                            } else {
                                 ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
-                            }
-                            break;
-                        case 6:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
-                            } else {
-                                ShopService.gI().opendShop(player, "SHOP_VIP", false);
                             }
                             break;
                     }

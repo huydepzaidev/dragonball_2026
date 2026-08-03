@@ -20,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import nro.models.player.Player;
 import nro.models.player_system.Template;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import nro.models.server.Manager;
 import nro.models.map.service.ChangeMapService;
@@ -30,9 +31,139 @@ import com.google.gson.Gson;
 
 public class PlayerDAO {
 
+    public static final int INITIAL_EVENT_POINTS = 1_000_000;
+    private static final String INITIAL_EVENT_POINTS_FLAG = "event_point_welcome_granted";
+    private static final String SUMMER_CARD_MIGRATION_FLAG = "summer_card_points_migrated";
+    private static final int[] SUMMER_CARD_IDS = {1204, 1791, 1792, 1793};
+
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     ; 
+
+    /**
+     * Grants the one-time starter event-point balance to players created before
+     * this feature was introduced. The database flag makes the migration
+     * idempotent, so spending points and restarting the server cannot grant the
+     * balance again.
+     */
+    public static void migrateInitialEventPoints() {
+        try {
+            LocalManager.executeUpdate("ALTER TABLE player ADD COLUMN IF NOT EXISTS "
+                    + INITIAL_EVENT_POINTS_FLAG + " TINYINT(1) NOT NULL DEFAULT 0");
+
+            int migratedPlayers = LocalManager.executeUpdate(
+                    "UPDATE player SET event_point = GREATEST(event_point, ?), "
+                    + INITIAL_EVENT_POINTS_FLAG + " = 1 WHERE " + INITIAL_EVENT_POINTS_FLAG + " = 0",
+                    INITIAL_EVENT_POINTS);
+
+            if (migratedPlayers > 0) {
+                Logger.success("Da cap " + INITIAL_EVENT_POINTS
+                        + " diem su kien khoi dau cho " + migratedPlayers + " nhan vat cu.\n");
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Khong the cap diem su kien khoi dau", e);
+        }
+    }
+
+    /**
+     * Backfills the hidden summer ranking once from cards that old characters
+     * still own and cards already consumed into their radar collection.
+     */
+    public static void migrateSummerCardPoints() {
+        try {
+            LocalManager.executeUpdate("ALTER TABLE player ADD COLUMN IF NOT EXISTS "
+                    + "point_summer_cards BIGINT NOT NULL DEFAULT 0");
+            LocalManager.executeUpdate("ALTER TABLE player ADD COLUMN IF NOT EXISTS "
+                    + SUMMER_CARD_MIGRATION_FLAG + " TINYINT(1) NOT NULL DEFAULT 0");
+
+            int migratedPlayers = 0;
+            String selectSql = "SELECT id, items_bag, items_box, data_card, point_summer_cards "
+                    + "FROM player WHERE " + SUMMER_CARD_MIGRATION_FLAG + " = 0";
+            String updateSql = "UPDATE player SET point_summer_cards = GREATEST(point_summer_cards, ?), "
+                    + SUMMER_CARD_MIGRATION_FLAG + " = 1 WHERE id = ?";
+
+            try (Connection con = LocalManager.getConnection()) {
+                con.setAutoCommit(false);
+                try (PreparedStatement select = con.prepareStatement(selectSql);
+                        PreparedStatement update = con.prepareStatement(updateSql);
+                        ResultSet rs = select.executeQuery()) {
+                    while (rs.next()) {
+                        long currentPoints = rs.getLong("point_summer_cards");
+                        long historicalCards = countSummerCardItems(rs.getString("items_bag"))
+                                + countSummerCardItems(rs.getString("items_box"))
+                                + countConsumedSummerCards(rs.getString("data_card"));
+                        update.setLong(1, Math.max(currentPoints, historicalCards));
+                        update.setLong(2, rs.getLong("id"));
+                        update.addBatch();
+                        migratedPlayers++;
+                    }
+                    update.executeBatch();
+                    con.commit();
+                }
+            }
+
+            LocalManager.executeUpdate("ALTER TABLE player MODIFY COLUMN "
+                    + SUMMER_CARD_MIGRATION_FLAG + " TINYINT(1) NOT NULL DEFAULT 1");
+            if (migratedPlayers > 0) {
+                Logger.success("Da backfill diem the he cho " + migratedPlayers + " nhan vat cu.\n");
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Khong the backfill diem the su kien he", e);
+        }
+    }
+
+    private static long countSummerCardItems(String rawItems) {
+        Object parsed = JSONValue.parse(rawItems);
+        if (!(parsed instanceof JSONArray items)) {
+            return 0;
+        }
+        long total = 0;
+        for (Object rawItem : items) {
+            Object parsedItem = rawItem instanceof JSONArray
+                    ? rawItem : JSONValue.parse(String.valueOf(rawItem));
+            if (!(parsedItem instanceof JSONArray item) || item.size() < 2) {
+                continue;
+            }
+            int itemId = Integer.parseInt(String.valueOf(item.get(0)));
+            if (isSummerCard(itemId)) {
+                total += Math.max(0L, Long.parseLong(String.valueOf(item.get(1))));
+            }
+        }
+        return total;
+    }
+
+    private static long countConsumedSummerCards(String rawCards) {
+        Object parsed = JSONValue.parse(rawCards);
+        if (!(parsed instanceof JSONArray cards)) {
+            return 0;
+        }
+        long total = 0;
+        for (Object rawCard : cards) {
+            Object parsedCard = rawCard instanceof JSONObject
+                    ? rawCard : JSONValue.parse(String.valueOf(rawCard));
+            if (!(parsedCard instanceof JSONObject card)) {
+                continue;
+            }
+            int cardId = Integer.parseInt(String.valueOf(card.get("id")));
+            if (!isSummerCard(cardId)) {
+                continue;
+            }
+            int amount = Math.max(0, Integer.parseInt(String.valueOf(card.get("amount"))));
+            int maxAmount = Math.max(0, Integer.parseInt(String.valueOf(card.get("max"))));
+            int level = Integer.parseInt(String.valueOf(card.get("level")));
+            total += level < 0 ? amount : (long) level * maxAmount + amount;
+        }
+        return total;
+    }
+
+    private static boolean isSummerCard(int itemId) {
+        for (int summerCardId : SUMMER_CARD_IDS) {
+            if (summerCardId == itemId) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public static boolean createNewPlayer(int userId, String name, byte gender, int hair) {
         try {
@@ -320,13 +451,14 @@ public class PlayerDAO {
             //data KOL
             Player player = new Player();
             KOLProgressData kolData = new KOLProgressData();
-            kolData.kolQuestStage = player.kolQuestStage;
-            kolData.kolVIPQuestStage = player.kolVIPQuestStage;
-            kolData.destronGas70CompletionCount = (int) player.destronGas70CompletionCount;
-            kolData.martialArtsTournamentWins = (int) player.martialArtsTournamentWins;
-            kolData.dailySuperHardQuestCompletionCount = (int) player.dailySuperHardQuestCompletionCount;
-            kolData.bossBabyDefeatParticipationCount = (int) player.bossBabyDefeatParticipationCount;
-            kolData.monsterKillCountAutoTrain = player.monsterKillCountAutoTrain;
+            kolData.version = KOLProgressData.CURRENT_VERSION;
+            kolData.kolQuestStage = Math.max(1, player.kolQuestStage);
+            kolData.woodDummyAutoTrainKills = player.kolWoodDummyAutoTrainKills;
+            kolData.birdDemonAutoTrainKills = player.kolBirdDemonAutoTrainKills;
+            kolData.fideWaveCompletions = player.kolFideWaveCompletions;
+            kolData.challengeWins = player.kolChallengeWins;
+            kolData.hardDailyQuestCompletions = player.kolHardDailyQuestCompletions;
+            kolData.superBrolyDefeats = player.kolSuperBrolyDefeats;
 
             Gson gson = new Gson();
             String dataKol = gson.toJson(kolData);
@@ -337,10 +469,12 @@ public class PlayerDAO {
                     + "data_inventory, data_location, data_point, data_magic_tree, items_body, "
                     + "items_bag, items_box, items_box_lucky_round, items_daban, friends, enemies, data_intrinsic, data_item_time,"
                     + "data_task, data_mabu_egg, data_charm, skills, skills_shortcut, pet,"
-                    + "data_black_ball, data_side_task, BoughtSkill, dailyGift, masterDoesNotAttack, data_luyentap, data_achievement, giftcode, total_damage_maydam, data_duahau_egg, nhiem_vu_kol) "
+                    + "data_black_ball, data_side_task, BoughtSkill, dailyGift, masterDoesNotAttack, data_luyentap, data_achievement, giftcode, total_damage_maydam, data_duahau_egg, nhiem_vu_kol, event_point, "
+                    + INITIAL_EVENT_POINTS_FLAG + ") "
                     + "values ()", userId, name, hair, gender, 0, -1, inventory, location, point, magicTree,
                     itemsBody, itemsBag, itemsBox, itemsBoxLuckyRound, itemsDaBan, friends, enemies, intrinsic,
-                    itemTime, task, mabuEgg, charms, skills, skillsShortcut, petData, dataBlackBall, dataSideTask, dataBoughtSkill, dailyGift, 0, luyenTapData, achievementData, giftCode, 0, DuaHauEgg, dataKol);
+                    itemTime, task, mabuEgg, charms, skills, skillsShortcut, petData, dataBlackBall, dataSideTask, dataBoughtSkill, dailyGift, 0, luyenTapData, achievementData, giftCode, 0, DuaHauEgg, dataKol,
+                    INITIAL_EVENT_POINTS, 1);
             Logger.success(Logger.PURPLE + "Tạo player mới thành công!\n");
             return true;
         } catch (Exception e) {
@@ -625,6 +759,7 @@ public class PlayerDAO {
                 dataArray.add((player.itemTime.isUseKilis ? (ItemTime.TIME_KILIS - (System.currentTimeMillis() - player.itemTime.lastTimeUseKilis)) : 0));
                 dataArray.add(0);
                 dataArray.add(0);
+                dataArray.add(player.itemTime.getRemainingTraiDuaTime());
                 String itemTime = dataArray.toJSONString();
                 dataArray.clear();
 
@@ -900,13 +1035,14 @@ public class PlayerDAO {
 
                 // Tạo dữ liệu KOL
                 KOLProgressData kolData = new KOLProgressData();
-                kolData.kolQuestStage = player.kolQuestStage;
-                kolData.kolVIPQuestStage = player.kolVIPQuestStage;
-                kolData.destronGas70CompletionCount = (int) player.destronGas70CompletionCount;
-                kolData.martialArtsTournamentWins = (int) player.martialArtsTournamentWins;
-                kolData.dailySuperHardQuestCompletionCount = (int) player.dailySuperHardQuestCompletionCount;
-                kolData.bossBabyDefeatParticipationCount = (int) player.bossBabyDefeatParticipationCount;
-                kolData.monsterKillCountAutoTrain = player.monsterKillCountAutoTrain;
+                kolData.version = KOLProgressData.CURRENT_VERSION;
+                kolData.kolQuestStage = Math.max(1, player.kolQuestStage);
+                kolData.woodDummyAutoTrainKills = player.kolWoodDummyAutoTrainKills;
+                kolData.birdDemonAutoTrainKills = player.kolBirdDemonAutoTrainKills;
+                kolData.fideWaveCompletions = player.kolFideWaveCompletions;
+                kolData.challengeWins = player.kolChallengeWins;
+                kolData.hardDailyQuestCompletions = player.kolHardDailyQuestCompletions;
+                kolData.superBrolyDefeats = player.kolSuperBrolyDefeats;
 
                 Gson gson = new Gson();
                 String dataKol = gson.toJson(kolData);
@@ -983,7 +1119,7 @@ public class PlayerDAO {
                         + "baovetaikhoan = ?, data_card = ?, lasttimepkcommeson = ?, bandokhobau = ?, doanhtrai = ?, conduongrandoc = ?, masterDoesNotAttack = ?, "
                         + "nhanthoivang = ?, ruonggo = ?, sieuthanthuy = ?, vodaisinhtu = ?, rongxuong = ?, data_item_event = ?, data_luyentap = ?, data_clan_task = ?, data_vip = ?, "
                         + "rank = ?, data_achievement = ?, giftcode = ?, event_point = ?, data_event = ?, dataBadges = ?, dataTaskBadges = ?, BoughtSkill = ?, LearnSkill = ?, "
-                        + "firstTimeLogin = ?,  dailyGift = ?, point_sukien = ?, thachdauwhis = ?, point_sukien1 = ?, point_maydam = ?, total_damage_maydam = ?, data_duahau_egg = ?, checkNhanQua = ?, nhiem_vu_kol = ?, point_sukien2 = ? where id = ?";
+                        + "firstTimeLogin = ?,  dailyGift = ?, point_sukien = ?, thachdauwhis = ?, point_sukien1 = ?, point_maydam = ?, total_damage_maydam = ?, data_duahau_egg = ?, checkNhanQua = ?, nhiem_vu_kol = ?, point_sukien2 = ?, point_summer_cards = ? where id = ?";
                 LocalManager.executeUpdate(query,
                         player.head,
                         player.haveTennisSpaceShip,
@@ -1046,6 +1182,7 @@ public class PlayerDAO {
                         checkNhanQua,
                         dataKol,
                         player.point_sukien2,
+                        player.point_summer_cards,
                         player.id);
                 SuperRankDAO.updateData(player);
                 if (player.isOffline) {

@@ -6,6 +6,7 @@ import nro.models.network.Message;
 import nro.models.utils.Logger;
 import nro.models.utils.TimeUtil;
 import nro.models.utils.Util;
+import nro.models.server.Client;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +56,38 @@ public class ChatGlobalService implements Runnable {
 
     public void ThongBaoDapDo(Player player, String text) {
         waitingChat.add(new ChatGlobal(player, text.length() > 100 ? text.substring(0, 100) : text));
+    }
+
+    /** Gửi chat thế giới ngay với thông tin người gửi tùy chỉnh, không trừ ngọc. */
+    public void chatNpcWorld(String name, int npcId, short head, short body, short leg, String text) {
+        try {
+            Message msg = new Message(92);
+            msg.writer().writeUTF(name);
+            msg.writer().writeUTF("|5|" + (text.length() > 100 ? text.substring(0, 100) : text));
+            msg.writer().writeInt(npcId);
+            msg.writer().writeShort(head);
+            msg.writer().writeShort(-1);
+            msg.writer().writeShort(body);
+            msg.writer().writeShort(0);
+            msg.writer().writeShort(leg);
+            msg.writer().writeByte(0);
+            Service.gI().sendMessAllPlayer(msg);
+            msg.cleanup();
+        } catch (Exception e) {
+            Logger.logException(ChatGlobalService.class, e);
+        }
+    }
+
+    public void chatAdmin(String text) {
+        for (Player player : Client.gI().getPlayers()) {
+            if (player != null && player.isAdmin()) {
+                chatNpcWorld("Admin", (int) player.id,
+                        player.getHead(), player.getBody(), player.getLeg(), text);
+                return;
+            }
+        }
+        // Trường hợp admin web cập nhật khi không có admin game online.
+        chatNpcWorld("Admin", 0, (short) 0, (short) -1, (short) -1, text);
     }
 
     public void chatVip(Player player, String text) {

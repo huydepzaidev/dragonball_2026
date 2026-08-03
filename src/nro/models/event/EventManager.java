@@ -8,6 +8,7 @@ import nro.models.event_list.Halloween;
 import nro.models.event_list.LunarNewYear;
 import nro.models.event_list.Default;
 import nro.models.event_list.InternationalWomensDay;
+import nro.models.server.EventControlService;
 
 public class EventManager {
 
@@ -36,26 +37,31 @@ public class EventManager {
 
     public void init() {
         new Default().init();
-        if (LUNNAR_NEW_YEAR) {
-           // new LunarNewYear().init();
+        EventControlService control = EventControlService.gI();
+        if (isEnabled(control, EventControlService.LUNAR_NEW_YEAR, LUNNAR_NEW_YEAR)) {
+            new LunarNewYear().init();
         }
-        if (INTERNATIONAL_WOMANS_DAY) {
-           // new InternationalWomensDay().init();
+        if (isEnabled(control, EventControlService.WOMENS_DAY, INTERNATIONAL_WOMANS_DAY)) {
+            new InternationalWomensDay().init();
         }
-        if (HALLOWEEN) {
-          //  new Halloween().init();
+        if (isEnabled(control, EventControlService.HALLOWEEN, HALLOWEEN)) {
+            new Halloween().init();
         }
-        if (CHRISTMAS) {
-          //  new Christmas().init();
+        if (isEnabled(control, EventControlService.CHRISTMAS, CHRISTMAS)) {
+            new Christmas().init();
         }
-        if (HUNG_VUONG) {
+        if (isEnabled(control, EventControlService.HUNG_VUONG, HUNG_VUONG)) {
             new HungVuong().init();
         }
-        if (TRUNG_THU) {
-           // new TrungThu().init();
+        if (isEnabled(control, EventControlService.MID_AUTUMN, TRUNG_THU)) {
+            new TrungThu().init();
         }
-        if (TOP_UP) {
+        if (isEnabled(control, EventControlService.TOP_UP, TOP_UP)) {
             new TopUp().init();
         }
+    }
+
+    private boolean isEnabled(EventControlService control, String eventKey, boolean legacyDefault) {
+        return control.isAvailable() ? control.isEnabled(eventKey) : legacyDefault;
     }
 }

@@ -25,6 +25,9 @@ public class XENCON4 extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        if (this.parentBoss instanceof SieuBoHung sieuBoHung) {
+            sieuBoHung.dropGuaranteedDivineForChild(this, plKill);
+        }
         BadgesTaskService.updateCountBagesTask(plKill, ConstTaskBadges.TRUM_SAN_BOSS, 1);
         int diem = 5;
         plKill.event.addEventPoint(diem);

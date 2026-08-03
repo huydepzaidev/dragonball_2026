@@ -12,7 +12,9 @@ public class CombineSystem {
 
     public static boolean isTrangBiPhaLeHoa(Item item) {
         if (item != null && item.isNotNullItem()) {
-            return item.template.type < 5 || item.template.type == 32;
+            int templateId = item.template.id;
+            boolean quanDiBien = templateId >= 691 && templateId <= 693;
+            return quanDiBien || item.template.type < 5 || item.template.type == 32;
         } else {
             return false;
         }
@@ -59,10 +61,10 @@ public class CombineSystem {
     }
 
     public static int getOptionDaPhaLe(Item daPhaLe) {
-        if (daPhaLe.template.type == 30) {
-            return daPhaLe.itemOptions.get(0).optionTemplate.id;
+        if (!isDaPhaLe(daPhaLe)) {
+            return -1;
         }
-        return switch (daPhaLe.template.id) {
+        int optionId = switch (daPhaLe.template.id) {
             case 20 ->
                 77;
             case 19 ->
@@ -94,13 +96,24 @@ public class CombineSystem {
             default ->
                 -1;
         };
+        if (optionId != -1) {
+            return optionId;
+        }
+        if (daPhaLe.itemOptions != null) {
+            for (Item.ItemOption option : daPhaLe.itemOptions) {
+                if (option != null && option.optionTemplate != null) {
+                    return option.optionTemplate.id;
+                }
+            }
+        }
+        return -1;
     }
 
     public static int getParamDaPhaLe(Item daPhaLe) {
-        if (daPhaLe.template.type == 30) {
-            return daPhaLe.itemOptions.get(0).param;
+        if (!isDaPhaLe(daPhaLe)) {
+            return -1;
         }
-        return switch (daPhaLe.template.id) {
+        int param = switch (daPhaLe.template.id) {
             case 20 ->
                 5;
             case 19 ->
@@ -132,6 +145,17 @@ public class CombineSystem {
             default ->
                 -1;
         };
+        if (param != -1) {
+            return param;
+        }
+        if (daPhaLe.itemOptions != null) {
+            for (Item.ItemOption option : daPhaLe.itemOptions) {
+                if (option != null && option.optionTemplate != null) {
+                    return option.param;
+                }
+            }
+        }
+        return -1;
     }
 
     public static int getGoldPhaLeHoa(int star) {

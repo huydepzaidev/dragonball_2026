@@ -102,6 +102,7 @@ public class Player implements Runnable {
     public int point_sukien;
     public int point_sukien1;
     public int point_sukien2;
+    public long point_summer_cards;
     public int thachdauwhis = 0;
     public int DuaHau;
     public int point_vuahung;
@@ -342,13 +343,18 @@ public class Player implements Runnable {
     public boolean hasReducedPower = false;
     public long originalPower = -1;
     public boolean receivedKilis = false;
-    public int kolQuestStage;
-    public int kolVIPQuestStage;
+    public int kolQuestStage = 1;
     public long martialArtsTournamentWins;
     public long destronGas70CompletionCount;
     public long dailySuperHardQuestCompletionCount;
     public long bossBabyDefeatParticipationCount;
     public long monsterKillCountAutoTrain;
+    public long kolWoodDummyAutoTrainKills;
+    public long kolBirdDemonAutoTrainKills;
+    public long kolFideWaveCompletions;
+    public long kolChallengeWins;
+    public long kolHardDailyQuestCompletions;
+    public long kolSuperBrolyDefeats;
     public int vipPurchaseCount;
     public long lastClanCheckIn = 0;
     public long lastChallengeGauTuongCuopTime;

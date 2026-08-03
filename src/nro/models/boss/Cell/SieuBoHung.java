@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import nro.models.consts.ConstTaskBadges;
 import nro.models.task.BadgesTaskService;
+import nro.models.server.GameConfigService;
 
 public class SieuBoHung extends Boss {
 
@@ -31,6 +32,10 @@ public class SieuBoHung extends Boss {
     private long lastTimeChat;
     private long lastTimeMove;
     private int indexChat = 0;
+    private int guaranteedDivineMainLevel = -1;
+    private int guaranteedDivineChildIndex = -1;
+    private boolean guaranteedDivineMainDropped;
+    private boolean guaranteedDivineChildDropped;
     private final String[] text = {
         "Thưa quý vị và các bạn, đây đúng là trận đấu trời long đất lở",
         "Vượt xa mọi dự đoán của chúng tôi",
@@ -45,6 +50,27 @@ public class SieuBoHung extends Boss {
     protected void resetBase() {
         super.resetBase();
         this.callCellCon = false;
+        if (this.currentLevel == 0) {
+            this.guaranteedDivineMainLevel = Util.nextInt(this.data.length);
+            this.guaranteedDivineChildIndex = Util.nextInt(7);
+            this.guaranteedDivineMainDropped = false;
+            this.guaranteedDivineChildDropped = false;
+        }
+    }
+
+    public synchronized void dropGuaranteedDivineForChild(Boss child, Player plKill) {
+        if (!this.guaranteedDivineChildDropped && child != null
+                && child.lv == this.guaranteedDivineChildIndex
+                && GameConfigService.gI().dropGuaranteedDivine(child, plKill, "7_XEN_CON_VO_DAI")) {
+            this.guaranteedDivineChildDropped = true;
+        }
+    }
+
+    private synchronized void dropGuaranteedDivineForSelectedForm(Player plKill) {
+        if (!this.guaranteedDivineMainDropped && this.currentLevel == this.guaranteedDivineMainLevel
+                && GameConfigService.gI().dropGuaranteedDivine(this, plKill, "XEN_VO_DAI")) {
+            this.guaranteedDivineMainDropped = true;
+        }
     }
 
     public void callCellCon() {
@@ -77,18 +103,13 @@ public class SieuBoHung extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        dropGuaranteedDivineForSelectedForm(plKill);
         BadgesTaskService.updateCountBagesTask(plKill, ConstTaskBadges.TRUM_SAN_BOSS, 1);
         int x = this.location.x; // đâyyyy
         int y = this.zone.map.yPhysicInTop(x, this.location.y - 24);
         int drop = 190; // 100% rơi item ID 190
         int quantity = Util.nextInt(20000, 30000);
         // Tạo itemMap cho item ID 190
-        if (Util.isTrue(5, 100)) {
-            ItemMap it = ItemService.gI().randDoTLBoss(this.zone, 1, x, y, plKill.id);
-            if (it != null) {
-                Service.gI().dropItemMap(zone, it);
-            }
-        }
         ItemMap itemMap = new ItemMap(this.zone, drop, quantity, x, y, plKill.id);
         Item item = ItemService.gI().createNewItem((short) drop);
         Service.gI().dropItemMap(zone, itemMap);

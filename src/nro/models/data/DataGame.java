@@ -32,13 +32,13 @@ import nro.models.player_system.Template.BgItem;
 public class DataGame {
 
     public static byte vsData = 9;
-    public static byte vsMap = 2;
+    public static byte vsMap = 3;
     public static byte vsSkill = 1;
     public static byte vsItem = 9;
     public static int vsRes = 1;
     public static short maxSmallVersion = 32767;
 
-    public static String LINK_IP_PORT = "Ngọc Rồng Online:36.50.134.190:14445:0";
+    public static String LINK_IP_PORT = "Ngọc Rồng Online:36.50.134.190:14446:0";
     public static Map<Object, Object> MAP_MOUNT_NUM = new HashMap<>();
 
     public static void sendVersionGame(MySession session) {

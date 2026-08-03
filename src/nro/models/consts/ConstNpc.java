@@ -187,6 +187,8 @@ public class ConstNpc {
     public static final int MENU_NANG_CAP_CHAN_MENH = 508;
     public static final int MENU_NANG_CAP_DAC_CAU = 509;
     public static final int MENU_SACH_TUYET_KY = 510;
+    public static final int MENU_NANG_SKH = 534;
+    public static final int MENU_NANG_SKH_THUONG = 535;
     //index menu whis
     public static final int MENU_DAP_DO = 508;
 
@@ -283,6 +285,19 @@ public class ConstNpc {
     //index menu quốc vương
     public static final int OPEN_POWER_MYSEFT = 500;
     public static final int OPEN_POWER_PET = 501;
+    public static final int OPEN_POWER_MYSEFT_GOLD = 502;
+    public static final int OPEN_POWER_PET_BY_LIMIT = 511;
+    public static final int OPEN_POWER_MYSEFT_DIVINE = 520;
+    public static final int OPEN_POWER_MYSEFT_DESTROY = 521;
+    public static final int OPEN_POWER_MYSEFT_DESTROY_2 = 522;
+    public static final int OPEN_POWER_MYSEFT_ANGEL = 523;
+    public static final int OPEN_POWER_MYSEFT_DIVINE_2 = 524;
+    public static final int OPEN_POWER_PET_GOLD = 530;
+    public static final int OPEN_POWER_PET_DIVINE = 535;
+    public static final int OPEN_POWER_PET_DIVINE_2 = 536;
+    public static final int OPEN_POWER_PET_DESTROY = 537;
+    public static final int OPEN_POWER_PET_DESTROY_2 = 538;
+    public static final int OPEN_POWER_PET_ANGEL = 539;
 
     //index menu thượng đế
     public static final int MENU_CHOOSE_LUCKY_ROUND = 500;
@@ -362,7 +377,6 @@ public class ConstNpc {
     public static final int BUA_HO_TRO = 1005;
     public static final int BINH_HUT_NANG_LUONG = 1006;
     public static final int KOL_QUEST_MENU = 1007;
-    public static final int KOL_VIP_REWARD_MENU = 1008;
     public static final int KOL_QUEST_TYPE_ITEM_COLLECTION = 1009;
     public static final int KOL_QUEST_TYPE_DUNGEON_COMPLETION = 1010;
     public static final int KOL_QUEST_TYPE_PVP_WINS = 1011;

@@ -17,18 +17,31 @@ import nro.models.services.TaskService;
 import nro.models.utils.Util;
 import nro.models.map.service.ChangeMapService;
 import nro.models.task.BadgesTaskService;
+import nro.models.server.GameConfigService;
 
 public class XenBoHung extends Boss {
 
     private long lastTimeHapThu;
     private int timeHapThu;
+    private int guaranteedDivineLevel = -1;
+    private boolean guaranteedDivineDropped;
 
     public XenBoHung() throws Exception {
         super(BossID.XEN_BO_HUNG, BossesData.XEN_BO_HUNG_1, BossesData.XEN_BO_HUNG_2, BossesData.XEN_BO_HUNG_3);
     }
 
     @Override
+    protected void resetBase() {
+        super.resetBase();
+        if (this.currentLevel == 0) {
+            this.guaranteedDivineLevel = Util.nextInt(this.data.length);
+            this.guaranteedDivineDropped = false;
+        }
+    }
+
+    @Override
     public void reward(Player plKill) {
+        dropGuaranteedDivineForSelectedForm(plKill);
         BadgesTaskService.updateCountBagesTask(plKill, ConstTaskBadges.TRUM_SAN_BOSS, 1);
         int diem = 5;
         plKill.event.addEventPoint(diem);
@@ -41,6 +54,13 @@ public class XenBoHung extends Boss {
             int randomItem = items[new Random().nextInt(items.length)];
             Service.gI().dropItemMap(this.zone, new ItemMap(this.zone, randomItem, 1,
           this.location.x, this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24), plKill.id));
+        }
+    }
+
+    private synchronized void dropGuaranteedDivineForSelectedForm(Player plKill) {
+        if (!this.guaranteedDivineDropped && this.currentLevel == this.guaranteedDivineLevel
+                && GameConfigService.gI().dropGuaranteedDivine(this, plKill, "XEN_THI_TRAN")) {
+            this.guaranteedDivineDropped = true;
         }
     }
 

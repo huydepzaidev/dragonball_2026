@@ -4,6 +4,7 @@ import nro.models.managers.GiftCodeManager;
 import nro.models.player_system.GiftCode;
 import nro.models.item.Item;
 import java.util.Set;
+import nro.models.player.Inventory;
 import nro.models.player.Player;
 import nro.models.map.service.NpcService;
 import nro.models.shop.ItemShop;
@@ -49,7 +50,7 @@ public class GiftCodeService {
 
                 switch (idItem) {
                     case -1 -> {
-                        player.inventory.gold = Math.min(player.inventory.gold + (long) quantity, 2000000000L);
+                        player.inventory.gold = Math.min(player.inventory.gold + (long) quantity, Inventory.LIMIT_GOLD);
                         textGift += "|2|" + quantity + " vàng\b";
                     }
                     case -2 -> {

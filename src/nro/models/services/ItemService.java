@@ -23,6 +23,10 @@ import nro.models.map.Zone;
 public class ItemService {
 
     private static ItemService i;
+    private static final short[] DIVINE_BOSS_ITEM_IDS = {
+        555, 556, 557, 558, 559, 560, 561,
+        562, 563, 564, 565, 566, 567
+    };
 
     public static ItemService gI() {
         if (i == null) {
@@ -403,9 +407,10 @@ public class ItemService {
     }
 
     public boolean isOutOfDateTime(Item item) {
-        if (item != null) {
+        normalizePermanentExpiration(item);
+        if (item != null && item.itemOptions != null) {
             for (Item.ItemOption io : item.itemOptions) {
-                if (io.optionTemplate.id == 93) {
+                if (io != null && io.optionTemplate != null && io.optionTemplate.id == 93) {
                     int dayPass = (int) TimeUtil.diffDate(new Date(), new Date(item.createTime), TimeUtil.DAY);
                     if (dayPass != 0) {
                         io.param -= dayPass;
@@ -419,6 +424,21 @@ public class ItemService {
             }
         }
         return false;
+    }
+
+    /**
+     * Option 93 with value 0 is the legacy representation of a permanent
+     * item. Remove only that display option so the client does not show
+     * "Hạn sử dụng 0 ngày" and the item is never treated as expired.
+     */
+    public void normalizePermanentExpiration(Item item) {
+        if (item == null || item.itemOptions == null) {
+            return;
+        }
+        item.itemOptions.removeIf(option -> option != null
+                && option.optionTemplate != null
+                && option.optionTemplate.id == 93
+                && option.param <= 0);
     }
 
     public void OpenItem736(Player player, Item itemUse) {
@@ -892,19 +912,19 @@ public class ItemService {
                 }
                 break;
             case 562: // Găng tay Thần Linh TD
-                itemoptions.add(new ItemOption(0, 4400 * tiLe / 100));
+                itemoptions.add(new ItemOption(0, divineGloveBaseAttack(idTempTL) * tiLe / 100));
                 if (tiLe > 100) {
                     itemoptions.add(new ItemOption(206, tiLe - 100));
                 }
                 break;
             case 564: // Găng tay Thần Linh NM
-                itemoptions.add(new ItemOption(0, 4300 * tiLe / 100));
+                itemoptions.add(new ItemOption(0, divineGloveBaseAttack(idTempTL) * tiLe / 100));
                 if (tiLe > 100) {
                     itemoptions.add(new ItemOption(206, tiLe - 100));
                 }
                 break;
             case 566: // Găng tay Thần Linh
-                itemoptions.add(new ItemOption(0, 4500 * tiLe / 100));
+                itemoptions.add(new ItemOption(0, divineGloveBaseAttack(idTempTL) * tiLe / 100));
                 if (tiLe > 100) {
                     itemoptions.add(new ItemOption(206, tiLe - 100));
                 }
@@ -954,27 +974,11 @@ public class ItemService {
     }
 
     public ItemMap randDoTLBoss(Zone zone, int quantity, int x, int y, long id) {
-        short idTempTL;
-        short[] ao = {555, 557, 559};
-        short[] quan = {556, 558, 560};
-        short[] gang = {562, 564, 566};
-        short[] giay = {563, 565, 567};
-        short[] nhan = {561};
+        short idTempTL = DIVINE_BOSS_ITEM_IDS[Util.nextInt(DIVINE_BOSS_ITEM_IDS.length)];
         short[] options = {86, 87};
-        /// Lựa chọn ngẫu nhiên trang bị
-        if (Util.isTrue(10, 100)) {  // Nhẫn (10%)
-            idTempTL = nhan[0];
-        } else if (Util.isTrue(25, 100)) {  // Găng tay (15%)
-            idTempTL = gang[Util.nextInt(3)];
-        } else if (Util.isTrue(45, 100)) {  // Quần (20%)
-            idTempTL = quan[Util.nextInt(3)];
-        } else if (Util.isTrue(75, 100)) {  // Áo (30%)
-            idTempTL = ao[Util.nextInt(3)];
-        } else {  // Giày (25%)
-            idTempTL = giay[Util.nextInt(3)];
-        }
 
-        int tiLe = Util.nextInt(100, 115);
+        int bonusPercent = divineBonusPercentForRoll(Util.nextInt(10000));
+        int tiLe = 100 + bonusPercent;
         List<ItemOption> itemoptions = new ArrayList<>();
 
         // Tùy chỉnh chỉ số cho từng ID trang bị cụ thể
@@ -1065,6 +1069,9 @@ public class ItemService {
                 break;
             case 561: // Nhẫn Thần Linh
                 itemoptions.add(new ItemOption(14, 14 * tiLe / 100));
+                if (bonusPercent > 0) {
+                    itemoptions.add(new ItemOption(207, bonusPercent));
+                }
                 break;
             default:
                 break;
@@ -1077,12 +1084,56 @@ public class ItemService {
 
         // Thêm chỉ số mặc định
         itemoptions.add(new ItemOption(21, Util.nextInt(15, 17)));
+        // Phẩm chất 0% vẫn phải hiển thị nguồn gốc rơi từ boss.
+        if (bonusPercent == 0) {
+            itemoptions.add(new ItemOption(207, 0));
+        }
 
         // Tạo ItemMap và trả về
         ItemMap it = new ItemMap(zone, idTempTL, quantity, x, y, id);
         it.options.clear();
         it.options.addAll(itemoptions);
         return it;
+    }
+
+    /**
+     * Quality distribution for configured divine boss drops:
+     * 0%: 20%; 1-5%: 45%; 6-10%: 25%; 11-14%: 9%; 15%: 1%.
+     */
+    static int divineBonusPercentForRoll(int roll) {
+        if (roll < 0 || roll >= 10000) {
+            throw new IllegalArgumentException("roll must be between 0 and 9999");
+        }
+        if (roll < 2000) {
+            return 0;
+        }
+        if (roll < 6500) {
+            return 1 + (roll - 2000) / 900;
+        }
+        if (roll < 9000) {
+            return 6 + (roll - 6500) / 500;
+        }
+        if (roll < 9900) {
+            return 11 + (roll - 9000) / 225;
+        }
+        return 15;
+    }
+
+    static short divineBossItemIdAt(int index) {
+        return DIVINE_BOSS_ITEM_IDS[index];
+    }
+
+    static int divineBossItemCount() {
+        return DIVINE_BOSS_ITEM_IDS.length;
+    }
+
+    static int divineGloveBaseAttack(short itemId) {
+        return switch (itemId) {
+            case 562 -> 4500;
+            case 564 -> 4300;
+            case 566 -> 4500;
+            default -> throw new IllegalArgumentException("Not a divine glove: " + itemId);
+        };
     }
 
     public Item DoThienSu(int itemId, int gender) {

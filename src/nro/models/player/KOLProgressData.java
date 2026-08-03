@@ -6,21 +6,19 @@ package nro.models.player;
  */
 public class KOLProgressData {
 
+    public static final int CURRENT_VERSION = 2;
+
+    public int version;
     public int kolQuestStage;
-    public int kolVIPQuestStage;
-    public int destronGas70CompletionCount;
-    public int martialArtsTournamentWins;
-    public int dailySuperHardQuestCompletionCount;
-    public int bossBabyDefeatParticipationCount;
-    public long monsterKillCountAutoTrain;
+    public long woodDummyAutoTrainKills;
+    public long birdDemonAutoTrainKills;
+    public long fideWaveCompletions;
+    public long challengeWins;
+    public long hardDailyQuestCompletions;
+    public long superBrolyDefeats;
 
     public KOLProgressData() {
+        this.version = 0;
         this.kolQuestStage = 1;
-        this.kolVIPQuestStage = 1;
-        this.destronGas70CompletionCount = 0;
-        this.martialArtsTournamentWins = 0;
-        this.dailySuperHardQuestCompletionCount = 0;
-        this.bossBabyDefeatParticipationCount = 0;
-        this.monsterKillCountAutoTrain = 0;
     }
 }

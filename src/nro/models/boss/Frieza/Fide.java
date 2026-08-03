@@ -9,6 +9,7 @@ import java.util.Random;
 import nro.models.map.ItemMap;
 import nro.models.player.Player;
 import nro.models.services.ItemService;
+import nro.models.services.KOLQuestService;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
 import nro.models.utils.Util;
@@ -16,6 +17,7 @@ import nro.models.utils.Util;
 public class Fide extends Boss {
 
     private long st;
+    private long kolWaveKillerId = -1;
 
     public Fide() throws Exception {
         super(BossID.FIDE, BossesData.FIDE_DAI_CA_1, BossesData.FIDE_DAI_CA_2, BossesData.FIDE_DAI_CA_3);
@@ -23,6 +25,7 @@ public class Fide extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        updateKOLWaveProgress(plKill);
         int diem = 5;
         plKill.event.addEventPoint(diem);
         Service.gI().sendThongBao(plKill, "+5 Point");
@@ -39,8 +42,38 @@ public class Fide extends Boss {
 
     @Override
     public void joinMap() {
+        if (this.currentLevel == 0) {
+            this.kolWaveKillerId = -1;
+        }
         super.joinMap(); //To change body of generated methods, choose Tools | Templates.
         st = System.currentTimeMillis();
+    }
+
+    private void updateKOLWaveProgress(Player plKill) {
+        if (plKill == null) {
+            this.kolWaveKillerId = -1;
+            return;
+        }
+
+        switch (this.currentLevel) {
+            case 0 ->
+                this.kolWaveKillerId = KOLQuestService.gI().isDoingFideWaveQuest(plKill)
+                        ? plKill.id : -1;
+            case 1 -> {
+                if (this.kolWaveKillerId != plKill.id
+                        || !KOLQuestService.gI().isDoingFideWaveQuest(plKill)) {
+                    this.kolWaveKillerId = -1;
+                }
+            }
+            case 2 -> {
+                if (this.kolWaveKillerId == plKill.id) {
+                    KOLQuestService.gI().recordFideWaveCompletion(plKill);
+                }
+                this.kolWaveKillerId = -1;
+            }
+            default ->
+                this.kolWaveKillerId = -1;
+        }
     }
 
     @Override

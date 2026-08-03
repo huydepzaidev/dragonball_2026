@@ -19,12 +19,25 @@ public class PlayerEvent {
         this.player = player;
     }
     
-    public void addEventPoint(int num) {
-        eventPoint += num;
+    public synchronized void addEventPoint(int num) {
+        if (num <= 0) {
+            return;
+        }
+        eventPoint = (int) Math.min(Integer.MAX_VALUE, (long) eventPoint + num);
     }
-    
-    public void subEventPoint(int num) {
+
+    public synchronized void subEventPoint(int num) {
+        if (num > 0) {
+            eventPoint = Math.max(0, eventPoint - num);
+        }
+    }
+
+    public synchronized boolean trySpendEventPoint(int num) {
+        if (num <= 0 || eventPoint < num) {
+            return false;
+        }
         eventPoint -= num;
+        return true;
     }
 
     public void update() {

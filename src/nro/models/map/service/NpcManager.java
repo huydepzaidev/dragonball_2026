@@ -4,6 +4,7 @@ import nro.models.consts.ConstNpc;
 import nro.models.consts.ConstTask;
 import nro.models.npc.Npc;
 import nro.models.player.Player;
+import nro.models.server.EventControlService;
 import nro.models.server.Manager;
 import nro.models.services.TaskService;
 import java.util.ArrayList;
@@ -42,7 +43,9 @@ public class NpcManager {
                 continue;
             } 
             // Điều kiện loại trừ NPC dưa hấu
-            if (npc.tempId == ConstNpc.DUA_HAU && player.DuaHauEgg == null && player.zone.map.mapId == (21 + player.gender)) {
+            if (npc.tempId == ConstNpc.DUA_HAU
+                    && (!EventControlService.gI().isEnabled(EventControlService.HUNG_VUONG)
+                    || player.DuaHauEgg == null)) {
                 continue;
             } 
             // Điều kiện loại trừ NPC CALICK dựa vào nhiệm vụ

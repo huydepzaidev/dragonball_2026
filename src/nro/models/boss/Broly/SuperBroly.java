@@ -7,9 +7,12 @@ import nro.models.boss.BossID;
 import nro.models.consts.BossStatus;
 import static nro.models.consts.BossType.BROLY;
 import nro.models.consts.ConstPlayer;
+import nro.models.map.ItemMap;
 import nro.models.map.Zone;
 import nro.models.player.Player;
 import nro.models.services.PetService;
+import nro.models.services.KOLQuestService;
+import nro.models.services.Service;
 import nro.models.services.SkillService;
 import nro.models.map.service.ChangeMapService;
 import nro.models.skill.Skill;
@@ -18,6 +21,9 @@ import nro.models.utils.SkillUtil;
 import nro.models.utils.Util;
 
 public class SuperBroly extends Boss {
+
+    private static final int MABU_EGG_ITEM_ID = 568;
+    private static final int MABU_EGG_DROP_RATE = 10;
 
     public SuperBroly(Zone zone, int x, int y) throws Exception {
 
@@ -50,6 +56,14 @@ public class SuperBroly extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        KOLQuestService.gI().recordSuperBrolyDefeat(plKill);
+        if (Util.isTrue(MABU_EGG_DROP_RATE, 100)) {
+            int y = this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24);
+            ItemMap mabuEgg = new ItemMap(this.zone, MABU_EGG_ITEM_ID, 1,
+                    this.location.x, y, plKill.id);
+            // Không thêm option 30 để Trứng Mabư có thể giao dịch.
+            Service.gI().dropItemMap(this.zone, mabuEgg);
+        }
         if (plKill.pet == null) {
             PetService.gI().createNormalPet(plKill);
         }
@@ -93,6 +107,9 @@ public class SuperBroly extends Boss {
     @Override
     public synchronized int injured(Player plAtt, long damage, boolean piercing, boolean isMobAttack) {
         if (!this.isDie()) {
+            if (!isAllowedDamage(plAtt, piercing)) {
+                return 0;
+            }
             if (!piercing && Util.isTrue(this.nPoint.tlNeDon, 1000)) {
                 this.chat("Xí hụt");
                 return 0;
@@ -115,6 +132,21 @@ public class SuperBroly extends Boss {
         } else {
             return 0;
         }
+    }
+
+    private boolean isAllowedDamage(Player attacker, boolean piercing) {
+        // SkillService truyền chính boss làm nguồn và piercing=true khi phản sát thương.
+        if (attacker == this && piercing) {
+            return true;
+        }
+        if (attacker == null || attacker.playerSkill == null
+                || attacker.playerSkill.skillSelect == null
+                || attacker.playerSkill.skillSelect.template == null) {
+            return false;
+        }
+        int skillId = attacker.playerSkill.skillSelect.template.id;
+        return skillId == Skill.DRAGON || skillId == Skill.DEMON || skillId == Skill.GALICK
+                || skillId == Skill.MAKANKOSAPPO;
     }
 
     private long lastTimeAttack;

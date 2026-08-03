@@ -119,6 +119,7 @@ public class MrBlue {
                                 player.point_sukien = rs.getInt("point_sukien");
                                 player.point_sukien1 = rs.getInt("point_sukien1");
                                 player.point_sukien2 = rs.getInt("point_sukien2");
+                                player.point_summer_cards = rs.getLong("point_summer_cards");
                                 player.thachdauwhis = rs.getInt("thachdauwhis");
                                 player.point_maydam = rs.getInt("point_maydam");
                                 player.total_damage_maydam = rs.getLong("total_damage_maydam");
@@ -569,6 +570,7 @@ public class MrBlue {
             long timeNuocMia1 = 0;
             long timeNuocMia2 = 0;
             long timeNuocMia3 = 0;
+            long timeTraiDua = 0;
             int timeBoHuyet = Integer.parseInt(String.valueOf(dataArray.get(0)));
             int timeBoHuyet2 = Integer.parseInt(String.valueOf(dataArray.get(1)));
             int timeBoKhi = Integer.parseInt(String.valueOf(dataArray.get(2)));
@@ -586,9 +588,10 @@ public class MrBlue {
                 timeMayDo = Integer.parseInt(String.valueOf(dataArray.get(11)));
             }
             if (dataArray.size() > 12) {
-                timeKhoBauX2 = Integer.parseInt(String.valueOf(dataArray.get(12)));
+                timeCoBonLa = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(12))));
             }
             if (dataArray.size() > 13) {
+                timeKhoBauX2 = Integer.parseInt(String.valueOf(dataArray.get(13)));
             }
             if (dataArray.size() > 14) {
                 timeMeal = Integer.parseInt(String.valueOf(dataArray.get(14)));
@@ -639,6 +642,9 @@ public class MrBlue {
             }
             if (dataArray.size() > 30) {
             }
+            if (dataArray.size() > 32) {
+                timeTraiDua = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(32))));
+            }
 
             player.itemTime.lastTimeBoHuyet = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeBoHuyet);
             player.itemTime.lastTimeBoKhi = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeBoKhi);
@@ -665,6 +671,8 @@ public class MrBlue {
             player.itemTime.lastTimeUseRX = System.currentTimeMillis();
             player.itemTime.lastTimeEatMeal2 = System.currentTimeMillis() - (ItemTime.TIME_EAT_MEAL - timeMeal2);
             player.itemTime.lastTimeUseNCD = System.currentTimeMillis() - (ItemTime.TIME_NCD - timeUseNCD);
+            player.itemTime.lastTimeUseTraiDua = System.currentTimeMillis();
+            player.itemTime.timeLengthTraiDua = Math.min(ItemTime.MAX_TIME_TRAI_DUA, timeTraiDua);
 
             player.itemTime.iconMeal = iconMeal;
             player.itemTime.isEatMeal = timeMeal != 0;
@@ -680,6 +688,7 @@ public class MrBlue {
             player.itemTime.isUseAnDanh2 = timeAnDanh2 != 0;
             player.itemTime.isOpenPower = timeOpenPower != 0;
             player.itemTime.isUseMayDo = timeMayDo != 0;
+            player.itemTime.isUseCoBonLa = timeCoBonLa > 0;
             player.itemTime.isUseKhoBauX2 = timeKhoBauX2 != 0;
             player.itemTime.isUseBuaSanta = timeBuaSanta != 0;
             player.itemTime.isUseTDLT = timeUseTDLT != 0;
@@ -694,6 +703,7 @@ public class MrBlue {
             player.itemTime.isUseNuocMia1 = timeNuocMia1 != 0;
             player.itemTime.isUseNuocMia2 = timeNuocMia2 != 0;
             player.itemTime.isUseNuocMia3 = timeNuocMia3 != 0;
+            player.itemTime.isUseTraiDua = timeTraiDua > 0;
             dataArray.clear();
 
             //data nhiệm vụ
@@ -1289,17 +1299,27 @@ public class MrBlue {
             }
             // Data KOL
             try {
+                player.kolQuestStage = 1;
+                player.kolWoodDummyAutoTrainKills = 0;
+                player.kolBirdDemonAutoTrainKills = 0;
+                player.kolFideWaveCompletions = 0;
+                player.kolChallengeWins = 0;
+                player.kolHardDailyQuestCompletions = 0;
+                player.kolSuperBrolyDefeats = 0;
+
                 String kolJson = rs.getString("nhiem_vu_kol");
                 if (kolJson != null && !kolJson.isEmpty()) {
                     KOLProgressData kolData = new Gson().fromJson(kolJson, KOLProgressData.class);
                     if (kolData != null) {
-                        player.kolQuestStage = kolData.kolQuestStage;
-                        player.kolVIPQuestStage = kolData.kolVIPQuestStage;
-                        player.destronGas70CompletionCount = kolData.destronGas70CompletionCount;
-                        player.martialArtsTournamentWins = kolData.martialArtsTournamentWins;
-                        player.dailySuperHardQuestCompletionCount = kolData.dailySuperHardQuestCompletionCount;
-                        player.bossBabyDefeatParticipationCount = kolData.bossBabyDefeatParticipationCount;
-                        player.monsterKillCountAutoTrain = (int) kolData.monsterKillCountAutoTrain;
+                        if (kolData.version == KOLProgressData.CURRENT_VERSION) {
+                            player.kolQuestStage = Math.max(1, kolData.kolQuestStage);
+                            player.kolWoodDummyAutoTrainKills = kolData.woodDummyAutoTrainKills;
+                            player.kolBirdDemonAutoTrainKills = kolData.birdDemonAutoTrainKills;
+                            player.kolFideWaveCompletions = kolData.fideWaveCompletions;
+                            player.kolChallengeWins = kolData.challengeWins;
+                            player.kolHardDailyQuestCompletions = kolData.hardDailyQuestCompletions;
+                            player.kolSuperBrolyDefeats = kolData.superBrolyDefeats;
+                        }
                     } else {
                         throw new Exception("kolData null");
                     }
@@ -1308,12 +1328,12 @@ public class MrBlue {
                 System.err.println("Lỗi khi đọc dữ liệu KOL từ database cho player: " + e.getMessage());
                 e.printStackTrace();
                 player.kolQuestStage = 1;
-                player.kolVIPQuestStage = 1;
-                player.destronGas70CompletionCount = 0;
-                player.martialArtsTournamentWins = 0;
-                player.dailySuperHardQuestCompletionCount = 0;
-                player.bossBabyDefeatParticipationCount = 0;
-                player.monsterKillCountAutoTrain = 0;
+                player.kolWoodDummyAutoTrainKills = 0;
+                player.kolBirdDemonAutoTrainKills = 0;
+                player.kolFideWaveCompletions = 0;
+                player.kolChallengeWins = 0;
+                player.kolHardDailyQuestCompletions = 0;
+                player.kolSuperBrolyDefeats = 0;
             }
 
             PlayerService.gI().dailyLogin(player);// RESET DATA KHI QUA 12H ĐÊM

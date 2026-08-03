@@ -1711,7 +1711,7 @@ public class NPoint {
             case 4:
                 return 39999999999L;
             case 5:
-                return 50010000000L;
+                return 49999999999L;
             case 6:
                 return 60010000000L;
             case 7:
@@ -1738,7 +1738,7 @@ public class NPoint {
             case 4:
                 return 39999999999L;
             case 5:
-                return 50010000000L;
+                return 49999999999L;
             case 6:
                 return 60010000000L;
             case 7:
@@ -1871,6 +1871,9 @@ public class NPoint {
 
     public void increasePoint(byte type, short point) {
         if (point <= 0 || point > 1000) {
+            return;
+        }
+        if (this.player != null && this.player.isPet && (type == 3 || type == 4)) {
             return;
         }
         long tiemNangUse;

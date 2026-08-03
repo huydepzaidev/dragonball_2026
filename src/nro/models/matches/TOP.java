@@ -34,6 +34,7 @@ public class TOP {
     private String info1;
     private String info2;
     private long paramCompare;
+    private boolean hiddenScore;
     
     public void setId_player(int id_player) {
     this.id_player = id_player;
