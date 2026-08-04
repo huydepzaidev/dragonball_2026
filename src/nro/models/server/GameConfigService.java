@@ -264,7 +264,9 @@ public final class GameConfigService implements Runnable {
      * so their legacy per-kill DIVINE_RANDOM database rule must not roll again.
      */
     static boolean isEncounterManagedDivineBoss(int bossId) {
-        return bossId == BossID.XEN_BO_HUNG || bossId == BossID.SIEU_BO_HUNG;
+        return bossId == BossID.XEN_BO_HUNG || bossId == BossID.SIEU_BO_HUNG
+                || bossId == BossID.GOD_BILL || bossId == BossID.ANGEL_WHIS
+                || bossId == BossID.GOD_CHAMPA || bossId == BossID.ANGEL_VADOS;
     }
 
     public boolean dropGuaranteedDivine(Boss boss, Player killer, String encounterName) {

@@ -2705,4 +2705,40 @@ public class BossesData {
             }, //text chat 3
             AppearType.ANOTHER_LEVEL
     );
+    public static final BossData GOD_BILL = divinePairLeader(
+            "Thần Hủy Diệt Bill", new short[]{508, 509, 510, -1, -1, -1}, BossID.ANGEL_WHIS);
+    public static final BossData ANGEL_WHIS = divinePairPartner(
+            "Thiên Sứ Whis", new short[]{505, 506, 507, -1, -1, -1});
+    public static final BossData GOD_CHAMPA = divinePairLeader(
+            "Thần Hủy Diệt Champa", new short[]{511, 512, 513, -1, -1, -1}, BossID.ANGEL_VADOS);
+    public static final BossData ANGEL_VADOS = divinePairPartner(
+            "Thiên Sứ Vados", new short[]{530, 531, 532, -1, -1, -1});
+    // Divine pair encounter data.
+    private static BossData divinePairLeader(String name, short[] outfit, int partnerId) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 400_000,
+                new int[]{2_000_000_000}, new int[]{154, 155}, divinePairSkills(),
+                new String[]{"|-1|Trận đấu bắt đầu!"},
+                new String[]{"|-1|Hãy đỡ lấy sức mạnh này!"},
+                new String[]{"|-1|Đến lượt ngươi."},
+                REST_10_M, new int[]{partnerId});
+    }
+
+    private static BossData divinePairPartner(String name, short[] outfit) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 400_000,
+                new int[]{2_000_000_000}, new int[]{154, 155}, divinePairSkills(),
+                new String[]{"|-1|Tôi sẽ quan sát trận đấu trước."},
+                new String[]{"|-1|Bây giờ đến lượt tôi."},
+                new String[]{"|-1|Một trận đấu thú vị."},
+                AppearType.APPEAR_WITH_ANOTHER);
+    }
+
+    private static int[][] divinePairSkills() {
+        return new int[][]{
+            {Skill.GALICK, 7}, {Skill.ANTOMIC, 7},
+            {Skill.TAI_TAO_NANG_LUONG, 4}, {Skill.KAMEJOKO, 7},
+            {Skill.THAI_DUONG_HA_SAN, 3}, {Skill.THOI_MIEN, 7},
+            {Skill.DICH_CHUYEN_TUC_THOI, 4}, {Skill.LIEN_HOAN, 7},
+            {Skill.MASENKO, 7}
+        };
+    }
 }

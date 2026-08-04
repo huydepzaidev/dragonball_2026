@@ -46,8 +46,12 @@ public final class ConfiguredBossDropIntegrationTest {
         owner.location.y = 100;
 
         if (!GameConfigService.isEncounterManagedDivineBoss(BossID.XEN_BO_HUNG)
-                || !GameConfigService.isEncounterManagedDivineBoss(BossID.SIEU_BO_HUNG)) {
-            throw new AssertionError("Cell encounters must use their guaranteed divine-drop state");
+                || !GameConfigService.isEncounterManagedDivineBoss(BossID.SIEU_BO_HUNG)
+                || !GameConfigService.isEncounterManagedDivineBoss(BossID.GOD_BILL)
+                || !GameConfigService.isEncounterManagedDivineBoss(BossID.ANGEL_WHIS)
+                || !GameConfigService.isEncounterManagedDivineBoss(BossID.GOD_CHAMPA)
+                || !GameConfigService.isEncounterManagedDivineBoss(BossID.ANGEL_VADOS)) {
+            throw new AssertionError("Pair encounters must use their guaranteed divine-drop state");
         }
         assertEventuallyDrops(service, new Cumber(), owner, testZone);
         assertEventuallyDrops(service, new Cooler(), owner, testZone);
@@ -58,7 +62,7 @@ public final class ConfiguredBossDropIntegrationTest {
         assertEventuallyDrops(service, new Android19(), owner, testZone);
         assertEventuallyDrops(service, new DrKore(), owner, testZone);
 
-        System.out.println("CONFIGURED_BOSS_DROP_INTEGRATION_OK configured=8 encounterManaged=2 chance=3%");
+        System.out.println("CONFIGURED_BOSS_DROP_INTEGRATION_OK configured=8 encounterManaged=6 chance=3%");
         System.exit(0);
     }
 

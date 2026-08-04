@@ -93,6 +93,10 @@ import nro.models.boss.event_trung_thu.NguyetThan;
 import nro.models.boss.event_trung_thu.NhatThan;
 import nro.models.boss.event_tet.LanCon;
 import nro.models.boss.event_noel.OngGiaNoel;
+import nro.models.boss.gods.BillBoss;
+import nro.models.boss.gods.ChampaBoss;
+import nro.models.boss.gods.VadosBoss;
+import nro.models.boss.gods.WhisBoss;
 import nro.models.player.Player;
 import nro.models.network.Message;
 import nro.models.map.service.MapService;
@@ -114,6 +118,8 @@ import nro.models.server.GameConfigService;
 import nro.models.server.EventControlService;
 
 public class BossManager implements Runnable {
+
+    public static final int ADMIN_BOSS_LIST_MENU_TYPE = 3;
 
     private static BossManager instance;
     private static final List<BossManager> MANAGERS = new CopyOnWriteArrayList<>();
@@ -176,6 +182,8 @@ public class BossManager implements Runnable {
         this.createBoss(BossID.O_DO1, 5);
         this.createBoss(BossID.BABY, 2);
         this.createBoss(BossID.MAT_TROI, 20);
+        this.createBoss(BossID.GOD_BILL);
+        this.createBoss(BossID.GOD_CHAMPA);
 
     }
 
@@ -379,6 +387,14 @@ public class BossManager implements Runnable {
                     new RongNhi();
                 case BossID.BABY ->
                     new Baby();
+                case BossID.GOD_BILL ->
+                    new BillBoss();
+                case BossID.ANGEL_WHIS ->
+                    new WhisBoss();
+                case BossID.GOD_CHAMPA ->
+                    new ChampaBoss();
+                case BossID.ANGEL_VADOS ->
+                    new VadosBoss();
                 default ->
                     null;
             };
@@ -403,12 +419,12 @@ public class BossManager implements Runnable {
         if (!player.isAdmin()) {
             return;
         }
-        player.idMark.setMenuType(3);
+        player.idMark.setMenuType(getAdminBossListMenuType());
         Message msg;
         try {
             msg = new Message(-96);
             msg.writer().writeByte(0);
-            msg.writer().writeUTF("Boss");
+            msg.writer().writeUTF(getAdminBossListTitle());
             msg.writer().writeByte((int) bosses.stream().filter(boss -> !MapService.gI().isMapBossFinal(boss.data[0].getMapJoin()[0]) && !MapService.gI().isMapHuyDiet(boss.data[0].getMapJoin()[0]) && !MapService.gI().isMapCadic(boss.data[0].getMapJoin()[0]) && !MapService.gI().isMapYardart(boss.data[0].getMapJoin()[0]) && !MapService.gI().isMapMaBu(boss.data[0].getMapJoin()[0]) && !MapService.gI().isMapBlackBallWar(boss.data[0].getMapJoin()[0])).count());
             for (int i = 0; i < bosses.size(); i++) {
                 Boss boss = this.bosses.get(i);
@@ -436,6 +452,14 @@ public class BossManager implements Runnable {
             msg.cleanup();
         } catch (Exception e) {
         }
+    }
+
+    protected int getAdminBossListMenuType() {
+        return ADMIN_BOSS_LIST_MENU_TYPE;
+    }
+
+    protected String getAdminBossListTitle() {
+        return "Boss";
     }
 
     public Boss getBossById(int bossId) {

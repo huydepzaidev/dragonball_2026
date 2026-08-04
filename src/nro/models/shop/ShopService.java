@@ -1020,12 +1020,15 @@ public class ShopService {
             Service.gI().sendThongBao(pl, "Vui lòng đợi " + (pl.lastTimeChangeBadges - System.currentTimeMillis()) / 1000 + " giây nữa");
             return;
         }
-        if (pl.badges.idBadges == BagesTemplate.fineIdEffectbyIdItem(is.temp.id)) {
+        int idEffect = BagesTemplate.fineIdEffectbyIdItem(is.temp.id);
+        if (pl.badges.idBadges == idEffect) {
             Service.gI().sendThongBao(pl, "Danh hiệu đang được sữ dụng, hãy chọn danh hiệu khác");
             pl.lastTimeChangeBadges = System.currentTimeMillis() + 3000;
             return;
         }
-        BadgesService.turnOnBadges(pl, BagesTemplate.fineIdEffectbyIdItem(is.temp.id));
+        BadgesService.turnOnBadges(pl, idEffect);
+        pl.badges.idBadges = idEffect;
+        Service.gI().sendBadgesPlayer(pl, 5, idEffect);
         Service.gI().sendThongBao(pl, "Đã đổi danh hiệu sang " + is.temp.name);
         pl.lastTimeChangeBadges = System.currentTimeMillis() + 3000;
         pl.nPoint.calPoint();

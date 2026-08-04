@@ -39,7 +39,10 @@ public class TabShopSoHuu extends TabShop {
                             break;
                         }
                     }
-                    this.itemShops.add(new ItemShop(itemShop));
+                    ItemShop ownedTitle = new ItemShop(itemShop);
+                    // A zero price marks an owned title as a single use action.
+                    ownedTitle.cost = 0;
+                    this.itemShops.add(ownedTitle);
                 }
             }
         }

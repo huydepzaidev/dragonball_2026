@@ -5,6 +5,7 @@ import nro.models.services.IntrinsicService;
 import nro.models.database.SuperRankDAO;
 import nro.models.boss.Boss;
 import nro.models.boss.Boss_Manager.BossManager;
+import nro.models.boss.Boss_Manager.BrolyManager;
 import nro.models.consts.ConstAchievement;
 import nro.models.services.ClanService;
 import nro.models.services.ChatGlobalService;
@@ -661,16 +662,13 @@ public class Controller implements IMessageHandler {
                             case 0, 1, 2 -> {
                                 SuperRankService.gI().competing(player, _id);
                             }
-                            default -> {
-                                if (player.isAdmin()) {
-                                    Boss boss = BossManager.gI().getBoss(_id);
-                                    if (boss != null) {
-                                        ChangeMapService.gI().changeMapYardrat(player, boss.zone, boss.location.x, boss.location.y);
-                                    }
-                                } else {
-                                    Service.gI().sendThongBao(player, "Không thể thực hiện");
-                                }
+                            case BossManager.ADMIN_BOSS_LIST_MENU_TYPE -> {
+                                teleportAdminToBoss(player, BossManager.gI(), _id);
                             }
+                            case BrolyManager.ADMIN_BROLY_LIST_MENU_TYPE -> {
+                                teleportAdminToBoss(player, BrolyManager.gI(), _id);
+                            }
+                            default -> Service.gI().sendThongBao(player, "Không thể thực hiện");
                         }
                     }
                     break;
@@ -714,6 +712,20 @@ public class Controller implements IMessageHandler {
                 //Logger.warning(_msg.command + " - TimeOut: " + timeDo + " ms\n");
             }
         }
+    }
+
+    private void teleportAdminToBoss(Player player, BossManager manager, int index) {
+        if (!player.isAdmin()) {
+            Service.gI().sendThongBao(player, "Không thể thực hiện");
+            return;
+        }
+        Boss boss = manager.getBoss(index);
+        if (boss == null || boss.zone == null) {
+            Service.gI().sendThongBao(player, "Boss chưa xuất hiện");
+            return;
+        }
+        ChangeMapService.gI().changeMapYardrat(
+                player, boss.zone, boss.location.x, boss.location.y);
     }
 
     public void messageNotLogin(MySession session, Message msg) {

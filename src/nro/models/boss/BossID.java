@@ -188,6 +188,11 @@ public class BossID {
     public static final int THAN_VU_TRU = -362;
     public static final int TO_SU_KAIO = -363;
     public static final int WHIS = -364;
+    //========================GODS PAIR ENCOUNTERS========================
+    public static final int GOD_BILL = -372;
+    public static final int ANGEL_WHIS = -373;
+    public static final int GOD_CHAMPA = -374;
+    public static final int ANGEL_VADOS = -375;
     //========================LINH TINH========================
     public static final int AN_TROM = -365;
     public static final int TAU_PAIPAI = -385;
