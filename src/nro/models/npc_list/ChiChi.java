@@ -8,6 +8,7 @@ import nro.models.npc.Npc;
 import nro.models.player.Player;
 import nro.models.server.Manager;
 import nro.models.server.EventControlService;
+import nro.models.server.DailyRankingService;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
 import nro.models.services.Service;
@@ -279,7 +280,9 @@ public class ChiChi extends Npc {
                 soLuongDaThem[i] = soLuongThe[i];
             }
 
-            player.point_summer_cards += (long) soLanDoi * SO_LUONG_THE_NHAN_DUOC;
+            long diemSuKien = (long) soLanDoi * SO_LUONG_THE_NHAN_DUOC;
+            player.point_summer_cards += diemSuKien;
+            DailyRankingService.recordSummerEventPoints(player, diemSuKien);
             InventoryService.gI().sendItemBags(player);
             StringBuilder ketQua = new StringBuilder("Đổi thành công ")
                     .append(soLanDoi).append(" lần, đã dùng x")

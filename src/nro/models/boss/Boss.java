@@ -50,6 +50,7 @@ import nro.models.player.Pet;
 import nro.models.player.Player;
 import nro.models.skill.Skill;
 import nro.models.server.ServerNotify;
+import nro.models.server.DailyRankingService;
 import nro.models.map.service.MapService;
 import nro.models.services.PlayerService;
 import nro.models.services.Service;
@@ -423,6 +424,7 @@ public class Boss extends Player implements IBoss {
         super.setDie(plAtt);
         if (!this.configuredDropProcessed) {
             this.configuredDropProcessed = true;
+            DailyRankingService.recordBossDefeat(this, plAtt);
             GameConfigService.gI().dropConfiguredRewards(this, plAtt);
         }
     }

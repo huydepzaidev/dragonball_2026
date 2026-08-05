@@ -120,10 +120,10 @@ public final class Manager {
     public static final String queryTopsukien2 = "SELECT id, point_sukien2 FROM player ORDER BY point_sukien2 DESC LIMIT 100";
     public static final String queryTopwhis = "SELECT id, thachdauwhis FROM player ORDER BY thachdauwhis DESC LIMIT 100";
     public static final String queryTopsukien = "SELECT id, point_sukien FROM player ORDER BY point_sukien DESC LIMIT 100";
-    private static final String queryTopBoss = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(JSON_UNQUOTE(JSON_EXTRACT(data_achievement, '$[19]')), '$[0]')) AS UNSIGNED), 0) AS boss_count FROM player ORDER BY boss_count DESC LIMIT 100";
-    private static final String queryTopEvent = "SELECT id, point_summer_cards AS event_points FROM player WHERE point_summer_cards > 0 ORDER BY point_summer_cards DESC, id ASC LIMIT 100";
-    private static final String queryTopPower = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_point, '$[1]')) AS UNSIGNED), 0) AS power FROM player ORDER BY power DESC LIMIT 100";
-    private static final String queryTopTask = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[0]')) AS UNSIGNED), 0) AS task_id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[1]')) AS UNSIGNED), 0) AS task_index, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[2]')) AS UNSIGNED), 0) AS task_count FROM player ORDER BY task_id DESC, task_index DESC, task_count DESC LIMIT 100";
+    private static final String queryTopBoss = "SELECT player_id AS id, score AS boss_count FROM daily_ranking_score WHERE ranking_date = DATE_SUB(DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00')), INTERVAL WEEKDAY(DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'))) DAY) AND ranking_type = 'BOSS' AND score > 0 ORDER BY score DESC, player_id ASC LIMIT " + DaishinkanRanking.LIMIT;
+    private static final String queryTopEvent = "SELECT player_id AS id, score AS event_points FROM daily_ranking_score WHERE ranking_date = DATE_SUB(DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00')), INTERVAL WEEKDAY(DATE(CONVERT_TZ(UTC_TIMESTAMP(), '+00:00', '+07:00'))) DAY) AND ranking_type = 'SUMMER_EVENT' AND score > 0 ORDER BY score DESC, player_id ASC LIMIT " + DaishinkanRanking.LIMIT;
+    private static final String queryTopPower = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_point, '$[1]')) AS UNSIGNED), 0) AS power FROM player ORDER BY power DESC LIMIT " + DaishinkanRanking.LIMIT;
+    private static final String queryTopTask = "SELECT id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[0]')) AS UNSIGNED), 0) AS task_id, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[1]')) AS UNSIGNED), 0) AS task_index, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(data_task, '$[2]')) AS UNSIGNED), 0) AS task_count FROM player ORDER BY task_id DESC, task_index DESC, task_count DESC LIMIT " + DaishinkanRanking.LIMIT;
     public static boolean isTopMaydamChanged = false;
     public static boolean isTopSukienChanged = false;
     public static boolean isTopSukien1Changed = false;
@@ -1042,25 +1042,13 @@ public final class Manager {
                     top.setInfo1(maydam + " điểm");
                     top.setInfo2(Util.formatNumber(totalDame) + " sát thương");
                 } else if (query.equals(Manager.queryTopBoss)) {
-                    long bossCount = rs.getLong("boss_count");
-                    top.setInfo1(Util.formatNumber(bossCount) + " Boss");
-                    top.setInfo2("Đã kết liễu " + Util.formatNumber(bossCount) + " Boss");
+                    DaishinkanRanking.hideBossScore(top);
                 } else if (query.equals(Manager.queryTopEvent)) {
-                    top.setParamCompare(rs.getLong("event_points"));
-                    top.setHiddenScore(true);
-                    top.setInfo1("Thành tích sự kiện đang được ẩn");
-                    top.setInfo2("Xếp hạng theo số thẻ đã đổi");
+                    DaishinkanRanking.hideSummerEventScore(top);
                 } else if (query.equals(Manager.queryTopPower)) {
-                    long power = rs.getLong("power");
-                    String formattedPower = Util.formatCompactVietnamese(power);
-                    top.setInfo1(formattedPower + " sức mạnh");
-                    top.setInfo2("Sức mạnh: " + formattedPower);
+                    DaishinkanRanking.showPower(top, rs.getLong("power"));
                 } else if (query.equals(Manager.queryTopTask)) {
-                    int taskId = rs.getInt("task_id");
-                    int taskIndex = rs.getInt("task_index");
-                    int taskCount = rs.getInt("task_count");
-                    top.setInfo1("Nhiệm vụ " + taskId + " - bước " + (taskIndex + 1));
-                    top.setInfo2("Tiến độ hiện tại: " + Util.formatNumber(taskCount));
+                    DaishinkanRanking.hideTaskScore(top);
                 }
 
                 tops.add(top);

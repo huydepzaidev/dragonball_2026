@@ -404,8 +404,8 @@ public class QuyLaoKame extends Npc {
             long currentProgress = KOLQuestService.gI().getProgress(player, currentStage);
 
             if (currentProgress >= questData.requiredQuantity) {
-                int availableSlots = InventoryService.gI().getCountEmptyBag(player);
-                if (availableSlots < questData.rewards.size()) {
+                byte emptyBagSlots = InventoryService.gI().getCountEmptyBag(player);
+                if (emptyBagSlots < questData.rewards.size()) {
                     Service.gI().sendThongBao(player, "Bạn cần ít nhất " + questData.rewards.size()
                             + " ô trống hành trang để nhận đủ phần thưởng KOL.");
                     openBaseMenu(player);
@@ -415,17 +415,15 @@ public class QuyLaoKame extends Npc {
                 for (RewardItem rewardData : questData.rewards) {
                     Item rewardItem = ItemService.gI().createNewItem((short) rewardData.itemId);
                     rewardItem.quantity = rewardData.quantity;
-
                     List<Item.ItemOption> options = getPetBackpackOptions(rewardData.itemId);
                     if (options != null) {
                         rewardItem.itemOptions.addAll(options);
                     }
-
                     InventoryService.gI().addItemBag(player, rewardItem);
                 }
                 InventoryService.gI().sendItemBags(player);
-
-                Service.gI().sendThongBao(player, "Bạn đã nhận phần thưởng nhiệm vụ KOL cấp " + currentStage + "!");
+                Service.gI().sendThongBao(player,
+                        "Bạn đã nhận phần thưởng nhiệm vụ KOL cấp " + currentStage + "!");
 
                 player.kolQuestStage++;
 
@@ -443,7 +441,6 @@ public class QuyLaoKame extends Npc {
     private List<Item.ItemOption> getPetBackpackOptions(int itemId) {
         List<Item.ItemOption> options = new ArrayList<>();
         options.add(new Item.ItemOption(73, 0));
-
         switch (itemId) {
             case 1360:
                 options.add(new Item.ItemOption(77, 13));

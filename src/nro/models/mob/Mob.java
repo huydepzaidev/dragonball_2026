@@ -38,6 +38,9 @@ import nro.models.server.EventControlService;
 public class Mob {
 
     private static final int[] CRYSTAL_STAR_ITEM_IDS = {441, 442, 443, 444, 445, 446, 447};
+    private static final int FOOD_DROP_RATE = 100;
+    private static final int FOOD_DROP_RATE_SCALE = 1000;
+    private static final int FOUR_LEAF_CLOVER_DROP_BONUS_PERCENT = 15;
 
     public int id;
     public Zone zone;
@@ -991,15 +994,23 @@ public class Mob {
                 //   ChatGlobalService.gI().ThongBaoRoiDo(player, "[ Hệ Thống ] " + player.name + " vừa nhặt được " + it.itemTemplate.name + " tại " + this.zone.map.mapName + " khu " + this.zone.zoneId);
             }
         }
-        int rate1 = 100;
-        if (player.itemTime.isUseCoBonLa) {
-            rate1 = (int) (rate1 * 1.15);
+        // The character that lands the killing blow must wear a full Thần Linh set.
+        // Pet drops belong to the master, and there is intentionally no per-player limit.
+        Player foodFighter = crystalHunter;
+        Player foodOwner = petMaster != null ? petMaster : crystalHunter;
+        boolean isFoodFarmMap = MapService.gI().isMapCold(mapid)
+                || MapService.gI().isMapTuongLai(mapid);
+        int foodDropRate = FOOD_DROP_RATE;
+        if (foodOwner.itemTime.isUseCoBonLa) {
+            foodDropRate += foodDropRate * FOUR_LEAF_CLOVER_DROP_BONUS_PERCENT / 100;
         }
-        if (Util.isTrue(3, 333)) {
-            if (player.setClothes.checkSetGod()) {
-                ItemMap it = new ItemMap(zone, Util.nextInt(663, 667), 1, x, yEnd, player.id);
-                list.add(it);
-            }
+        if (isFoodFarmMap
+                && foodFighter.setClothes.checkSetGod()
+                && Util.isTrue(foodDropRate, FOOD_DROP_RATE_SCALE)) {
+            ItemMap food = new ItemMap(zone,
+                    Util.nextInt(ConstItem.BANH_PUDDING, ConstItem.SUSHI),
+                    1, x, yEnd, foodOwner.id);
+            list.add(food);
         }
 
         if (MapService.gI().isMapCold(mapid)) {

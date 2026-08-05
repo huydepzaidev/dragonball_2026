@@ -254,11 +254,6 @@ public class Service {
                 msg.writer().writeUTF(pl.name);
                 String info1 = top.getInfo1() != null ? top.getInfo1() : "";
                 String info2 = top.getInfo2() != null ? top.getInfo2() : "";
-                if (top.isHiddenScore() && top.getId_player() == player.id) {
-                    String eventPoints = Util.formatNumber(top.getParamCompare());
-                    info1 = eventPoints + " thẻ đã đổi";
-                    info2 = "Điểm sự kiện của bạn: " + eventPoints;
-                }
                 msg.writer().writeUTF(info1);
                 msg.writer().writeUTF(info2);
             }

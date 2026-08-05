@@ -13598,4 +13598,66 @@ INSERT INTO `item_shop_option` (`item_shop_id`,`option_id`,`param`) VALUES
 COMMIT;
 -- END MIGRATION: 2026_08_05_disciple_tnsm_multiplier_display.sql
 
+-- BEGIN MIGRATION: 2026_08_05_daishinkan_village_live_top10.sql
+-- Configure Daishinkan and place him in all three starter villages.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `npc_template` (`id`,`NAME`,`head`,`body`,`leg`,`avatar`) VALUES
+(64,'Daishinkan',703,704,705,6578)
+ON DUPLICATE KEY UPDATE
+`NAME`=VALUES(`NAME`),`head`=VALUES(`head`),`body`=VALUES(`body`),
+`leg`=VALUES(`leg`),`avatar`=VALUES(`avatar`);
+
+UPDATE `map_template`
+SET `npcs`=IF(TRIM(`npcs`)='[]','[[64,760,432]]',
+    CONCAT(LEFT(TRIM(`npcs`),CHAR_LENGTH(TRIM(`npcs`))-1),',[64,760,432]]'))
+WHERE `id`=0 AND `npcs` NOT LIKE '%[64,%';
+
+UPDATE `map_template`
+SET `npcs`=IF(TRIM(`npcs`)='[]','[[64,1030,432]]',
+    CONCAT(LEFT(TRIM(`npcs`),CHAR_LENGTH(TRIM(`npcs`))-1),',[64,1030,432]]'))
+WHERE `id`=7 AND `npcs` NOT LIKE '%[64,%';
+
+UPDATE `map_template`
+SET `npcs`=IF(TRIM(`npcs`)='[]','[[64,700,408]]',
+    CONCAT(LEFT(TRIM(`npcs`),CHAR_LENGTH(TRIM(`npcs`))-1),',[64,700,408]]'))
+WHERE `id`=14 AND `npcs` NOT LIKE '%[64,%';
+
+COMMIT;
+-- END MIGRATION: 2026_08_05_daishinkan_village_live_top10.sql
+
+-- BEGIN MIGRATION: 2026_08_05_daily_boss_event_rankings.sql
+-- Store independent daily scores for the Daishinkan boss and summer-event rankings.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+CREATE TABLE IF NOT EXISTS daily_ranking_score (
+  ranking_date date NOT NULL,
+  ranking_type varchar(32) NOT NULL,
+  player_id int NOT NULL,
+  score bigint unsigned NOT NULL DEFAULT 0,
+  updated_at timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (ranking_date,ranking_type,player_id),
+  KEY idx_daily_ranking_order (ranking_date,ranking_type,score,player_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+COMMIT;
+-- END MIGRATION: 2026_08_05_daily_boss_event_rankings.sql
+
+-- BEGIN MIGRATION: 2026_08_05_fix_be_rong_cute_icon.sql
+-- Correct Bé Rồng Cute id 1771, which was linked to the Ghost Rider icon.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE item_template
+SET icon_id=15125
+WHERE id=1771 AND icon_id=16187;
+
+COMMIT;
+-- END MIGRATION: 2026_08_05_fix_be_rong_cute_icon.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS
