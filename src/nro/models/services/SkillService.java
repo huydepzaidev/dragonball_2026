@@ -750,6 +750,8 @@ public class SkillService {
                     } else if (player.setClothes.cadicM == 5) {
                         dame += player.nPoint.hpMax * 50 / 100;
                     }
+                    dame = Math.min(2_147_483_647L,
+                            dame + (dame * player.nPoint.tlDameTuSat / 100L));
                     if (!player.isBoss) {
                         for (Mob mob : player.zone.mobs) {
                             if (Util.getDistance(player, mob) <= rangeBom) { //khoảng cách có tác dụng bom
@@ -904,12 +906,9 @@ public class SkillService {
         if (plInjure.effectSkill.anTroi) {
             plAtt.nPoint.isCrit100 = true;
         }
-        long dameAttack = plAtt.nPoint.getDameAttack(false);
+        long dameAttack = plAtt.nPoint.getDameAttack(false, !plInjure.isBoss);
         if (plAtt.isPl() && plAtt.effectSkin != null && plAtt.effectSkin.isXDame) {
             plAtt.effectSkin.isXDame = false;
-            if (plInjure.isBoss) {
-                dameAttack /= 3;
-            }
         }
         int dameHit = plInjure.injured(plAtt, miss ? 0 : dameAttack, false, false);
         if (plAtt.playerSkill == null) {

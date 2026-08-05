@@ -1034,25 +1034,28 @@ public class Pet extends Player {
     }
 
     public void openSkill3() {
-        Skill skill = null;
+        Skill currentSkill = this.playerSkill.skills.get(2);
+        Skill skill;
 
         int[] tiLe = {30, 40, 30};
         byte[] skills = {Skill.THAI_DUONG_HA_SAN, Skill.TAI_TAO_NANG_LUONG, Skill.KAIOKEN};
 
-        int totalTiLe = 0;
-        for (int t : tiLe) {
-            totalTiLe += t;
-        }
-        int rd = Util.nextInt(1, totalTiLe);
-
-        int accumulatedTiLe = 0;
-        for (int i = 0; i < tiLe.length; i++) {
-            accumulatedTiLe += tiLe[i];
-            if (rd <= accumulatedTiLe) {
-                skill = SkillUtil.createSkill(skills[i], 1);
-                break;
+        do {
+            skill = null;
+            int totalTiLe = 0;
+            for (int t : tiLe) {
+                totalTiLe += t;
             }
-        }
+            int rd = Util.nextInt(1, totalTiLe);
+            int accumulatedTiLe = 0;
+            for (int i = 0; i < tiLe.length; i++) {
+                accumulatedTiLe += tiLe[i];
+                if (rd <= accumulatedTiLe) {
+                    skill = SkillUtil.createSkill(skills[i], 1);
+                    break;
+                }
+            }
+        } while (currentSkill != null && skill != null && skill.skillId == currentSkill.skillId);
 
         this.playerSkill.skills.set(2, skill);
     }

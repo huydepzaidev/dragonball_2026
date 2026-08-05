@@ -162,6 +162,8 @@ public class NPoint {
 
     public short tlTNSMPet;
     public short xChuong;
+    public short tlDameTuSat;
+    public short tlDameLaze;
 
     public short setltdb;
     public short setTinhAn;
@@ -633,8 +635,19 @@ public class NPoint {
             case 159: // x chưởng
                 this.xChuong = (short) io.param;
                 break;
-            case 160: // TNSM PET;
+            case 160: // +#% TNSM đệ tử (option cũ)
                 this.tlTNSMPet += io.param;
+                break;
+            case 254: // x# TNSM đệ tử
+                if (io.param > 2) {
+                    this.tlTNSMPet += (io.param - 2) * 100;
+                }
+                break;
+            case 252: // +#% sát thương chiêu tự sát
+                this.tlDameTuSat += io.param;
+                break;
+            case 253: // +#% sát thương chiêu laze
+                this.tlDameLaze += io.param;
                 break;
             case 173: //Phục hồi #% HP và KI cho đồng đội
                 this.tlHpHoiBanThanVaDongDoi += io.param;
@@ -1178,16 +1191,7 @@ public class NPoint {
                 dame += (dame * percent / 100L);
             }
         }
-        int totalPercent = 0;
-        for (Item.ItemOption opt : options) {
-            if (opt.optionTemplate.id == 117) {
-                tlSexyDame += opt.param;
-            }
-        }
-
-        dame += (dame * tlSexyDame / 100L);
-
-        //Sức đánh đẹp
+        // Sức đánh đẹp cho bản thân; hiệu ứng xung quanh dùng cùng tlSexyDame.
         dame += (dame * tlSexyDame / 100L);
 
         // Xử lý giảm dame
@@ -1277,6 +1281,8 @@ public class NPoint {
         this.tlchinhxac = 0;
         this.tlTNSMPet = 0;
         this.xChuong = 0;
+        this.tlDameTuSat = 0;
+        this.tlDameLaze = 0;
         this.setltdb = 0;
         this.setTinhAn = 0;
         this.setNhatAn = 0;
@@ -1348,6 +1354,10 @@ public class NPoint {
     }
 
     public int getDameAttack(boolean isAttackMob) {
+        return getDameAttack(isAttackMob, true);
+    }
+
+    public int getDameAttack(boolean isAttackMob, boolean allowXChuong) {
         setIsCrit();
         long dameAttack = this.dame;
         intrinsic = this.player.playerIntrinsic.intrinsic;
@@ -1438,11 +1448,12 @@ public class NPoint {
                 break;
             case Skill.MAKANKOSAPPO:
                 percentDameSkill = skillSelect.damage;
-                int dameSkill = (int) Math.min(2_147_483_647L, (long) this.mpMax * percentDameSkill / 100);
+                long dameSkill = Math.min(2_147_483_647L, (long) this.mpMax * percentDameSkill / 100);
                 if (this.player.setClothes.picolo == 5) {
-                    dameSkill *= 3 / 2;
+                    dameSkill = Math.min(2_147_483_647L, dameSkill * 3 / 2);
                 }
-                return dameSkill;
+                dameSkill = Math.min(2_147_483_647L, dameSkill + (dameSkill * tlDameLaze / 100L));
+                return (int) dameSkill;
             case Skill.QUA_CAU_KENH_KHI:
                 long hpmob = 0;
                 long hppl = 0;
@@ -1524,7 +1535,7 @@ public class NPoint {
                 -1, 1) * Util.nextInt((int) tempDameAttack
                 ) + 1);
 
-        if (player.effectSkin != null && player.effectSkin.isXChuong && (player.playerSkill.skillSelect.template.id == Skill.KAMEJOKO || player.playerSkill.skillSelect.template.id == Skill.ANTOMIC || player.playerSkill.skillSelect.template.id == Skill.MASENKO)) {
+        if (allowXChuong && player.effectSkin != null && player.effectSkin.isXChuong && (player.playerSkill.skillSelect.template.id == Skill.KAMEJOKO || player.playerSkill.skillSelect.template.id == Skill.ANTOMIC || player.playerSkill.skillSelect.template.id == Skill.MASENKO)) {
             dameAttack *= xChuong;
             player.effectSkin.isXDame = true;
             player.effectSkin.isXChuong = false;

@@ -266,7 +266,13 @@ public final class GameConfigService implements Runnable {
     static boolean isEncounterManagedDivineBoss(int bossId) {
         return bossId == BossID.XEN_BO_HUNG || bossId == BossID.SIEU_BO_HUNG
                 || bossId == BossID.GOD_BILL || bossId == BossID.ANGEL_WHIS
-                || bossId == BossID.GOD_CHAMPA || bossId == BossID.ANGEL_VADOS;
+                || bossId == BossID.GOD_CHAMPA || bossId == BossID.ANGEL_VADOS
+                || bossId == BossID.PILAP || bossId == BossID.MAI_PILAP
+                || bossId == BossID.PU_PILAP
+                || bossId == BossID.SOI_DO_VO_TINH
+                || bossId == BossID.SOI_VANG_VO_TINH
+                || bossId == BossID.SOI_XANH_XAM_VO_TINH
+                || bossId == BossID.ZAMASU;
     }
 
     public boolean dropGuaranteedDivine(Boss boss, Player killer, String encounterName) {

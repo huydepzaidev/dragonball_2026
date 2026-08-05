@@ -680,7 +680,7 @@ public final class Manager {
             }
 
             //load item option template
-            ps = ConnectionDatabase.prepareStatement("select id, name from item_option_template");
+            ps = ConnectionDatabase.prepareStatement("select id, name from item_option_template order by id");
             rs = ps.executeQuery();
             while (rs.next()) {
                 ItemOptionTemplate optionTemp = new ItemOptionTemplate();

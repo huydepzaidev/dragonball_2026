@@ -97,6 +97,13 @@ import nro.models.boss.gods.BillBoss;
 import nro.models.boss.gods.ChampaBoss;
 import nro.models.boss.gods.VadosBoss;
 import nro.models.boss.gods.WhisBoss;
+import nro.models.boss.pilap.MaiPilapBoss;
+import nro.models.boss.pilap.PilapBoss;
+import nro.models.boss.pilap.PuPilapBoss;
+import nro.models.boss.wolves.BlueGrayWolfBoss;
+import nro.models.boss.wolves.RedWolfBoss;
+import nro.models.boss.wolves.YellowWolfBoss;
+import nro.models.boss.zamasu.ZamasuBoss;
 import nro.models.player.Player;
 import nro.models.network.Message;
 import nro.models.map.service.MapService;
@@ -184,6 +191,9 @@ public class BossManager implements Runnable {
         this.createBoss(BossID.MAT_TROI, 20);
         this.createBoss(BossID.GOD_BILL);
         this.createBoss(BossID.GOD_CHAMPA);
+        this.createBoss(BossID.PILAP);
+        this.createBoss(BossID.SOI_DO_VO_TINH);
+        this.createBoss(BossID.ZAMASU);
 
     }
 
@@ -395,6 +405,20 @@ public class BossManager implements Runnable {
                     new ChampaBoss();
                 case BossID.ANGEL_VADOS ->
                     new VadosBoss();
+                case BossID.PILAP ->
+                    new PilapBoss();
+                case BossID.MAI_PILAP ->
+                    new MaiPilapBoss();
+                case BossID.PU_PILAP ->
+                    new PuPilapBoss();
+                case BossID.SOI_DO_VO_TINH ->
+                    new RedWolfBoss();
+                case BossID.SOI_VANG_VO_TINH ->
+                    new YellowWolfBoss();
+                case BossID.SOI_XANH_XAM_VO_TINH ->
+                    new BlueGrayWolfBoss();
+                case BossID.ZAMASU ->
+                    new ZamasuBoss();
                 default ->
                     null;
             };

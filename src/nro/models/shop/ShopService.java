@@ -1,6 +1,7 @@
 package nro.models.shop;
 
 import nro.models.consts.ConstAchievement;
+import nro.models.consts.ConstItem;
 import nro.models.item.Item;
 import nro.models.player.Inventory;
 import nro.models.player.Player;
@@ -524,8 +525,8 @@ public class ShopService {
         } else if (player.inventory.gem < gem) {
             Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
             return false;
-        } else if (player.inventory.gem < ruby) {
-            Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
+        } else if (player.inventory.ruby < ruby) {
+            Service.gI().sendThongBao(player, "Bạn không có đủ Hồng Ngọc");
             return false;
         } else if (player.inventory.coupon < coupon) {
             Service.gI().sendThongBao(player, "Bạn không có đủ điểm");
@@ -535,6 +536,7 @@ public class ShopService {
         player.inventory.gem -= gem;
         player.inventory.ruby -= ruby;
         player.inventory.coupon -= coupon;
+        Service.gI().sendMoney(player);
         return true;
     }
 
@@ -738,6 +740,10 @@ public class ShopService {
             return;
         }
 
+        if (itemTempId == ConstItem.DOI_SKILL_2_3_DE_TU && !canChangePetSkill2And3(player)) {
+            return;
+        }
+
         // Kiểm tra auto train
         if (itemTempId == 1524 || itemTempId == 1523 || itemTempId == 521) {
             if (!checkAutoTrainPurchase(player, itemTempId)) {
@@ -912,6 +918,20 @@ public class ShopService {
             updateAutoTrainPurchase(player, itemTempId);
             Service.gI().sendThongBao(player, "Mua thành công " + is.temp.name);
         }
+    }
+
+    private boolean canChangePetSkill2And3(Player player) {
+        if (player.pet == null || player.pet.playerSkill == null
+                || player.pet.playerSkill.skills == null
+                || player.pet.playerSkill.skills.size() < 3
+                || player.pet.playerSkill.skills.get(1) == null
+                || player.pet.playerSkill.skills.get(2) == null
+                || player.pet.playerSkill.skills.get(1).skillId == -1
+                || player.pet.playerSkill.skills.get(2).skillId == -1) {
+            Service.gI().sendThongBao(player, "Đệ tử phải có đủ skill 2 và skill 3 mới có thể mua.");
+            return false;
+        }
+        return true;
     }
 
     private boolean checkAutoTrainPurchase(Player player, int itemTempId) {

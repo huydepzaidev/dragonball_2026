@@ -193,6 +193,16 @@ public class BossID {
     public static final int ANGEL_WHIS = -373;
     public static final int GOD_CHAMPA = -374;
     public static final int ANGEL_VADOS = -375;
+    //========================PILAP SQUAD ENCOUNTER========================
+    public static final int PILAP = -376;
+    public static final int MAI_PILAP = -377;
+    public static final int PU_PILAP = -378;
+    //========================BA CON SOI VO TINH========================
+    public static final int SOI_DO_VO_TINH = -379;
+    public static final int SOI_VANG_VO_TINH = -380;
+    public static final int SOI_XANH_XAM_VO_TINH = -381;
+    //========================ZAMASU ENCOUNTER========================
+    public static final int ZAMASU = -382;
     //========================LINH TINH========================
     public static final int AN_TROM = -365;
     public static final int TAU_PAIPAI = -385;

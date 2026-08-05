@@ -27,6 +27,7 @@ public class Santa extends Npc {
             }
             List<String> menu = new ArrayList<>(Arrays.asList(
                     "Cửa hàng",
+                    "Cửa hàng\nHồng Ngọc",
                     "Mở rộng\nHành trang\nRương đồ",
                     "Cửa hàng\nHạn sử dụng",
                     "Tiệm\nHớt tóc",
@@ -55,43 +56,33 @@ public class Santa extends Npc {
 
             if (this.mapId == 5 || this.mapId == 13 || this.mapId == 20) {
                 if (player.idMark.isBaseMenu()) {
-                    switch (select) {
-                        case 0:
-                            ShopService.gI().opendShop(player, "SANTA", false);
-                            break;
-                        case 1:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_GIAM_GIA_1", false);
-                            } else {
-                                ShopService.gI().opendShop(player, "SANTA_MO_RONG_HANH_TRANG", false);
-                            }
-                            break;
-                        case 2:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_MO_RONG_HANH_TRANG", false);
-                            } else {
-                                ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
-                            }
-                            break;
-                        case 3:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
-                            } else {
-                                ShopService.gI().opendShop(player, "SANTA_HEAD", false);
-                            }
-                            break;
-                        case 4:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_HEAD", false);
-                            } else {
-                                ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
-                            }
-                            break;
-                        case 5:
-                            if (soLuong >= 1) {
-                                ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
-                            }
-                            break;
+                    int menuIndex = 0;
+                    if (select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SANTA", false);
+                        return;
+                    }
+                    if (soLuong >= 1 && select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SANTA_GIAM_GIA_1", false);
+                        return;
+                    }
+                    if (select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SATAN_RUBY", true);
+                        return;
+                    }
+                    if (select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SANTA_MO_RONG_HANH_TRANG", false);
+                        return;
+                    }
+                    if (select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SANTA_HAN_SU_DUNG", false);
+                        return;
+                    }
+                    if (select == menuIndex++) {
+                        ShopService.gI().opendShop(player, "SANTA_HEAD", false);
+                        return;
+                    }
+                    if (select == menuIndex) {
+                        ShopService.gI().opendShop(player, "SANTA_DANH_HIEU", false);
                     }
                 }
             }

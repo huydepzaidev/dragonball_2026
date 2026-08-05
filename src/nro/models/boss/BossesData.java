@@ -2713,6 +2713,28 @@ public class BossesData {
             "Thần Hủy Diệt Champa", new short[]{511, 512, 513, -1, -1, -1}, BossID.ANGEL_VADOS);
     public static final BossData ANGEL_VADOS = divinePairPartner(
             "Thiên Sứ Vados", new short[]{530, 531, 532, -1, -1, -1});
+
+    public static final BossData PILAP = pilapSquadLeader(
+            "Pilap", new short[]{612, 613, 614, -1, -1, -1});
+    public static final BossData MAI_PILAP = pilapSquadMember(
+            "Mai", new short[]{615, 616, 617, -1, -1, -1});
+    public static final BossData PU_PILAP = pilapSquadMember(
+            "Pu", new short[]{618, 619, 620, -1, -1, -1});
+    public static final BossData SOI_DO_VO_TINH = wolfLeader(
+            "Sói Đỏ Vô Tình", new short[]{745, 746, 747, -1, -1, -1});
+    public static final BossData SOI_VANG_VO_TINH = wolfMember(
+            "Sói Vàng Vô Tình", new short[]{748, 749, 750, -1, -1, -1});
+    public static final BossData SOI_XANH_XAM_VO_TINH = wolfMember(
+            "Sói Xanh Xám Vô Tình", new short[]{751, 752, 753, -1, -1, -1});
+    public static final BossData ZAMASU = new BossData(
+            "Zamasu", ConstPlayer.TRAI_DAT,
+            new short[]{903, 904, 905, -1, -1, -1}, 400_000,
+            new int[]{2_000_000_000}, zamasuEncounterMaps(), divinePairSkills(),
+            new String[]{"|-1|Kế hoạch Không Nhân Loại bắt đầu!"},
+            new String[]{"|-1|Loài người phải bị thanh trừng!"},
+            new String[]{"|-1|Công lý của thần linh là bất diệt!"},
+            REST_10_M);
+
     // Divine pair encounter data.
     private static BossData divinePairLeader(String name, short[] outfit, int partnerId) {
         return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 400_000,
@@ -2738,6 +2760,74 @@ public class BossesData {
             {Skill.TAI_TAO_NANG_LUONG, 4}, {Skill.KAMEJOKO, 7},
             {Skill.THAI_DUONG_HA_SAN, 3}, {Skill.THOI_MIEN, 7},
             {Skill.DICH_CHUYEN_TUC_THOI, 4}, {Skill.LIEN_HOAN, 7},
+            {Skill.MASENKO, 7}
+        };
+    }
+
+    private static BossData pilapSquadLeader(String name, short[] outfit) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 100_000,
+                new int[]{1_000}, pilapSquadMaps(), pilapSquadSkills(),
+                new String[]{"|-1|Tiểu Đội Pilap đã đến!"},
+                new String[]{"|-1|Không ai cản được kế hoạch của bọn ta!"},
+                new String[]{"|-1|Đến lượt người tiếp theo!"},
+                REST_10_M, new int[]{BossID.MAI_PILAP, BossID.PU_PILAP});
+    }
+
+    private static BossData pilapSquadMember(String name, short[] outfit) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 100_000,
+                new int[]{1_000}, pilapSquadMaps(), pilapSquadSkills(),
+                new String[]{"|-1|Tôi sẽ đứng xem trước."},
+                new String[]{"|-1|Bây giờ đến lượt tôi!"},
+                new String[]{"|-1|Tiểu Đội Pilap chưa thua đâu!"},
+                AppearType.APPEAR_WITH_ANOTHER);
+    }
+
+    private static int[] pilapSquadMaps() {
+        return new int[]{0, 7, 14, 42, 43, 44};
+    }
+
+    private static int[][] pilapSquadSkills() {
+        return new int[][]{
+            {Skill.THOI_MIEN, 7}, {Skill.DRAGON, 7}, {Skill.GALICK, 7},
+            {Skill.LIEN_HOAN, 7}, {Skill.THAI_DUONG_HA_SAN, 3},
+            {Skill.MASENKO, 7}
+        };
+    }
+
+    private static BossData wolfLeader(String name, short[] outfit) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 100_000,
+                new int[]{1_000}, wolfEncounterMaps(), wolfSkills(),
+                new String[]{"|-1|Ba Con Sói Vô Tình đã xuất hiện!"},
+                new String[]{"|-1|Hãy thử vượt qua nanh vuốt của bọn ta!"},
+                new String[]{"|-1|Đồng đội của ta sẽ tiếp tục trận chiến!"},
+                REST_10_M,
+                new int[]{BossID.SOI_VANG_VO_TINH, BossID.SOI_XANH_XAM_VO_TINH});
+    }
+
+    private static BossData wolfMember(String name, short[] outfit) {
+        return new BossData(name, ConstPlayer.TRAI_DAT, outfit, 100_000,
+                new int[]{1_000}, wolfEncounterMaps(), wolfSkills(),
+                new String[]{"|-1|Ta sẽ đứng xem trước."},
+                new String[]{"|-1|Đến lượt ta chiến đấu!"},
+                new String[]{"|-1|Ba Con Sói Vô Tình chưa bị đánh bại!"},
+                AppearType.APPEAR_WITH_ANOTHER);
+    }
+
+    private static int[] zamasuEncounterMaps() {
+        return new int[]{92, 93, 94, 96, 97, 98, 99, 100};
+    }
+    private static int[] wolfEncounterMaps() {
+        return new int[]{
+            0, 1, 2, 3, 4,
+            7, 8, 9, 10, 11,
+            14, 15, 16, 17, 18
+        };
+    }
+
+    private static int[][] wolfSkills() {
+        return new int[][]{
+            {Skill.THOI_MIEN, 7}, {Skill.DRAGON, 7}, {Skill.GALICK, 7},
+            {Skill.LIEN_HOAN, 7}, {Skill.THAI_DUONG_HA_SAN, 3},
             {Skill.MASENKO, 7}
         };
     }

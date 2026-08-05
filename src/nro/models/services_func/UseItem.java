@@ -879,6 +879,25 @@ public class UseItem {
                             case 2006:
                                 Input.gI().createFormChangeNameByItem(pl);
                                 break;
+                            case ConstItem.DOI_SKILL_2_3_DE_TU: {
+                                if (pl.pet == null || pl.pet.playerSkill == null
+                                        || pl.pet.playerSkill.skills == null
+                                        || pl.pet.playerSkill.skills.size() < 3
+                                        || pl.pet.playerSkill.skills.get(1) == null
+                                        || pl.pet.playerSkill.skills.get(2) == null
+                                        || pl.pet.playerSkill.skills.get(1).skillId == -1
+                                        || pl.pet.playerSkill.skills.get(2).skillId == -1) {
+                                    Service.gI().sendThongBao(pl, "Đệ tử phải có đủ skill 2 và skill 3 mới có thể sử dụng.");
+                                    break;
+                                }
+                                pl.pet.openSkill2();
+                                pl.pet.openSkill3();
+                                InventoryService.gI().subQuantityItemsBag(pl, item, 1);
+                                InventoryService.gI().sendItemBags(pl);
+                                Service.gI().chatJustForMe(pl, pl.pet, "Cám ơn sư phụ");
+                                Service.gI().sendThongBao(pl, "Đã đổi ngẫu nhiên skill 2 và skill 3 của đệ tử.");
+                            }
+                            break;
                             case 1758: {
                                 Player player = pl;
                                 if (player.pet != null) {
