@@ -324,6 +324,8 @@ public class ConstNpc {
     //index menu bò mộng
     public static final int MENU_OPTION_LEVEL_SIDE_TASK = 500;
     public static final int MENU_OPTION_PAY_SIDE_TASK = 501;
+    public static final int MENU_MAILBOX_LIST = 99001;
+    public static final int MENU_MAILBOX_DETAIL = 99002;
     public static final int event3 = 3333;
     public static final int event3_1 = 3334;
 

@@ -1042,13 +1042,13 @@ public final class Manager {
                     top.setInfo1(maydam + " điểm");
                     top.setInfo2(Util.formatNumber(totalDame) + " sát thương");
                 } else if (query.equals(Manager.queryTopBoss)) {
-                    DaishinkanRanking.hideBossScore(top);
+                    DaishinkanRanking.showBossScore(top, rs.getLong("boss_count"));
                 } else if (query.equals(Manager.queryTopEvent)) {
-                    DaishinkanRanking.hideSummerEventScore(top);
+                    DaishinkanRanking.showSummerEventScore(top, rs.getLong("event_points"));
                 } else if (query.equals(Manager.queryTopPower)) {
                     DaishinkanRanking.showPower(top, rs.getLong("power"));
                 } else if (query.equals(Manager.queryTopTask)) {
-                    DaishinkanRanking.hideTaskScore(top);
+                    DaishinkanRanking.showTaskScore(top, rs.getInt("task_id"));
                 }
 
                 tops.add(top);

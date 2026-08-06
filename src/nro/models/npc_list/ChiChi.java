@@ -51,6 +51,7 @@ public class ChiChi extends Npc {
                 menu.add("Sự kiện\nhè");
                 menu.add("Cửa hàng\nhè");
                 menu.add("Đổi quà\nsự kiện");
+                menu.add("Xem điểm\nsự kiện");
             }
             if (eventControl.isEnabled(CHILDRENS_DAY)) {
                 menu.add("Top\nHộp quà\nthiếu nhi\n2025");
@@ -136,6 +137,11 @@ public class ChiChi extends Npc {
                 return;
             }
             menuIndex++;
+            if (select == menuIndex) {
+                showSummerEventScore(player);
+                return;
+            }
+            menuIndex++;
         }
 
         if (eventControl.isEnabled(CHILDRENS_DAY)) {
@@ -188,6 +194,19 @@ public class ChiChi extends Npc {
                 + "Mặc Quần đi biển, tháo áo và cải trang rồi đánh quái tại map có nước để tìm Vỏ ốc, Vỏ sò, Con cua và Sao biển.\n"
                 + "Trái dừa hoặc Cỏ bốn lá tăng 70% tỷ lệ rơi nguyên liệu trong thời gian sử dụng.",
                 "Đóng");
+    }
+
+    private void showSummerEventScore(Player player) {
+        long weeklyScore = DailyRankingService.getCurrentSummerEventScore(player);
+        createOtherMenu(player, ConstNpc.IGNORE_MENU,
+                formatSummerEventScore(weeklyScore, player.point_summer_cards),
+                "Đóng");
+    }
+
+    static String formatSummerEventScore(long weeklyScore, long totalScore) {
+        return "ĐIỂM SỰ KIỆN HÈ\n"
+                + "Điểm tuần này: " + Util.formatNumber(weeklyScore) + " điểm\n"
+                + "Tổng điểm tích lũy: " + Util.formatNumber(totalScore) + " điểm";
     }
 
     private void openMenuDoiQuaMuaHe(Player player) {

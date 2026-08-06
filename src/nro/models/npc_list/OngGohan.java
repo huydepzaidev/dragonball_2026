@@ -6,8 +6,10 @@ import nro.models.item.Item;
 import nro.models.map.service.NpcService;
 import nro.models.npc.Npc;
 import nro.models.player.Player;
+import nro.models.services.HomeNpcGemService;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
+import nro.models.services.MailboxService;
 import nro.models.services.PetService;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
@@ -26,7 +28,8 @@ public class OngGohan extends Npc {
         if (canOpenNpc(player)) {
             createOtherMenu(player, ConstNpc.BASE_MENU,
                     "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.",
-                    "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử");
+                    "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử",
+                    "Nhận ngọc\nmiễn phí", "Hòm thư");
         }
     }
 
@@ -47,7 +50,15 @@ public class OngGohan extends Npc {
                     case 2 -> {
                         receiveDisciple(player);
                     }
+                    case 3 -> {
+                        HomeNpcGemService.claimFreeGems(player);
+                    }
+                    case 4 -> {
+                        MailboxService.openMailbox(this, player);
+                    }
                 }
+            } else {
+                MailboxService.handleMenu(this, player, select);
             }
         }
     }

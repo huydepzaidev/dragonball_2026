@@ -298,15 +298,31 @@ public class MapService {
             return null;
         }
 
-        int z = Util.nextInt(0, map.zones.size() - 1);
-        //  int z = 0;
-        while (map.zones.get(z).getNumOfPlayers() >= map.zones.get(z).maxPlayer) {
-            z = Util.nextInt(0, map.zones.size() - 1);
-            //    z++;
-        }
-        return map.zones.get(z);
+        return selectAutomaticZone(map.zones);
     }
 
+    static Zone selectAutomaticZone(List<Zone> zones) {
+        if (zones == null || zones.isEmpty()) {
+            return null;
+        }
+
+        for (Zone zone : zones) {
+            if (zone == null) {
+                continue;
+            }
+            int preferredCapacity = Math.min(Zone.PLAYERS_TIEU_CHUAN_TRONG_MAP, zone.maxPlayer);
+            if (zone.getNumOfPlayers() < preferredCapacity) {
+                return zone;
+            }
+        }
+
+        for (Zone zone : zones) {
+            if (zone != null && !zone.isFullPlayer()) {
+                return zone;
+            }
+        }
+        return null;
+    }
     public Zone getZoneByMapIDAndZoneID(int mapId, int zoneId) {
         Zone zoneJoin = null;
         try {

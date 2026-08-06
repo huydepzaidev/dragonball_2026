@@ -17,22 +17,26 @@ final class DaishinkanRanking {
         top.setInfo2(text);
     }
 
-    static void hideTaskScore(TOP top) {
-        hide(top, " - Ẩn NV", "Xếp hạng theo tiến độ nhiệm vụ");
+    static void showTaskScore(TOP top, int taskId) {
+        show(top, "Nhiệm vụ số " + taskId, taskId);
     }
 
-    static void hideSummerEventScore(TOP top) {
-        hide(top, " - Ẩn điểm", "Xếp hạng sự kiện hè");
+    static void showSummerEventScore(TOP top, long score) {
+        showPoints(top, score);
     }
 
-    static void hideBossScore(TOP top) {
-        hide(top, " - Ẩn Boss", "Xếp hạng theo số Boss đã tiêu diệt");
+    static void showBossScore(TOP top, long score) {
+        showPoints(top, score);
     }
 
-    private static void hide(TOP top, String info1, String info2) {
-        top.setHiddenScore(true);
-        top.setParamCompare(0L);
-        top.setInfo1(info1);
-        top.setInfo2(info2);
+    private static void showPoints(TOP top, long score) {
+        show(top, score + " điểm", score);
+    }
+
+    private static void show(TOP top, String text, long compareValue) {
+        top.setHiddenScore(false);
+        top.setParamCompare(compareValue);
+        top.setInfo1(text);
+        top.setInfo2(text);
     }
 }

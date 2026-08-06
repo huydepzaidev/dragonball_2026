@@ -20,6 +20,7 @@ import nro.models.map.service.NpcService;
 import nro.models.network.SessionManager;
 import nro.models.player.Pet;
 import nro.models.player.Player;
+import nro.models.services.EffectSkillService;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
 import nro.models.services.PetService;
@@ -57,7 +58,7 @@ public final class Command {
         adminCommands.put("brl", player -> BrolyManager.gI().showListBoss(player));
         adminCommands.put("item", player -> Input.gI().createFormGiveItem(player));
         adminCommands.put("getitem", player -> Input.gI().createFormGetItem(player));
-        adminCommands.put("hs", player -> Service.gI().releaseCooldownSkill(player));
+        adminCommands.put("hs", Command::restoreAdminPlayer);
         adminCommands.put("d", player -> Service.gI().setPos(
                 player, player.location.x, player.location.y + 10));
         adminCommands.put("toado", player -> Service.gI().sendThongBaoOK(player,
@@ -66,6 +67,15 @@ public final class Command {
         adminCommands.put("1", this::openBotMenu);
         adminCommands.put("2", this::createAttackBot);
         adminCommands.put("b", player -> Input.gI().createFormSenditem1(player));
+    }
+
+    static void restoreAdminPlayer(Player player) {
+        Service.gI().releaseCooldownSkill(player);
+        EffectSkillService.gI().removeControlEffects(player);
+        player.nPoint.setHp(player.nPoint.hpMax);
+        player.nPoint.setMp(player.nPoint.mpMax);
+        PlayerService.gI().sendInfoHpMpMoney(player);
+        Service.gI().Send_Info_NV(player);
     }
 
     private void initParameterizedCommands() {

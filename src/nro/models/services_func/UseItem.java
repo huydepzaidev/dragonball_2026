@@ -50,6 +50,7 @@ import nro.models.npc.DuaHauEgg;
 import nro.models.server.Manager;
 import static nro.models.server.Manager.isTopSukienChanged;
 import nro.models.services.ChatGlobalService;
+import nro.models.services.ActivationRewardService;
 import nro.models.task.BadgesTaskService;
 import nro.models.utils.Logger;
 
@@ -648,6 +649,12 @@ public class UseItem {
                                 break;
                             case 1655: // capule kich hoat
                                 UseItem.gI().CapsuleKichHoat(pl, item);
+                                break;
+                            case ActivationRewardService.SET_BOX_ID:
+                                ActivationRewardService.gI().openSetBox(pl, item);
+                                break;
+                            case ActivationRewardService.SINGLE_CAPSULE_ID:
+                                ActivationRewardService.gI().openSingleCapsule(pl, item);
                                 break;
                             case 1787: // capule kich hoat
                                 UseItem.gI().MapRiengTu(pl, item);

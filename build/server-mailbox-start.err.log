@@ -1,0 +1,1 @@
+[Game config database sync] WARN com.zaxxer.hikari.pool.PoolBase - User Management - Failed to validate connection com.mysql.jdbc.JDBC4Connection@743b097a (No operations allowed after connection closed.). Possibly consider using a shorter maxLifetime value.

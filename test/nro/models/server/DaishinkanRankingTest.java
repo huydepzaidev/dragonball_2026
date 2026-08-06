@@ -16,20 +16,21 @@ public final class DaishinkanRankingTest {
         DaishinkanRanking.showPower(top, 2_500L);
         assertEquals("2,5 nghìn sức mạnh", top.getInfo1());
 
-        DaishinkanRanking.hideTaskScore(top);
-        assertHidden(top, " - Ẩn NV");
-        DaishinkanRanking.hideSummerEventScore(top);
-        assertHidden(top, " - Ẩn điểm");
-        DaishinkanRanking.hideBossScore(top);
-        assertHidden(top, " - Ẩn Boss");
+        DaishinkanRanking.showTaskScore(top, 29);
+        assertVisible(top, "Nhiệm vụ số 29", 29L);
+        DaishinkanRanking.showSummerEventScore(top, 1_000L);
+        assertVisible(top, "1000 điểm", 1_000L);
+        DaishinkanRanking.showBossScore(top, 350L);
+        assertVisible(top, "350 điểm", 350L);
 
-        System.out.println("DAISHINKAN_RANKING_OK limit=10 power=vi scores=hidden");
+        System.out.println("DAISHINKAN_RANKING_OK limit=10 power=vi scores=visible");
     }
 
-    private static void assertHidden(TOP top, String expected) {
-        assertEquals(true, top.isHiddenScore());
-        assertEquals(0L, top.getParamCompare());
+    private static void assertVisible(TOP top, String expected, long compareValue) {
+        assertEquals(false, top.isHiddenScore());
+        assertEquals(compareValue, top.getParamCompare());
         assertEquals(expected, top.getInfo1());
+        assertEquals(expected, top.getInfo2());
     }
 
     private static void assertEquals(Object expected, Object actual) {

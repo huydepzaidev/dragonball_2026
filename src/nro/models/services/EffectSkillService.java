@@ -71,7 +71,7 @@ public class EffectSkillService {
                 msg.writer().writeInt((int) plTarget.id); //id player dính effect
                 msg.writer().writeInt((int) plUseSkill.id); //id player dùng skill
             }
-            Service.gI().sendMessAllPlayerInMap(plUseSkill, msg);
+            Service.gI().sendMessAllPlayerInMap(plTarget, msg);
             msg.cleanup();
         } catch (Exception e) {
             nro.models.utils.Logger.logException(EffectSkillService.class, e);
@@ -109,9 +109,69 @@ public class EffectSkillService {
 
     public void removeAnTroi(Player player) {
         if (player != null && player.effectSkill != null) {
+            Player playerUsingHold = player.effectSkill.plTroi;
             player.effectSkill.anTroi = false;
             player.effectSkill.plTroi = null;
-            sendEffectPlayer(player, player, TURN_OFF_EFFECT, HOLD_EFFECT);
+            sendEffectPlayer(playerUsingHold != null ? playerUsingHold : player,
+                    player, TURN_OFF_EFFECT, HOLD_EFFECT);
+        }
+    }
+
+    /**
+     * Removes harmful effects that prevent or restrict a player from acting.
+     * Beneficial effects such as shielding and an active monkey form are kept.
+     */
+    public void removeControlEffects(Player player) {
+        if (player == null || player.effectSkill == null) {
+            return;
+        }
+
+        if (player.effectSkill.anTroi) {
+            Player playerUsingHold = player.effectSkill.plTroi;
+            if (playerUsingHold != null && playerUsingHold.effectSkill != null
+                    && playerUsingHold.effectSkill.useTroi) {
+                removeUseTroi(playerUsingHold);
+            } else {
+                removeAnTroi(player);
+            }
+        }
+        if (player.effectSkill.useTroi) {
+            removeUseTroi(player);
+        }
+        if (player.effectSkill.isStun) {
+            removeStun(player);
+        }
+        if (player.effectSkill.isThoiMien) {
+            removeThoiMien(player);
+        }
+        if (player.effectSkill.isBlindDCTT) {
+            removeBlindDCTT(player);
+        }
+        if (player.effectSkill.isStone) {
+            removeStone(player);
+        }
+        if (player.effectSkill.isLamCham) {
+            removeLamCham(player);
+        }
+        if (player.effectSkill.isSocola) {
+            removeSocola(player);
+        }
+        if (player.effectSkill.isBinh) {
+            int mafubaIcon = player.effectSkill.typeBinh == 0 ? 11175 : 11166;
+            BinhDown(player);
+            ItemTimeService.gI().removeItemTime(player, mafubaIcon);
+        }
+        if (player.effectSkill.isMabuHold || player.maBuHold != null) {
+            removeMabuHold(player);
+        }
+        player.isMabuHold = false;
+
+        if (player.effectSkill.isUseSkillMonkey) {
+            player.effectSkill.isUseSkillMonkey = false;
+            Service.gI().sendSpeedPlayer(player, -1);
+        }
+        if (player.effectSkill.isBodyChangeTechnique) {
+            removeBodyChangeTechnique(player);
         }
     }
 
@@ -606,6 +666,15 @@ public class EffectSkillService {
 
     public void removeBodyChangeTechnique(Player player) {
         PlayerService.gI().changeAndSendTypePK(player, 0);
-        player.effectSkill.isTanHinh = false;
+        player.effectSkill.isBodyChangeTechnique = false;
+        Service.gI().Send_Caitrang(player);
+        if (player.zone != null) {
+            for (Player playerInMap : player.zone.getPlayers()) {
+                if (playerInMap != null && playerInMap.getSession() != null) {
+                    Service.gI().playerInfoUpdate(player, playerInMap, player.name,
+                            player.getHead(), player.getBody(), player.getLeg());
+                }
+            }
+        }
     }
 }

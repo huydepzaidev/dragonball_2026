@@ -1,6 +1,9 @@
 package nro.models.server;
 
+import java.sql.Connection;
 import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -18,6 +21,8 @@ public final class DailyRankingService {
     private static final String UPSERT = "INSERT INTO daily_ranking_score "
             + "(ranking_date, ranking_type, player_id, score) VALUES (?, ?, ?, ?) "
             + "ON DUPLICATE KEY UPDATE score = score + VALUES(score)";
+    private static final String SELECT_SCORE = "SELECT score FROM daily_ranking_score "
+            + "WHERE ranking_date = ? AND ranking_type = ? AND player_id = ?";
 
     private DailyRankingService() {
     }
@@ -33,6 +38,25 @@ public final class DailyRankingService {
 
     public static void recordSummerEventPoints(Player player, long points) {
         addScore(player, TYPE_SUMMER_EVENT, points);
+    }
+
+    public static long getCurrentSummerEventScore(Player player) {
+        if (player == null) {
+            return 0L;
+        }
+        try (Connection con = LocalManager.getConnection();
+                PreparedStatement ps = con.prepareStatement(SELECT_SCORE)) {
+            LocalDate today = LocalDate.now(TimeUtil.VIETNAM_ZONE);
+            ps.setDate(1, Date.valueOf(getWeekStart(today)));
+            ps.setString(2, TYPE_SUMMER_EVENT);
+            ps.setLong(3, player.id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong("score") : 0L;
+            }
+        } catch (Exception e) {
+            Logger.logException(DailyRankingService.class, e);
+            return 0L;
+        }
     }
 
     private static void addScore(Player player, String type, long points) {

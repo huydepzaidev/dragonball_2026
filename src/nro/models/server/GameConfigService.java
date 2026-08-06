@@ -359,6 +359,7 @@ public final class GameConfigService implements Runnable {
                 if (tablesAvailable) {
                     processCommands();
                     EventControlService.gI().processCommands();
+                    TopRewardService.gI().processCommands();
                     if (System.currentTimeMillis() - lastCatalogSync >= 30_000L) {
                         syncBossCatalog();
                         lastCatalogSync = System.currentTimeMillis();

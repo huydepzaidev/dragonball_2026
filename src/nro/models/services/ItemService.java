@@ -301,9 +301,9 @@ public class ItemService {
     public int[] getOptionIdsBySKH(int skhId) {
         switch (skhId) {
             case 127:
-                return new int[]{140};
-            case 128:
                 return new int[]{139};
+            case 128:
+                return new int[]{140};
             case 129:
                 return new int[]{141};
             case 130:
