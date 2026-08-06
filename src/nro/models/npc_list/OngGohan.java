@@ -26,6 +26,10 @@ public class OngGohan extends Npc {
     @Override
     public void openBaseMenu(Player player) {
         if (canOpenNpc(player)) {
+            if (openHomeMenuWithRubyGuide(player,
+                    \u0022Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.\u0022)) {
+                return;
+            }
             createOtherMenu(player, ConstNpc.BASE_MENU,
                     "Con cố gắng theo Quy Lão Kame học thành tài, đừng lo lắng cho ta.",
                     "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử",
@@ -37,6 +41,10 @@ public class OngGohan extends Npc {
     public void confirmMenu(Player player, int select) {
         if (canOpenNpc(player)) {
             if (player.idMark.isBaseMenu()) {
+                if (select == 5) {
+                    showRubyGuide(player);
+                    return;
+                }
                 switch (select) {
                     case 0 -> {
                         if (!TaskService.gI().checkDoneTaskTalkNpc(player, this)) {
@@ -58,9 +66,37 @@ public class OngGohan extends Npc {
                     }
                 }
             } else {
+                if (player.idMark.getIndexMenu() == ConstNpc.HOME_RUBY_GUIDE_MENU) {
+                    openBaseMenu(player);
+                    return;
+                }
                 MailboxService.handleMenu(this, player, select);
             }
         }
+    }
+
+    protected boolean openHomeMenuWithRubyGuide(Player player, String introText) {
+        createOtherMenu(player, ConstNpc.BASE_MENU, introText,
+                \u0022Nhiệm vụ\u0022,
+                \u0022Nhập mã\ngiftcode\u0022,
+                \u0022Nhận\nđệ tử\u0022,
+                \u0022Nhận ngọc\nmiễn phí\u0022,
+                \u0022Hòm thư\u0022,
+                \u0022Cách kiếm\nhồng ngọc\u0022);
+        return true;
+    }
+
+    protected void showRubyGuide(Player player) {
+        createOtherMenu(player, ConstNpc.HOME_RUBY_GUIDE_MENU,
+                rubyGuideText(), \u0022Đóng\u0022);
+    }
+
+    static String rubyGuideText() {
+        return \u0022Các boss có thể rơi Capsule hồng ngọc:\n\n\u0022
+                + \u0022- Tiểu đội sát thủ Namek: Số 1 Namek, Số 2 Namek, Số 3 Namek, Số 4 Namek, Tiểu đội trưởng Namek (10 capsule mỗi boss).\n\u0022
+                + \u0022- Tiểu đội Bojack Trái Đất: Bojack, Bujin, Kogu, Bido, Zangya, Siêu Bojack (10 capsule mỗi boss).\n\u0022
+                + \u0022- Boss mini: Ăn Trộm, Mặt Trời, Ở Dơ (5 capsule mỗi boss).\n\n\u0022
+                + \u0022Mở mỗi capsule nhận từ 1 đến 100 hồng ngọc.\u0022;
     }
 
     protected void receiveDisciple(Player player) {

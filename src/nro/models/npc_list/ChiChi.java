@@ -106,6 +106,7 @@ public class ChiChi extends Npc {
                             Service.gI().sendThongBao(player, "Bạn có " + player.point_sukien2 + " điểm Kem trái cây.");
                             break;
                     }
+
                 } else if (player.idMark.getIndexMenu() == MENU_DOI_QUA_MUA_HE
                         && select >= 0 && select < NGUYEN_LIEU_MUA_HE.length) {
                     openFormDoiQuaMuaHe(player, select);
@@ -195,7 +196,6 @@ public class ChiChi extends Npc {
                 + "Trái dừa hoặc Cỏ bốn lá tăng 70% tỷ lệ rơi nguyên liệu trong thời gian sử dụng.",
                 "Đóng");
     }
-
     private void showSummerEventScore(Player player) {
         long weeklyScore = DailyRankingService.getCurrentSummerEventScore(player);
         createOtherMenu(player, ConstNpc.IGNORE_MENU,

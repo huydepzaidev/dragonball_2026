@@ -13909,4 +13909,55 @@ ON DUPLICATE KEY UPDATE `planet`=VALUES(`planet`);
 COMMIT;
 -- END MIGRATION: 2026_08_06_1007_shared_activation_reward_defaults.sql
 
+-- BEGIN MIGRATION: 2026_08_06_namek_assassin_ruby_capsule.sql
+-- Rename the existing pink capsule for the Namek assassin ruby reward.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME`='Capsule hồng ngọc',
+    `description`='Mở ra nhận ngẫu nhiên từ 1 đến 100 hồng ngọc'
+WHERE `id`=722;
+
+COMMIT;
+-- END MIGRATION: 2026_08_06_namek_assassin_ruby_capsule.sql
+
+-- BEGIN MIGRATION: 2026_08_06_distinct_namek_ruby_capsule.sql
+-- Restore the existing combat capsule and add a dedicated ruby reward capsule.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME`='Capsule hồng',
+    `description`='VPSK'
+WHERE `id`=722;
+
+INSERT INTO `item_template`
+    (`id`, `TYPE`, `gender`, `NAME`, `description`, `level`, `icon_id`, `part`,
+     `is_up_to_up`, `power_require`, `gold`, `gem`, `head`, `body`, `leg`)
+VALUES
+    (2005, 27, 3, 'Capsule hồng ngọc',
+     'Mở ra nhận ngẫu nhiên từ 1 đến 100 hồng ngọc',
+     1, 6782, -1, 1, 0, 0, 0, -1, -1, -1)
+ON DUPLICATE KEY UPDATE
+    `TYPE`=VALUES(`TYPE`),
+    `gender`=VALUES(`gender`),
+    `NAME`=VALUES(`NAME`),
+    `description`=VALUES(`description`),
+    `level`=VALUES(`level`),
+    `icon_id`=VALUES(`icon_id`),
+    `part`=VALUES(`part`),
+    `is_up_to_up`=VALUES(`is_up_to_up`),
+    `power_require`=VALUES(`power_require`),
+    `gold`=VALUES(`gold`),
+    `gem`=VALUES(`gem`),
+    `head`=VALUES(`head`),
+    `body`=VALUES(`body`),
+    `leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_06_distinct_namek_ruby_capsule.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS

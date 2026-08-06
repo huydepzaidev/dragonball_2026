@@ -18,6 +18,10 @@ public class OngParagus extends OngGohan {
     @Override
     public void openBaseMenu(Player player) {
         if (canOpenNpc(player)) {
+            if (openHomeMenuWithRubyGuide(player,
+                    \u0022Con cố gắng theo Vua Vegeta học thành tài, đừng lo lắng cho ta.\u0022)) {
+                return;
+            }
             createOtherMenu(player, ConstNpc.BASE_MENU,
                     "Con cố gắng theo Vua Vegeta học thành tài, đừng lo lắng cho ta.",
                     "Nhiệm vụ", "Nhập mã\ngiftcode", "Nhận\nđệ tử",
@@ -29,6 +33,10 @@ public class OngParagus extends OngGohan {
     public void confirmMenu(Player player, int select) {
         if (canOpenNpc(player)) {
             if (player.idMark.isBaseMenu()) {
+                if (select == 5) {
+                    showRubyGuide(player);
+                    return;
+                }
                 switch (select) {
                     case 0 -> {
                         if (!TaskService.gI().checkDoneTaskTalkNpc(player, this)) {
@@ -50,6 +58,10 @@ public class OngParagus extends OngGohan {
                     }
                 }
             } else {
+                if (player.idMark.getIndexMenu() == ConstNpc.HOME_RUBY_GUIDE_MENU) {
+                    openBaseMenu(player);
+                    return;
+                }
                 MailboxService.handleMenu(this, player, select);
             }
         }

@@ -31,17 +31,7 @@ public class SO1_NM extends Boss {
 
     @Override
     public void reward(Player plKill) {
-        Service.gI().dropItemMap(this.zone, new ItemMap(zone, 77, Util.nextInt(1, 2), this.location.x + Util.nextInt(-50, 50), this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24), plKill.id));
-        for (int i = 0; i < Util.nextInt(2); i++) {
-            Service.gI().dropItemMap(this.zone, new ItemMap(zone, 77, Util.nextInt(1, 3), this.location.x + i * Util.nextInt(-50, 50), this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24), plKill.id));
-        }
-        for (int i = 0; i < Util.nextInt(3, 3); i++) {
-            Service.gI().dropItemMap(this.zone, new ItemMap(zone, 77, Util.nextInt(1, 4), this.location.x + i * 10, this.zone.map.yPhysicInTop(this.location.x,
-                    this.location.y - 24), plKill.id));
-        }
-        for (int i = 1; i < Util.nextInt(3, 3) + 1; i++) {
-            Service.gI().dropItemMap(this.zone, new ItemMap(zone, 77, Util.nextInt(1, 5), this.location.x - i * 10, this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24), plKill.id));
-        }
+        NamekAssassinRewardService.dropPublicRubyCapsules(this);
         short itTemp = 432;
          short nr6s = 19;
         short nr7s = 20;

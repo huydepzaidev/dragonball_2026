@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import nro.models.boss.Boss;
 import nro.models.boss.BossData;
 import nro.models.boss.BossID;
+import nro.models.boss.RubyCapsuleDropService;
 import nro.models.consts.BossStatus;
 import nro.models.consts.ConstPlayer;
 import nro.models.consts.ConstTaskBadges;
@@ -123,6 +124,7 @@ public class MatTroi extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        RubyCapsuleDropService.dropPublicRubyCapsules(this, 5);
         BadgesTaskService.updateCountBagesTask(plKill, ConstTaskBadges.KOL, 1);
         int x = this.location.x;
         int y = this.zone.map.yPhysicInTop(x, this.location.y - 24);

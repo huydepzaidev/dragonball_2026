@@ -385,5 +385,6 @@ public class ConstNpc {
     public static final int KOL_QUEST_TYPE_DAILY_QUEST_COMPLETION = 1012;
     public static final int KOL_QUEST_TYPE_BOSS_DEFEAT_PARTICIPATION = 1013;
     public static final int KOL_QUEST_TYPE_MONSTER_KILL_COUNT = 1014;
+    public static final int HOME_RUBY_GUIDE_MENU = 1015;
 
 }

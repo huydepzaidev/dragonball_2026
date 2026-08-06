@@ -733,6 +733,7 @@ public class ConstItem {
     public static final int MANH_CAI_TRANG = 720;
     public static final int PHIEU_GIAM_GIA_VIP = 721;
     public static final int CAPSULE_HONG = 722;
+    public static final int CAPSULE_HONG_NGOC = 2005;
     public static final int BONG_HONG = 723;
     public static final int CAI_TRANG_CHI_CHI_724 = 724;
     public static final int SIEU_THAN_THUY = 725;

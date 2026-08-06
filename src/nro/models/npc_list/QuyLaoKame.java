@@ -92,6 +92,7 @@ public class QuyLaoKame extends Npc {
                 menu.add("Nói\nchuyện");
                 menu.add("Đổi điểm\nsự kiện\n[" + player.event.getEventPoint() + "]");
                 menu.add("Nhận quà\nKOL");
+                menu.set(menu.size() - 1, getKOLBaseMenuLabel(player));
                 if (ruacon != null && ruacon.quantity >= 1) {
                     menu.add("Giao\nRùa con");
                 }
@@ -378,6 +379,12 @@ public class QuyLaoKame extends Npc {
         String npcText = questData.description + "\nPhần thưởng: " + rewardDetails + "\nHoàn thành: "
                 + currentProgress + "/" + questData.requiredQuantity + " (" + percent + "%)";
 
+        if (isKOLQuestComplete(currentProgress, questData.requiredQuantity)) {
+            this.createOtherMenu(player, ConstNpc.KOL_QUEST_MENU, npcText,
+                    \u0022Nhận quà\u0022, \u0022Đóng\u0022);
+            return;
+        }
+
         if (currentProgress >= questData.requiredQuantity) {
             this.createOtherMenu(player, ConstNpc.KOL_QUEST_MENU, npcText, "Nhận thưởng", "Đóng");
         } else {
@@ -402,6 +409,11 @@ public class QuyLaoKame extends Npc {
             }
 
             long currentProgress = KOLQuestService.gI().getProgress(player, currentStage);
+
+            if (!isKOLQuestComplete(currentProgress, questData.requiredQuantity)) {
+                openBaseMenu(player);
+                return;
+            }
 
             if (currentProgress >= questData.requiredQuantity) {
                 byte emptyBagSlots = InventoryService.gI().getCountEmptyBag(player);
@@ -436,6 +448,24 @@ public class QuyLaoKame extends Npc {
         } else {
             openBaseMenu(player);
         }
+    }
+
+    private String getKOLBaseMenuLabel(Player player) {
+        int currentStage = Math.max(1, player.kolQuestStage);
+        KOLQuestData questData = KOL_QUESTS.get(currentStage);
+        boolean rewardReady = questData != null
+                && isKOLQuestComplete(
+                        KOLQuestService.gI().getProgress(player, currentStage),
+                        questData.requiredQuantity);
+        return kolBaseMenuLabel(rewardReady);
+    }
+
+    static boolean isKOLQuestComplete(long currentProgress, long requiredQuantity) {
+        return currentProgress >= requiredQuantity;
+    }
+
+    static String kolBaseMenuLabel(boolean rewardReady) {
+        return rewardReady ? \u0022Nhận quà\u0022 : \u0022Nhiệm vụ\nKOL\u0022;
     }
 
     private List<Item.ItemOption> getPetBackpackOptions(int itemId) {

@@ -1,6 +1,7 @@
 package nro.models.map;
 
 import nro.models.consts.ConstTask;
+import nro.models.consts.ConstItem;
 import nro.models.boss.Boss;
 import nro.models.boss.BossID;
 import nro.models.item.Item;
@@ -332,7 +333,8 @@ public class Zone {
                             return;
                         }
                         int playerId = Math.abs(itemMap.playerId > 100_000_000 ? 1_000_000_000 - (int) itemMap.playerId : (int) itemMap.playerId);
-                        if (playerId == player.id || itemMap.playerId == player.id || itemMap.playerId == -1) {
+                        boolean isPublicRubyCapsule = itemMap.itemTemplate.id == ConstItem.CAPSULE_HONG_NGOC;
+                        if (isPublicRubyCapsule || playerId == player.id || itemMap.playerId == player.id || itemMap.playerId == -1) {
                             Item item = ItemService.gI().createItemFromItemMap(itemMap);
                             boolean picked = false;  // Variable to track if the item was successfully picked
 

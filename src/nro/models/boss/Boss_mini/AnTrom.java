@@ -3,6 +3,7 @@ package nro.models.boss.Boss_mini;
 import nro.models.boss.Boss;
 import nro.models.boss.BossData;
 import nro.models.boss.BossID;
+import nro.models.boss.RubyCapsuleDropService;
 import nro.models.consts.BossStatus;
 import static nro.models.consts.BossType.ANTROM;
 import nro.models.consts.ConstPlayer;
@@ -137,6 +138,7 @@ public class AnTrom extends Boss {
 
     @Override
     public void reward(Player plKill) {
+        RubyCapsuleDropService.dropPublicRubyCapsules(this, 5);
         if (goldAnTrom != 0) {
             goldAnTrom = goldAnTrom * 8 / 10;
             for (byte i = 0; i < 5; i++) {

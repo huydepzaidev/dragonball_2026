@@ -291,6 +291,9 @@ public class UseItem {
                     }
                     default:
                         switch (item.template.id) {
+                            case ConstItem.CAPSULE_HONG_NGOC:
+                                openRubyCapsule(pl, item);
+                                break;
                             case 992: // Nhan thoi khong
                                 pl.type = 2;
                                 pl.maxTime = 5;
@@ -965,6 +968,30 @@ public class UseItem {
                 Service.gI().sendThongBaoOK(pl, "Sức mạnh không đủ yêu cầu");
             }
         }
+    }
+
+    static int rubyCapsuleRewardForRoll(int roll) {
+        return roll < 900 ? roll % 50 + 1 : roll % 50 + 51;
+    }
+
+    private void openRubyCapsule(Player player, Item capsule) {
+        int reward = rubyCapsuleRewardForRoll(Util.nextInt(1000));
+        int rubyBefore = player.inventory.ruby;
+        int rubyAfter = (int) Math.min(Integer.MAX_VALUE, (long) rubyBefore + reward);
+        if (rubyAfter == rubyBefore) {
+            return;
+        }
+
+        player.inventory.ruby = rubyAfter;
+        InventoryService.gI().subQuantityItemsBag(player, capsule, 1);
+        InventoryService.gI().sendItemBags(player);
+        Service.gI().sendMoney(player);
+        Service.gI().sendThongBao(player, new StringBuilder()
+                .append('+')
+                .append(rubyAfter - rubyBefore)
+                .append(' ')
+                .append(ItemService.gI().getTemplate((short) 861).name)
+                .toString());
     }
 
     public void openRuongGo(Player player) {
