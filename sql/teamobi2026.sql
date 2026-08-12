@@ -13960,4 +13960,249 @@ ON DUPLICATE KEY UPDATE
 COMMIT;
 -- END MIGRATION: 2026_08_06_distinct_namek_ruby_capsule.sql
 
+-- BEGIN MIGRATION: 2026_08_07_1341_admin_costume_crash_repair.sql
+-- Move the admin character's incompatible costume from body slot 5 to an empty bag slot.
+-- The equipped costume resolves to head part 1264, whose small-image IDs are absent from
+-- the current data/update_data/image bundle and crash the Unity client avatar renderer.
+-- Safe to run more than once; the guarded update only applies to the known broken state.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+SET @admin_costume_repair_player_id := (
+  SELECT p.id
+  FROM `player` p
+  INNER JOIN `account` a ON a.id=p.account_id
+  WHERE a.username='1'
+    AND p.name='admin'
+    AND CAST(JSON_UNQUOTE(JSON_EXTRACT(
+          JSON_UNQUOTE(JSON_EXTRACT(p.items_body,'$[5]')),'$[0]'
+        )) AS SIGNED)=1255
+    AND CAST(JSON_UNQUOTE(JSON_EXTRACT(
+          JSON_UNQUOTE(JSON_EXTRACT(p.items_bag,'$[64]')),'$[0]'
+        )) AS SIGNED)=-1
+  LIMIT 1
+);
+
+SET @admin_costume_repair_item := (
+  SELECT JSON_EXTRACT(items_body,'$[5]')
+  FROM `player`
+  WHERE id=@admin_costume_repair_player_id
+);
+
+SET @admin_costume_repair_empty_slot := (
+  SELECT JSON_EXTRACT(items_bag,'$[64]')
+  FROM `player`
+  WHERE id=@admin_costume_repair_player_id
+);
+
+UPDATE `player`
+SET items_bag=JSON_SET(
+      items_bag,'$[64]',JSON_EXTRACT(@admin_costume_repair_item,'$')
+    ),
+    items_body=JSON_SET(
+      items_body,'$[5]',JSON_EXTRACT(@admin_costume_repair_empty_slot,'$')
+    )
+WHERE id=@admin_costume_repair_player_id;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1341_admin_costume_crash_repair.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1353_admin_head_fallback.sql
+-- Replace the admin character's legacy head 31 with the built-in Earth fallback head 64.
+-- The current Unity client cannot resolve head 31 in Char.getAvatar, leaving the panel
+-- header blank even after the incompatible costume has been unequipped.
+-- Safe to run more than once and scoped to the known account/player pair.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `player` p
+INNER JOIN `account` a ON a.id=p.account_id
+SET p.head=64
+WHERE a.username='1'
+  AND p.name='admin'
+  AND p.gender=0
+  AND p.head=31;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1353_admin_head_fallback.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1407_admin_inventory_packet_bounds.sql
+-- Keep the admin inventory counts within the signed-byte range used by the Unity client.
+-- Service.player writes bag and box counts before the head-avatar table. Counts above 127
+-- make the client packet parser overflow, so Panel.paintTopInfo never receives its avatars.
+-- Only trailing empty slots are removed; all occupied slots and item payloads are preserved.
+-- Safe to run more than once and scoped to the known account/player pair.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+SET @admin_packet_repair_player_id := (
+  SELECT p.id
+  FROM `player` p
+  INNER JOIN `account` a ON a.id=p.account_id
+  WHERE a.username='1'
+    AND p.name='admin'
+    AND JSON_LENGTH(p.items_bag)=140
+    AND JSON_LENGTH(p.items_box)=130
+    AND NOT EXISTS (
+      SELECT 1
+      FROM (
+        SELECT 127 n UNION ALL SELECT 128 UNION ALL SELECT 129 UNION ALL
+        SELECT 130 UNION ALL SELECT 131 UNION ALL SELECT 132 UNION ALL
+        SELECT 133 UNION ALL SELECT 134 UNION ALL SELECT 135 UNION ALL
+        SELECT 136 UNION ALL SELECT 137 UNION ALL SELECT 138 UNION ALL SELECT 139
+      ) tail
+      WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(
+              JSON_UNQUOTE(JSON_EXTRACT(p.items_bag,CONCAT('$[',tail.n,']'))),
+              '$[0]'
+            )) AS SIGNED)<>-1
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM (SELECT 127 n UNION ALL SELECT 128 UNION ALL SELECT 129) tail
+      WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(
+              JSON_UNQUOTE(JSON_EXTRACT(p.items_box,CONCAT('$[',tail.n,']'))),
+              '$[0]'
+            )) AS SIGNED)<>-1
+    )
+  LIMIT 1
+);
+
+UPDATE `player`
+SET items_bag=JSON_REMOVE(
+      items_bag,
+      '$[139]','$[138]','$[137]','$[136]','$[135]','$[134]','$[133]',
+      '$[132]','$[131]','$[130]','$[129]','$[128]','$[127]'
+    ),
+    items_box=JSON_REMOVE(items_box,'$[129]','$[128]','$[127]')
+WHERE id=@admin_packet_repair_player_id;
+
+-- Head 31 and its avatar mapping are valid. Restore the original appearance now that the
+-- packet can reach the head-avatar table instead of keeping the diagnostic fallback head.
+UPDATE `player` p
+INNER JOIN `account` a ON a.id=p.account_id
+SET p.head=31
+WHERE a.username='1'
+  AND p.name='admin'
+  AND p.gender=0
+  AND p.head=64;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1407_admin_inventory_packet_bounds.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1414_inventory_capacity_120.sql
+-- Normalize the repaired admin inventory to the shared 120-slot server limit.
+-- Service.player serializes these lengths as signed bytes, so the limit must stay at or
+-- below 127. Only known trailing empty slots are removed; every item is preserved.
+-- Safe to run more than once and scoped to the known account/player pair.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+SET @inventory_120_player_id := (
+  SELECT p.id
+  FROM `player` p
+  INNER JOIN `account` a ON a.id=p.account_id
+  WHERE a.username='1'
+    AND p.name='admin'
+    AND JSON_LENGTH(p.items_bag)=127
+    AND JSON_LENGTH(p.items_box)=127
+    AND NOT EXISTS (
+      SELECT 1
+      FROM (
+        SELECT 120 n UNION ALL SELECT 121 UNION ALL SELECT 122 UNION ALL
+        SELECT 123 UNION ALL SELECT 124 UNION ALL SELECT 125 UNION ALL SELECT 126
+      ) tail
+      WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(
+              JSON_UNQUOTE(JSON_EXTRACT(p.items_bag,CONCAT('$[',tail.n,']'))),
+              '$[0]'
+            )) AS SIGNED)<>-1
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM (
+        SELECT 120 n UNION ALL SELECT 121 UNION ALL SELECT 122 UNION ALL
+        SELECT 123 UNION ALL SELECT 124 UNION ALL SELECT 125 UNION ALL SELECT 126
+      ) tail
+      WHERE CAST(JSON_UNQUOTE(JSON_EXTRACT(
+              JSON_UNQUOTE(JSON_EXTRACT(p.items_box,CONCAT('$[',tail.n,']'))),
+              '$[0]'
+            )) AS SIGNED)<>-1
+    )
+  LIMIT 1
+);
+
+UPDATE `player`
+SET items_bag=JSON_REMOVE(
+      items_bag,'$[126]','$[125]','$[124]','$[123]','$[122]','$[121]','$[120]'
+    ),
+    items_box=JSON_REMOVE(
+      items_box,'$[126]','$[125]','$[124]','$[123]','$[122]','$[121]','$[120]'
+    )
+WHERE id=@inventory_120_player_id;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1414_inventory_capacity_120.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1608_picolo_set_ki_bonus.sql
+-- Grant +50% total KI only while all five pieces of Set Picolo are equipped.
+-- Server-side stat logic lives in NPoint; this migration keeps the option text canonical.
+-- It also removes the per-item KI bonus from the superseded implementation.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+SET @namek_bonus_json := COALESCE((
+  SELECT NULLIF(`bonus_options_json`,'')
+  FROM `activation_reward_config`
+  WHERE `planet`=1
+  LIMIT 1
+),'[]');
+
+SET @namek_ki_path := JSON_UNQUOTE(JSON_SEARCH(
+  @namek_bonus_json,'one','103',NULL,'$[*].id'
+));
+
+UPDATE `activation_reward_config`
+SET `bonus_options_json`=IF(
+  @namek_ki_path IS NULL,
+  @namek_bonus_json,
+  JSON_REMOVE(@namek_bonus_json,REPLACE(@namek_ki_path,'.id',''))
+)
+WHERE `planet`=1;
+
+UPDATE `item_option_template`
+SET `NAME`='$(5 món +100% sát thương Masenkosappo, +50% KI)'
+WHERE `id`=142;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1608_picolo_set_ki_bonus.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1847_admin_only_maintenance.sql
+-- Add admin-only maintenance commands and expose the in-memory mode to web2026.
+-- Rerunnable: DDL converges to the same enum and guarded runtime column.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+ALTER TABLE `game_server_command`
+  MODIFY COLUMN `command_type`
+    enum('RELOAD_CONFIG','RESPAWN_BOSS','RESPAWN_ALL','START_MAINTENANCE','STOP_MAINTENANCE') NOT NULL;
+
+ALTER TABLE `game_server_runtime`
+  ADD COLUMN IF NOT EXISTS `admin_only_mode` tinyint(1) NOT NULL DEFAULT 0
+  AFTER `boss_count`;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1847_admin_only_maintenance.sql
+
+-- BEGIN MIGRATION: 2026_08_07_1944_item_568_normal_egg.sql
+-- Item 568 is the normal Mabu egg, not Lunar New Year event stock.
+-- Rerunnable: delete every accidental event classification for this item.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+DELETE FROM `game_event_item`
+WHERE `item_id`=568;
+
+COMMIT;
+-- END MIGRATION: 2026_08_07_1944_item_568_normal_egg.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS

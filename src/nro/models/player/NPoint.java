@@ -12,6 +12,7 @@ import nro.models.server.Manager;
 import nro.models.services.EffectSkillService;
 import nro.models.services.ItemService;
 import nro.models.map.service.MapService;
+import nro.models.map.phoban.TreasureMapPolicy;
 import nro.models.services.PlayerService;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
@@ -35,6 +36,8 @@ import nro.models.utils.TimeUtil;
 public class NPoint {
 
     public static final byte MAX_LIMIT = 9;
+    static final int PICOLO_SET_REQUIRED_PIECES = 5;
+    static final int PICOLO_SET_KI_BONUS_PERCENT = 50;
 
     @Setter
     private Player player;
@@ -948,6 +951,7 @@ public class NPoint {
                 }
             }
         }
+        mpMax = applyPicoloSetKiBonus(mpMax, this.player.setClothes.picolo);
         if (this.isNguyetAn) {
             mpMax += (mpMax * 15L / 100L);
         }
@@ -1041,6 +1045,13 @@ public class NPoint {
 
     private void setMp() {
         this.mp = Math.min(this.mp, this.mpMax);
+    }
+
+    static long applyPicoloSetKiBonus(long mpMax, int picoloPieces) {
+        if (picoloPieces == PICOLO_SET_REQUIRED_PIECES) {
+            return mpMax + (mpMax * PICOLO_SET_KI_BONUS_PERCENT / 100L);
+        }
+        return mpMax;
     }
 
     public int getHP() {
@@ -1630,9 +1641,6 @@ public class NPoint {
             if (this.intrinsic != null && this.intrinsic.id == 24) {
                 tiemNang += ((long) tiemNang * this.intrinsic.param1 / 100);
             }
-            if (this.power >= 60_000_000_000L) {
-                tiemNang -= ((long) tiemNang * 80 / 100);
-            }
             if (this.player.isPet) {
                 if (((Pet) this.player).master.itemTime.isUseBuaSanta) {
                     tiemNang += tn * 2;
@@ -1648,7 +1656,7 @@ public class NPoint {
                 //  tiemNang *= 10; //x x3 tiềm năng toàn server
             }
             if (MapService.gI().isMapBanDoKhoBau(this.player.zone.map.mapId)) {
-                tiemNang *= 1.5;
+                tiemNang = TreasureMapPolicy.multiplyMapExperience(tiemNang);
             }
             if (this.player.cFlag != 0) {
                 if (this.player.cFlag == 8) {
@@ -1669,18 +1677,21 @@ public class NPoint {
     }
 
     public long calSubTNSM(long tiemNang) {
+        int reductionPercent = 0;
         if (power >= 90_000_000_000L) {
-            tiemNang /= 100;
+            reductionPercent = 30;
         } else if (power >= 80_000_000_000L) {
-            tiemNang /= 90;
+            reductionPercent = 25;
+        } else if (power >= 70_000_000_000L) {
+            reductionPercent = 20;
         } else if (power >= 60_000_000_000L) {
-            tiemNang /= 50;
+            reductionPercent = 15;
         } else if (power >= 50_000_000_000L) {
-            tiemNang /= 40;
+            reductionPercent = 10;
         } else if (power >= 40_000_000_000L) {
-            tiemNang /= 30;
+            reductionPercent = 5;
         }
-        return tiemNang;
+        return tiemNang - (tiemNang * reductionPercent / 100L);
     }
 
     public short getTileHutHp(boolean isMob) {

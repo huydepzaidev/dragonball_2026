@@ -24,34 +24,20 @@ import nro.models.utils.SkillUtil;
 import nro.models.utils.TimeUtil;
 import nro.models.utils.Util;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class QuyLaoKame extends Npc {
 
-    private static class RewardItem {
-
-        int itemId;
-        int quantity;
-
-        public RewardItem(int itemId, int quantity) {
-            this.itemId = itemId;
-            this.quantity = quantity;
-        }
-    }
-
     private static class KOLQuestData {
 
         long requiredQuantity;
-
-        List<RewardItem> rewards;
+        int eventPointReward;
         String description;
 
-        public KOLQuestData(long requiredQuantity, List<RewardItem> rewards, String description) {
+        public KOLQuestData(long requiredQuantity, int eventPointReward, String description) {
             this.requiredQuantity = requiredQuantity;
-            this.rewards = rewards;
+            this.eventPointReward = eventPointReward;
             this.description = description;
         }
     }
@@ -60,22 +46,22 @@ public class QuyLaoKame extends Npc {
 
     static {
         KOL_QUESTS.put(1, new KOLQuestData(KOLQuestService.REQUIRED_WOOD_DUMMY,
-                Arrays.asList(new RewardItem(1821, 5)),
+                kolEventPointReward(1),
                 "Nhiệm vụ 1:\nTiêu diệt 1.000 Mộc Nhân bằng tự động luyện tập"));
         KOL_QUESTS.put(2, new KOLQuestData(KOLQuestService.REQUIRED_BIRD_DEMON,
-                Arrays.asList(new RewardItem(1592, 5), new RewardItem(1757, 5)),
+                kolEventPointReward(2),
                 "Nhiệm vụ 2:\nTiêu diệt 10.000 Quỷ Chim bằng tự động luyện tập (khu vực Nappa)"));
         KOL_QUESTS.put(3, new KOLQuestData(KOLQuestService.REQUIRED_FIDE_WAVE,
-                Arrays.asList(new RewardItem(1360, 1)),
+                kolEventPointReward(3),
                 "Nhiệm vụ 3:\nTiêu diệt 10 đợt Fide. Cùng một người chơi phải kết liễu đủ Fide 1, Fide 2 và Fide 3 mới tính 1 đợt"));
         KOL_QUESTS.put(4, new KOLQuestData(KOLQuestService.REQUIRED_CHALLENGE,
-                Arrays.asList(new RewardItem(1654, 1)),
+                kolEventPointReward(4),
                 "Nhiệm vụ 4:\nĐánh thắng 100 người qua lời mời thách đấu"));
         KOL_QUESTS.put(5, new KOLQuestData(KOLQuestService.REQUIRED_HARD_DAILY_TASK,
-                Arrays.asList(new RewardItem(1822, 10)),
+                kolEventPointReward(5),
                 "Nhiệm vụ 5:\nHoàn thành 20 nhiệm vụ khó hằng ngày tại Bò Mộng"));
         KOL_QUESTS.put(6, new KOLQuestData(KOLQuestService.REQUIRED_SUPER_BROLY,
-                Arrays.asList(new RewardItem(1797, 1), new RewardItem(1592, 5), new RewardItem(1757, 5)),
+                kolEventPointReward(6),
                 "Nhiệm vụ 6:\nTiêu diệt 20 Super Broly"));
     }
 
@@ -374,9 +360,8 @@ public class QuyLaoKame extends Npc {
             percent = 100;
         }
 
-        String rewardDetails = formatRewardDetails(questData.rewards);
-
-        String npcText = questData.description + "\nPhần thưởng: " + rewardDetails + "\nHoàn thành: "
+        String npcText = questData.description + "\nPhần thưởng: "
+                + Util.numberToMoney(questData.eventPointReward) + " điểm sự kiện\nHoàn thành: "
                 + currentProgress + "/" + questData.requiredQuantity + " (" + percent + "%)";
 
         if (isKOLQuestComplete(currentProgress, questData.requiredQuantity)) {
@@ -415,36 +400,16 @@ public class QuyLaoKame extends Npc {
                 return;
             }
 
-            if (currentProgress >= questData.requiredQuantity) {
-                byte emptyBagSlots = InventoryService.gI().getCountEmptyBag(player);
-                if (emptyBagSlots < questData.rewards.size()) {
-                    Service.gI().sendThongBao(player, "Bạn cần ít nhất " + questData.rewards.size()
-                            + " ô trống hành trang để nhận đủ phần thưởng KOL.");
-                    openBaseMenu(player);
-                    return;
-                }
-
-                for (RewardItem rewardData : questData.rewards) {
-                    Item rewardItem = ItemService.gI().createNewItem((short) rewardData.itemId);
-                    rewardItem.quantity = rewardData.quantity;
-                    List<Item.ItemOption> options = getPetBackpackOptions(rewardData.itemId);
-                    if (options != null) {
-                        rewardItem.itemOptions.addAll(options);
-                    }
-                    InventoryService.gI().addItemBag(player, rewardItem);
-                }
-                InventoryService.gI().sendItemBags(player);
-                Service.gI().sendThongBao(player,
-                        "Bạn đã nhận phần thưởng nhiệm vụ KOL cấp " + currentStage + "!");
-
-                player.kolQuestStage++;
-
+            int claimedReward = KOLQuestService.gI().claimCurrentQuestReward(player);
+            if (claimedReward <= 0) {
+                Service.gI().sendThongBao(player, "Không thể nhận thưởng nhiệm vụ KOL lúc này.");
                 openBaseMenu(player);
-
-            } else {
-                Service.gI().sendThongBao(player, "Bạn không đủ điều kiện hoàn thành nhiệm vụ!");
-                openBaseMenu(player);
+                return;
             }
+            Service.gI().sendThongBao(player,
+                    "Bạn đã nhận " + Util.numberToMoney(claimedReward)
+                    + " điểm sự kiện từ nhiệm vụ KOL cấp " + currentStage + "!");
+            openBaseMenu(player);
         } else {
             openBaseMenu(player);
         }
@@ -468,48 +433,7 @@ public class QuyLaoKame extends Npc {
         return rewardReady ? \u0022Nhận quà\u0022 : \u0022Nhiệm vụ\nKOL\u0022;
     }
 
-    private List<Item.ItemOption> getPetBackpackOptions(int itemId) {
-        List<Item.ItemOption> options = new ArrayList<>();
-        options.add(new Item.ItemOption(73, 0));
-        switch (itemId) {
-            case 1360:
-                options.add(new Item.ItemOption(77, 13));
-                options.add(new Item.ItemOption(103, 13));
-                options.add(new Item.ItemOption(50, 13));
-                options.add(new Item.ItemOption(101, 20));
-                options.add(new Item.ItemOption(30, 1));
-                options.add(new Item.ItemOption(93, 90));
-                break;
-            case 1654:
-                options.add(new Item.ItemOption(50, 16));
-                options.add(new Item.ItemOption(77, 15));
-                options.add(new Item.ItemOption(103, 15));
-                options.add(new Item.ItemOption(106, 0));
-                options.add(new Item.ItemOption(30, 1));
-                options.add(new Item.ItemOption(93, 30));
-                break;
-            case 1797:
-                options.add(new Item.ItemOption(50, 25));
-                options.add(new Item.ItemOption(103, 30));
-                options.add(new Item.ItemOption(30, 1));
-                options.add(new Item.ItemOption(93, 90));
-                break;
-            default:
-                return null;
-        }
-        return options;
-    }
-
-    private String formatRewardDetails(List<RewardItem> rewards) {
-        StringBuilder details = new StringBuilder();
-        for (int i = 0; i < rewards.size(); i++) {
-            RewardItem rewardData = rewards.get(i);
-            String rewardName = ItemService.gI().getTemplate(rewardData.itemId).name;
-            details.append(rewardData.quantity).append(" ").append(rewardName);
-            if (i < rewards.size() - 1) {
-                details.append(", ");
-            }
-        }
-        return details.toString();
+    static int kolEventPointReward(int stage) {
+        return KOLQuestService.getEventPointReward(stage);
     }
 }

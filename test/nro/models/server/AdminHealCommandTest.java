@@ -20,6 +20,20 @@ public final class AdminHealCommandTest {
         player.nPoint.setHp(1);
         player.nPoint.setMp(2);
         player.effectSkill.isStun = true;
+        player.effectSkill.isShielding = true;
+        player.effectSkill.isMonkey = true;
+        player.effectSkill.isCharging = true;
+        player.effectSkill.tiLeHPHuytSao = 20;
+        player.effectSkill.isTanHinh = true;
+        player.effectSkill.isDameBuff = true;
+        player.effectSkill.isPKCommeson = true;
+        player.effectSkill.isPKSTT = true;
+        player.effectSkill.isChibi = true;
+        player.effectSkill.isHalloween = true;
+        player.effectSkill.isUseMafuba = true;
+        player.effectSkill.isIntrinsic = true;
+        player.effectSkill.playerUseMafuba = new Player();
+        player.newSkill.playersTaget.add(new Player());
 
         Skill skill = new Skill();
         skill.skillId = 1;
@@ -33,8 +47,22 @@ public final class AdminHealCommandTest {
                 || player.nPoint.mp != player.nPoint.mpMax) {
             throw new AssertionError("hs did not restore full HP/KI");
         }
-        if (player.effectSkill.isStun) {
-            throw new AssertionError("hs did not remove control effects");
+        if (player.effectSkill.isStun
+                || player.effectSkill.isShielding
+                || player.effectSkill.isMonkey
+                || player.effectSkill.isCharging
+                || player.effectSkill.tiLeHPHuytSao != 0
+                || player.effectSkill.isTanHinh
+                || player.effectSkill.isDameBuff
+                || player.effectSkill.isPKCommeson
+                || player.effectSkill.isPKSTT
+                || player.effectSkill.isChibi
+                || player.effectSkill.isHalloween
+                || player.effectSkill.isUseMafuba
+                || player.effectSkill.isIntrinsic
+                || player.effectSkill.playerUseMafuba != null
+                || !player.newSkill.playersTaget.isEmpty()) {
+            throw new AssertionError("hs did not remove every skill effect");
         }
         if (skill.lastTimeUseThisSkill + skill.coolDown > System.currentTimeMillis()) {
             throw new AssertionError("hs did not reset the skill cooldown");

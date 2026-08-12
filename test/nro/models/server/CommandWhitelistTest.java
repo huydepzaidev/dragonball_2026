@@ -12,7 +12,7 @@ public final class CommandWhitelistTest {
 
     public static void main(String[] args) {
         for (String command : List.of(
-                "boss", "brl", "a", "item", "getitem", "hs", "d",
+                "boss", "brl", "a", "item", "getitem", "hs", "kol", "d",
                 "toado", "1", "2", "b", "m 5", "n 4", "dm 100",
                 "hp 100", "ki 100", "up 100", "upp 100", "i 14",
                 "i 14 2", "i 14 2 50:10", " BOSS ", "DM 100")) {
@@ -22,7 +22,7 @@ public final class CommandWhitelistTest {
         }
 
         for (String text : List.of(
-                "boss 1", "brl 1", "item 14", "m abc", "nhiệm vụ 4",
+                "boss 1", "brl 1", "item 14", "kol 1", "m abc", "nhiệm vụ 4",
                 "dame 100", "hp của tôi", "ki cao", "up đồ", "upp đồ",
                 "i love you", "xin chào", "mình đi map 5", "boss mạnh")) {
             if (Command.isSupportedAdminCommand(text)) {
@@ -32,6 +32,9 @@ public final class CommandWhitelistTest {
 
         if (Command.gI().check(new Player(), "boss")) {
             throw new AssertionError("non-admin player executed admin command");
+        }
+        if (Command.gI().check(new Player(), "kol")) {
+            throw new AssertionError("non-admin player executed kol command");
         }
         if (BossManager.ADMIN_BOSS_LIST_MENU_TYPE
                 == BrolyManager.ADMIN_BROLY_LIST_MENU_TYPE) {

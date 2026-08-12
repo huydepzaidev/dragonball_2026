@@ -430,6 +430,20 @@ public final class GameConfigService implements Runnable {
                     success = count > 0;
                     message = "Đã làm mới " + count + " boss.";
                 }
+                case "START_MAINTENANCE" -> {
+                    Client.MaintenanceKickResult result
+                            = Maintenance.gI().enterAdminOnlyMode();
+                    success = result.failed() == 0;
+                    message = "Đã bật bảo trì admin-only: lưu/kick "
+                            + result.kicked() + "/" + result.targeted()
+                            + ", lỗi lưu " + result.failed() + ".";
+                }
+                case "STOP_MAINTENANCE" -> {
+                    success = Maintenance.gI().leaveAdminOnlyMode();
+                    message = success
+                            ? "Đã kết thúc bảo trì; người chơi có thể đăng nhập."
+                            : "Server chưa bật chế độ bảo trì admin-only.";
+                }
                 default -> message = "Lệnh không được hỗ trợ.";
             }
         } catch (Exception e) {
@@ -500,23 +514,40 @@ public final class GameConfigService implements Runnable {
 
     private void updateRuntime(Connection con, boolean online, String error) throws SQLException {
         String sql = "INSERT INTO game_server_runtime "
-                + "(id, server_online, boss_count, last_heartbeat, last_config_load, last_error) "
-                + "VALUES (1, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?) "
+                + "(id, server_online, boss_count, admin_only_mode, "
+                + "last_heartbeat, last_config_load, last_error) "
+                + "VALUES (1, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?) "
                 + "ON DUPLICATE KEY UPDATE server_online=VALUES(server_online), "
-                + "boss_count=VALUES(boss_count), last_heartbeat=VALUES(last_heartbeat), "
+                + "boss_count=VALUES(boss_count), admin_only_mode=VALUES(admin_only_mode), "
+                + "last_heartbeat=VALUES(last_heartbeat), "
                 + "last_config_load=VALUES(last_config_load), last_error=VALUES(last_error)";
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setBoolean(1, online);
             ps.setInt(2, BossManager.getAllManagedBosses().size());
-            ps.setString(3, error == null ? null : trim(error, 500));
+            ps.setBoolean(3, Maintenance.isAdminOnlyMode());
+            ps.setString(4, error == null ? null : trim(error, 500));
             ps.executeUpdate();
+        }
+    }
+
+    public void markAdminOnlyMode(boolean active) {
+        try (Connection con = LocalManager.getConnection();
+                PreparedStatement ps = con.prepareStatement(
+                        "UPDATE game_server_runtime SET admin_only_mode=?, "
+                        + "updated_at=CURRENT_TIMESTAMP WHERE id=1")) {
+            ps.setBoolean(1, active);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            Logger.error("Không thể cập nhật trạng thái bảo trì runtime: "
+                    + compactError(e) + "\n");
         }
     }
 
     public void markOffline() {
         try (Connection con = LocalManager.getConnection();
                 PreparedStatement ps = con.prepareStatement(
-                        "UPDATE game_server_runtime SET server_online=0, updated_at=CURRENT_TIMESTAMP WHERE id=1")) {
+                        "UPDATE game_server_runtime SET server_online=0, admin_only_mode=0, "
+                        + "updated_at=CURRENT_TIMESTAMP WHERE id=1")) {
             ps.executeUpdate();
         } catch (Exception ignored) {
         }

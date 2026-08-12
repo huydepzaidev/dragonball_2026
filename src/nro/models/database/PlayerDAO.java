@@ -31,39 +31,12 @@ import com.google.gson.Gson;
 
 public class PlayerDAO {
 
-    public static final int INITIAL_EVENT_POINTS = 1_000_000;
-    private static final String INITIAL_EVENT_POINTS_FLAG = "event_point_welcome_granted";
     private static final String SUMMER_CARD_MIGRATION_FLAG = "summer_card_points_migrated";
     private static final int[] SUMMER_CARD_IDS = {1204, 1791, 1792, 1793};
 
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     ; 
-
-    /**
-     * Grants the one-time starter event-point balance to players created before
-     * this feature was introduced. The database flag makes the migration
-     * idempotent, so spending points and restarting the server cannot grant the
-     * balance again.
-     */
-    public static void migrateInitialEventPoints() {
-        try {
-            LocalManager.executeUpdate("ALTER TABLE player ADD COLUMN IF NOT EXISTS "
-                    + INITIAL_EVENT_POINTS_FLAG + " TINYINT(1) NOT NULL DEFAULT 0");
-
-            int migratedPlayers = LocalManager.executeUpdate(
-                    "UPDATE player SET event_point = GREATEST(event_point, ?), "
-                    + INITIAL_EVENT_POINTS_FLAG + " = 1 WHERE " + INITIAL_EVENT_POINTS_FLAG + " = 0",
-                    INITIAL_EVENT_POINTS);
-
-            if (migratedPlayers > 0) {
-                Logger.success("Da cap " + INITIAL_EVENT_POINTS
-                        + " diem su kien khoi dau cho " + migratedPlayers + " nhan vat cu.\n");
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("Khong the cap diem su kien khoi dau", e);
-        }
-    }
 
     /**
      * Backfills the hidden summer ranking once from cards that old characters
@@ -469,12 +442,11 @@ public class PlayerDAO {
                     + "data_inventory, data_location, data_point, data_magic_tree, items_body, "
                     + "items_bag, items_box, items_box_lucky_round, items_daban, friends, enemies, data_intrinsic, data_item_time,"
                     + "data_task, data_mabu_egg, data_charm, skills, skills_shortcut, pet,"
-                    + "data_black_ball, data_side_task, BoughtSkill, dailyGift, masterDoesNotAttack, data_luyentap, data_achievement, giftcode, total_damage_maydam, data_duahau_egg, nhiem_vu_kol, event_point, "
-                    + INITIAL_EVENT_POINTS_FLAG + ") "
+                    + "data_black_ball, data_side_task, BoughtSkill, dailyGift, masterDoesNotAttack, data_luyentap, data_achievement, giftcode, total_damage_maydam, data_duahau_egg, nhiem_vu_kol, event_point, event_point_welcome_granted) "
                     + "values ()", userId, name, hair, gender, 0, -1, inventory, location, point, magicTree,
                     itemsBody, itemsBag, itemsBox, itemsBoxLuckyRound, itemsDaBan, friends, enemies, intrinsic,
                     itemTime, task, mabuEgg, charms, skills, skillsShortcut, petData, dataBlackBall, dataSideTask, dataBoughtSkill, dailyGift, 0, luyenTapData, achievementData, giftCode, 0, DuaHauEgg, dataKol,
-                    INITIAL_EVENT_POINTS, 1);
+                    0, 1);
             Logger.success(Logger.PURPLE + "Tạo player mới thành công!\n");
             return true;
         } catch (Exception e) {
@@ -483,7 +455,7 @@ public class PlayerDAO {
         }
     }
 
-    public static void updatePlayer(Player player) {
+    public static boolean updatePlayer(Player player) {
         if (player != null && player.idMark.isLoadedAllDataPlayer()) {
             long st = System.currentTimeMillis();
             try {
@@ -1120,7 +1092,7 @@ public class PlayerDAO {
                         + "nhanthoivang = ?, ruonggo = ?, sieuthanthuy = ?, vodaisinhtu = ?, rongxuong = ?, data_item_event = ?, data_luyentap = ?, data_clan_task = ?, data_vip = ?, "
                         + "rank = ?, data_achievement = ?, giftcode = ?, event_point = ?, data_event = ?, dataBadges = ?, dataTaskBadges = ?, BoughtSkill = ?, LearnSkill = ?, "
                         + "firstTimeLogin = ?,  dailyGift = ?, point_sukien = ?, thachdauwhis = ?, point_sukien1 = ?, point_maydam = ?, total_damage_maydam = ?, data_duahau_egg = ?, checkNhanQua = ?, nhiem_vu_kol = ?, point_sukien2 = ?, point_summer_cards = ? where id = ?";
-                LocalManager.executeUpdate(query,
+                int updatedRows = LocalManager.executeUpdate(query,
                         player.head,
                         player.haveTennisSpaceShip,
                         (player.clan != null ? player.clan.id : -1),
@@ -1184,6 +1156,10 @@ public class PlayerDAO {
                         player.point_sukien2,
                         player.point_summer_cards,
                         player.id);
+                if (updatedRows != 1) {
+                    throw new IllegalStateException("Player " + player.id
+                            + " save affected " + updatedRows + " rows");
+                }
                 SuperRankDAO.updateData(player);
                 if (player.isOffline) {
                     Logger.log(Logger.PURPLE, TimeUtil.getCurrHour() + "h" + TimeUtil.getCurrMin() + "m: Player " + player.name + " updated successfully! " + (System.currentTimeMillis() - st) + "ms\n");
@@ -1191,12 +1167,13 @@ public class PlayerDAO {
                 } else {
                     Logger.success(Logger.PURPLE + TimeUtil.getCurrHour() + "h" + TimeUtil.getCurrMin() + "m: Player " + player.name + " save successfully! " + (System.currentTimeMillis() - st) + "ms\n");
                 }
+                return true;
             } catch (Exception e) {
                 Logger.logException(PlayerDAO.class, e, "Lỗi save player " + player.name);
             }
-
+            return false;
         }
-
+        return false;
     }
 
     public static boolean checkLogout(Connection con, Player player) {

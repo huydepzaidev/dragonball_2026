@@ -68,7 +68,6 @@ public class ServerManager {
 
     public void init() {
         Manager.gI();
-        PlayerDAO.migrateInitialEventPoints();
         PlayerDAO.migrateSummerCardPoints();
         //TaskService.gI().loadTask();
         HistoryTransactionDAO.deleteHistory();

@@ -12,7 +12,8 @@ public class Maintenance implements Runnable {
 
     private static Maintenance instance;
     private int timeInSeconds;
-    public static boolean isRunning = false;
+    public static volatile boolean isRunning = false;
+    private static volatile boolean adminOnlyMode;
 
     private Maintenance() {
     }
@@ -22,6 +23,37 @@ public class Maintenance implements Runnable {
             instance = new Maintenance();
         }
         return instance;
+    }
+
+    public static boolean isLoginRestricted() {
+        return isRunning || adminOnlyMode;
+    }
+
+    public static boolean isAdminOnlyMode() {
+        return adminOnlyMode;
+    }
+
+    public synchronized Client.MaintenanceKickResult enterAdminOnlyMode() {
+        adminOnlyMode = true;
+        GameConfigService.gI().markAdminOnlyMode(true);
+        String message = "Server bắt đầu bảo trì. Dữ liệu sẽ được lưu và "
+                + "người chơi sẽ bị ngắt kết nối; chỉ admin được phép đăng nhập.";
+        Service.gI().sendThongBaoAllPlayer(message);
+        Logger.log(Logger.YELLOW, message + "\n");
+        Client.MaintenanceKickResult result
+                = Client.gI().kickAllNonAdminForMaintenance();
+        Logger.log(Logger.YELLOW, "MAINTENANCE ADMIN-ONLY targeted="
+                + result.targeted() + " kicked=" + result.kicked()
+                + " failed=" + result.failed() + "\n");
+        return result;
+    }
+
+    public synchronized boolean leaveAdminOnlyMode() {
+        boolean wasActive = adminOnlyMode;
+        adminOnlyMode = false;
+        GameConfigService.gI().markAdminOnlyMode(false);
+        Logger.success("Đã kết thúc chế độ bảo trì admin-only.\n");
+        return wasActive;
     }
 
     public synchronized void startCountdown() {

@@ -49,6 +49,9 @@ public final class EventControlService {
 
     private static final int SANTA_NPC_ID = 39;
 
+    /** Normal gameplay items that must never be governed or purged by an event. */
+    private static final Set<Integer> PERMANENT_NON_EVENT_ITEMS = Set.of(568);
+
     /**
      * Legacy boxes sold permanently in the event-point shop and every reward
      * they can create. They remain usable after their original event ends.
@@ -172,7 +175,8 @@ public final class EventControlService {
     }
 
     private boolean isPermanentNonEventItem(int itemId) {
-        return PERSISTENT_LEGACY_REWARD_ITEMS.contains(itemId)
+        return PERMANENT_NON_EVENT_ITEMS.contains(itemId)
+                || PERSISTENT_LEGACY_REWARD_ITEMS.contains(itemId)
                 || santaShopItems.contains(itemId);
     }
 

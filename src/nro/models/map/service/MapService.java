@@ -4,6 +4,7 @@ import nro.models.consts.ConstMap;
 import nro.models.map.Map;
 import nro.models.map.WayPoint;
 import nro.models.map.Zone;
+import nro.models.map.phoban.TreasureMapPolicy;
 import nro.models.mob.Mob;
 import nro.models.player.Player;
 import nro.models.server.Manager;
@@ -101,7 +102,11 @@ public class MapService {
         }
 
         if (this.isMapBanDoKhoBau(mapId)) {
-            if (player.clan == null || player.clan.BanDoKhoBau == null || player.zone == null) {
+            int currentMapId = player.zone != null && player.zone.map != null
+                    ? player.zone.map.mapId : -1;
+            boolean approvedNpcEntry = player.idMark != null && player.idMark.isGoToBDKB();
+            if (player.clan == null || player.clan.BanDoKhoBau == null
+                    || !TreasureMapPolicy.canEnterTreasureMap(currentMapId, approvedNpcEntry)) {
                 // Đưa về zone mặc định an toàn
                 Zone zone = getZone(5);
                 player.location.x = Util.nextInt(100, zone.map.mapWidth - 100);
@@ -390,6 +395,11 @@ public class MapService {
      */
     public List<Zone> getMapCapsule(Player pl) {
         List<Zone> list = new ArrayList<>();
+        if (pl.mapBeforeCapsule != null
+                && (pl.mapBeforeCapsule.map == null
+                || isMapBanDoKhoBau(pl.mapBeforeCapsule.map.mapId))) {
+            pl.mapBeforeCapsule = null;
+        }
         if (pl.mapBeforeCapsule != null
                 && pl.mapBeforeCapsule.map.mapId != 21
                 && pl.mapBeforeCapsule.map.mapId != 22

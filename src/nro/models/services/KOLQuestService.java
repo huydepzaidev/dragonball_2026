@@ -93,6 +93,81 @@ public class KOLQuestService {
         };
     }
 
+    public static int getEventPointReward(int stage) {
+        return stage >= STAGE_WOOD_DUMMY && stage <= STAGE_SUPER_BROLY
+                ? stage * 1_000 : 0;
+    }
+
+    public int claimCurrentQuestReward(Player player) {
+        if (player == null) {
+            return 0;
+        }
+        synchronized (player) {
+            return claimCurrentQuestRewardLocked(player);
+        }
+    }
+
+    public int completeAndClaimCurrentQuest(Player player) {
+        if (player == null) {
+            return 0;
+        }
+        synchronized (player) {
+            if (player.kolQuestStage < STAGE_WOOD_DUMMY) {
+                player.kolQuestStage = STAGE_WOOD_DUMMY;
+            }
+            if (!completeCurrentQuestProgress(player)) {
+                return 0;
+            }
+            return claimCurrentQuestRewardLocked(player);
+        }
+    }
+
+    private int claimCurrentQuestRewardLocked(Player player) {
+        int stage = player.kolQuestStage;
+        long requiredQuantity = getRequiredQuantity(stage);
+        int eventPointReward = getEventPointReward(stage);
+        if (requiredQuantity <= 0 || eventPointReward <= 0
+                || getProgress(player, stage) < requiredQuantity) {
+            return 0;
+        }
+        player.event.addEventPoint(eventPointReward);
+        player.kolQuestStage++;
+        return eventPointReward;
+    }
+
+    private boolean completeCurrentQuestProgress(Player player) {
+        switch (player.kolQuestStage) {
+            case STAGE_WOOD_DUMMY ->
+                player.kolWoodDummyAutoTrainKills = REQUIRED_WOOD_DUMMY;
+            case STAGE_BIRD_DEMON ->
+                player.kolBirdDemonAutoTrainKills = REQUIRED_BIRD_DEMON;
+            case STAGE_FIDE_WAVE ->
+                player.kolFideWaveCompletions = REQUIRED_FIDE_WAVE;
+            case STAGE_CHALLENGE ->
+                player.kolChallengeWins = REQUIRED_CHALLENGE;
+            case STAGE_HARD_DAILY_TASK ->
+                player.kolHardDailyQuestCompletions = REQUIRED_HARD_DAILY_TASK;
+            case STAGE_SUPER_BROLY ->
+                player.kolSuperBrolyDefeats = REQUIRED_SUPER_BROLY;
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private long getRequiredQuantity(int stage) {
+        return switch (stage) {
+            case STAGE_WOOD_DUMMY -> REQUIRED_WOOD_DUMMY;
+            case STAGE_BIRD_DEMON -> REQUIRED_BIRD_DEMON;
+            case STAGE_FIDE_WAVE -> REQUIRED_FIDE_WAVE;
+            case STAGE_CHALLENGE -> REQUIRED_CHALLENGE;
+            case STAGE_HARD_DAILY_TASK -> REQUIRED_HARD_DAILY_TASK;
+            case STAGE_SUPER_BROLY -> REQUIRED_SUPER_BROLY;
+            default -> 0;
+        };
+    }
+
     private long incrementUpTo(long currentValue, long maximum) {
         return currentValue < maximum ? currentValue + 1 : maximum;
     }

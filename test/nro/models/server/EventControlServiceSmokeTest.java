@@ -66,6 +66,7 @@ public final class EventControlServiceSmokeTest {
                 || !EventControlService.gI().canAcquireItem(691)
                 || EventControlService.gI().canAcquireItem(648)
                 || !EventControlService.gI().canAcquireItem(1628)
+                || !EventControlService.gI().canAcquireItem(568)
                 || euroPurgeItems.contains(1628)
                 || EventControlService.gI().isEnabled(EventControlService.HUNG_VUONG)
                 || EventControlService.gI().canCreateBoss(-355)

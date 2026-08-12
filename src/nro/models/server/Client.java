@@ -50,7 +50,7 @@ public class Client implements Runnable {
         return instance;
     }
 
-    public void put(Player player) {
+    public synchronized void put(Player player) {
         if (!players_id.containsKey(player.id)) {
             this.players_id.put(player.id, player);
         }
@@ -82,7 +82,7 @@ public class Client implements Runnable {
         ServerManager.gI().disconnect(session);
     }
 
-    private void remove(Player player) {
+    private synchronized void remove(Player player) {
         this.players_id.remove(player.id);
         this.players_name.remove(player.name);
         this.players_userId.remove(player.getSession().userId);
@@ -131,6 +131,56 @@ public class Client implements Runnable {
             this.remove(session);
             session.disconnect();
         }
+    }
+
+    public MaintenanceKickResult kickAllNonAdminForMaintenance() {
+        List<Player> snapshot = snapshotPlayers();
+        int targeted = 0;
+        int kicked = 0;
+        int failed = 0;
+        for (Player player : snapshot) {
+            if (player == null || player.getSession() == null
+                    || player.getSession().isAdmin) {
+                continue;
+            }
+            targeted++;
+            MySession session = player.getSession();
+            synchronized (session) {
+                if (session.player == null) {
+                    continue;
+                }
+                if (!savePlayerForMaintenance(player)) {
+                    failed++;
+                    Logger.error("Không kick player " + player.name
+                            + " vì chưa lưu được dữ liệu.\n");
+                    continue;
+                }
+                kickSession(session);
+                kicked++;
+            }
+        }
+        return new MaintenanceKickResult(targeted, kicked, failed);
+    }
+
+    private boolean savePlayerForMaintenance(Player player) {
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            if (PlayerDAO.updatePlayer(player)) {
+                return true;
+            }
+            if (attempt < 3) {
+                Logger.error("Save player " + player.name + " thất bại lần "
+                        + attempt + ", đang thử lại.\n");
+                Functions.sleep(200L * attempt);
+            }
+        }
+        return false;
+    }
+
+    private synchronized List<Player> snapshotPlayers() {
+        return new ArrayList<>(players);
+    }
+
+    public record MaintenanceKickResult(int targeted, int kicked, int failed) {
     }
 
     public Player getPlayer(long playerId) {

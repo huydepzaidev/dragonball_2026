@@ -23,17 +23,19 @@ import nro.models.player.Player;
 import nro.models.services.EffectSkillService;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
+import nro.models.services.KOLQuestService;
 import nro.models.services.PetService;
 import nro.models.services.PlayerService;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
 import nro.models.services_func.Input;
 import nro.models.utils.SystemMetrics;
+import nro.models.utils.Util;
 
 public final class Command {
 
     private static final Set<String> EXACT_ADMIN_COMMANDS = Set.of(
-            "boss", "brl", "a", "item", "getitem", "hs", "d",
+            "boss", "brl", "a", "item", "getitem", "hs", "kol", "d",
             "toado", "1", "2", "b");
 
     private static Command instance;
@@ -59,6 +61,7 @@ public final class Command {
         adminCommands.put("item", player -> Input.gI().createFormGiveItem(player));
         adminCommands.put("getitem", player -> Input.gI().createFormGetItem(player));
         adminCommands.put("hs", Command::restoreAdminPlayer);
+        adminCommands.put("kol", Command::completeAdminKOLQuest);
         adminCommands.put("d", player -> Service.gI().setPos(
                 player, player.location.x, player.location.y + 10));
         adminCommands.put("toado", player -> Service.gI().sendThongBaoOK(player,
@@ -71,11 +74,25 @@ public final class Command {
 
     static void restoreAdminPlayer(Player player) {
         Service.gI().releaseCooldownSkill(player);
-        EffectSkillService.gI().removeControlEffects(player);
+        EffectSkillService.gI().removeAllEffects(player);
         player.nPoint.setHp(player.nPoint.hpMax);
         player.nPoint.setMp(player.nPoint.mpMax);
         PlayerService.gI().sendInfoHpMpMoney(player);
         Service.gI().Send_Info_NV(player);
+    }
+
+    static void completeAdminKOLQuest(Player player) {
+        int completedStage = Math.max(KOLQuestService.STAGE_WOOD_DUMMY, player.kolQuestStage);
+        int reward = KOLQuestService.gI().completeAndClaimCurrentQuest(player);
+        if (reward <= 0) {
+            Service.gI().sendThongBao(player, "Bạn đã hoàn thành toàn bộ nhiệm vụ KOL.");
+            return;
+        }
+        Service.gI().sendThongBao(player,
+                "Admin đã hoàn thành nhiệm vụ KOL cấp " + completedStage
+                + " và nhận " + Util.numberToMoney(reward)
+                + " điểm sự kiện. Tổng điểm: "
+                + Util.numberToMoney(player.event.getEventPoint()));
     }
 
     private void initParameterizedCommands() {

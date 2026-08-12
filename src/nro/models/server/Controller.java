@@ -917,6 +917,10 @@ public class Controller implements IMessageHandler {
     public void sendInfo(MySession session) {
         try {
             Player player = session.player;
+            player.setClothes.setup();
+            if (player.pet != null) {
+                player.pet.setClothes.setup();
+            }
             DataGame.sendTileSetInfo(session);
             IntrinsicService.gI().sendInfoIntrinsic(player);
             Service.gI().point(player);
@@ -935,10 +939,6 @@ public class Controller implements IMessageHandler {
                 SuperRankDAO.insertData(player);
             }
             ServerNotify.gI().sendNotifyTab(player);
-            player.setClothes.setup();
-            if (player.pet != null) {
-                player.pet.setClothes.setup();
-            }
             ItemTimeService.gI().sendCanAutoPlay(player);
             player.start();
         } catch (Exception e) {

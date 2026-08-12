@@ -30,6 +30,7 @@ import nro.models.services.ItemService;
 import nro.models.services.KOLQuestService;
 import nro.models.services.SummerEventService;
 import nro.models.map.service.MapService;
+import nro.models.map.phoban.TreasureMapPolicy;
 import nro.models.skill.Skill;
 import nro.models.task.BadgesTaskService;
 import nro.models.utils.TimeUtil;
@@ -63,6 +64,9 @@ public class Mob {
 
     public long lastTimeDie;
     public int lvMob = 0;
+    private int baseMaxHp;
+    private volatile boolean naturalSuperMob;
+    private volatile boolean pendingNaturalSuperMob;
     public int status = 5;
     public int type = 1;
 
@@ -85,6 +89,7 @@ public class Mob {
         this.pDame = mob.pDame;
         this.pTiemNang = mob.pTiemNang;
         this.type = mob.type;
+        this.baseMaxHp = mob.point.getHpFull();
         this.setTiemNang();
         if (this.tempId == 118) {
             this.type = 1; // loại mob thường
@@ -108,6 +113,76 @@ public class Mob {
         this.maxTiemNang = (long) this.point.getHpFull() * (long) (this.pTiemNang + Util.nextInt(-2, 2)) / 100L;
     }
 
+    public synchronized int getBaseMaxHp() {
+        if (baseMaxHp <= 0 && point != null) {
+            baseMaxHp = point.getHpFull();
+        }
+        return baseMaxHp;
+    }
+
+    public boolean isNaturalSuperMob() {
+        return naturalSuperMob;
+    }
+
+    public boolean isPendingNaturalSuperMob() {
+        return pendingNaturalSuperMob;
+    }
+
+    public boolean canBecomeNaturalSuperMob() {
+        if (zone == null || zone.map == null || naturalSuperMob || pendingNaturalSuperMob
+                || isBigBoss() || zone.map.type != ConstMap.MAP_NORMAL
+                || MapService.gI().isMapRiengTu(zone.map.mapId)
+                || MapService.gI().isMapLuyenTap(zone.map.mapId)) {
+            return false;
+        }
+        if (tempId <= 0 || tempId == ConstMob.MOC_NHAN
+                || tempId == ConstMob.BU_NHIN_MA_QUAI
+                || tempId == ConstMob.CO_MAY_HUY_DIET
+                || tempId == ConstMob.MAY_DO_SUC_MANH) {
+            return false;
+        }
+        return NaturalSuperMobPolicy.isEligibleBaseHp(getBaseMaxHp());
+    }
+
+    public synchronized boolean scheduleNaturalSuperRespawn() {
+        if (!canBecomeNaturalSuperMob()) {
+            return false;
+        }
+        pendingNaturalSuperMob = true;
+        return true;
+    }
+
+    private synchronized void applyNaturalSuperRespawnState() {
+        int originalMaxHp = getBaseMaxHp();
+        point.maxHp = originalMaxHp;
+        if (!pendingNaturalSuperMob) {
+            naturalSuperMob = false;
+            lvMob = 0;
+            point.hp = originalMaxHp;
+            return;
+        }
+
+        pendingNaturalSuperMob = false;
+        naturalSuperMob = true;
+        lvMob = NaturalSuperMobPolicy.randomAuraLevel();
+        point.maxHp = NaturalSuperMobPolicy.rollSuperHp(originalMaxHp);
+        point.hp = point.maxHp;
+        setTiemNang();
+    }
+
+    private synchronized void clearNaturalSuperAfterDeath() {
+        if (!naturalSuperMob) {
+            return;
+        }
+        naturalSuperMob = false;
+        lvMob = 0;
+        point.maxHp = getBaseMaxHp();
+        if (point.hp > point.maxHp) {
+            point.hp = point.maxHp;
+        }
+        sendSieuQuai(0);
+    }
+
     public boolean isDie() {
         return this.point.gethp() <= 0;
     }
@@ -123,8 +198,10 @@ public class Mob {
         }
     }
 
-    public void injured(Player plAtt, long damage, boolean dieWhenHpFull) {
+    public synchronized void injured(Player plAtt, long damage, boolean dieWhenHpFull) {
         if (!this.isDie()) {
+            boolean naturalSuperAtHit = this.naturalSuperMob;
+            boolean diedThisHit = false;
             if (damage >= this.point.hp) {
                 damage = this.point.hp;
             }
@@ -153,8 +230,9 @@ public class Mob {
                     }
                 }
             }
-            if (!dieWhenHpFull && !isBigBoss() && !MapService.gI().isMapPhoBan(this.zone.map.mapId) && this.lvMob > 0 && plAtt != null && plAtt.charms.tdOaiHung < System.currentTimeMillis()) {
-                damage = (int) ((this.point.maxHp <= 20_000_000 ? this.point.maxHp * 1 : 2) * (10.0 / 100));
+            if (!dieWhenHpFull && naturalSuperAtHit && plAtt != null
+                    && (plAtt.charms == null || plAtt.charms.tdOaiHung < System.currentTimeMillis())) {
+                damage = Math.min(damage, NaturalSuperMobPolicy.damageCapForHp(this.point.maxHp));
                 this.mobAttackPlayer(plAtt);
             }
             if (plAtt != null && plAtt.isBoss && this.tempId > 0 && Util.isTrue(1, 2) && Util.canDoWithTime(lastTimeAttackPlayer, 2500)) {
@@ -169,6 +247,7 @@ public class Mob {
             this.point.hp -= damage;
             addTemporaryEnemies(plAtt);
             if (this.isDie()) {
+                diedThisHit = true;
                 this.status = 0;
                 this.setDie();
                 this.temporaryEnemies.clear();
@@ -186,6 +265,7 @@ public class Mob {
                 if (this.id == 14) {
                     this.zone.isbulon2Alive = false;
                 }
+                this.zone.recordMobDefeatForNaturalSuper(this, naturalSuperAtHit);
             } else {
                 this.sendMobStillAliveAffterAttacked((int) damage, plAtt != null ? (plAtt.nPoint != null && plAtt.nPoint.isCrit) : false);
             }
@@ -193,13 +273,22 @@ public class Mob {
                 if (plAtt.isPl() && plAtt.satellite != null && plAtt.satellite.isDefend) {
                     plAtt.satellite.isDefend = false;
                 }
-                Service.gI().addSMTN(plAtt, (byte) 2, getTiemNangForPlayer(plAtt, damage), true);
-                TrainingService.gI().tangTnsmLuyenTap(plAtt, getTiemNangForPlayer(plAtt, damage));
+                long earnedExperience = getTiemNangForPlayer(plAtt, damage);
+                if (earnedExperience > 0) {
+                    if (naturalSuperAtHit) {
+                        earnedExperience = NaturalSuperMobPolicy.multiplyExperience(earnedExperience);
+                    }
+                    Service.gI().addSMTN(plAtt, (byte) 2, earnedExperience, true);
+                    TrainingService.gI().tangTnsmLuyenTap(plAtt, earnedExperience);
+                }
                 plAtt.total_damage_maydam += damage;
                 Service.gI().updatePlayerTotalDamage(plAtt);
                 long realDamage = this.point.hp / 100 > 0 ? this.point.hp / 100 : 1;
 
                 damage = this.point.hp / 100 > 0 ? this.point.hp / 100 : 1;
+            }
+            if (diedThisHit && naturalSuperAtHit) {
+                clearNaturalSuperAfterDeath();
             }
         }
         if (MapService.gI().isMapCadic(this.zone.map.mapId) && plAtt != null) {
@@ -231,10 +320,19 @@ public class Mob {
     }
 
     public long getTiemNangForPlayer(Player pl, long dame) {
+        boolean treasureMap = this.zone != null && this.zone.map != null
+                && TreasureMapPolicy.isTreasureMap(this.zone.map.mapId);
+        if (treasureMap && (pl.nPoint == null
+                || !TreasureMapPolicy.canReceiveExperience(pl.nPoint.dame))) {
+            return 0;
+        }
         int levelPlayer = Service.gI().getCurrLevel(pl);
         int levelMob = this.level;
-        int checkLevel = Math.abs(levelPlayer - this.level);
-        long tiemNang = (long) (dame + (point.getHpFull() * 0.0005));
+        int checkLevel = treasureMap ? 0 : Math.abs(levelPlayer - this.level);
+        int rewardMaxHp = naturalSuperMob ? getBaseMaxHp() : point.getHpFull();
+        long tiemNang = treasureMap
+                ? TreasureMapPolicy.baseExperience(dame, rewardMaxHp)
+                : (long) (dame + (rewardMaxHp * 0.0005));
         switch (this.tempId) {
             case 0:
                 tiemNang = 1;
@@ -253,7 +351,10 @@ public class Mob {
             tiemNang = 1;
         }
         if (pl.nPoint != null) {
-            tiemNang = (int) pl.nPoint.calSucManhTiemNang(tiemNang);
+            long calculatedExperience = pl.nPoint.calSucManhTiemNang(tiemNang);
+            tiemNang = treasureMap
+                    ? TreasureMapPolicy.toIntExperience(calculatedExperience)
+                    : (int) calculatedExperience;
         } else {
             return 0;
         }
@@ -419,7 +520,7 @@ public class Mob {
             }
         }
 
-        if (this.lvMob > 0 && !MapService.gI().isMapPhoBan(this.zone.map.mapId)) {
+        if (this.naturalSuperMob) {
             dameMob = (int) (player.nPoint.hpMax * 0.1);
         }
 
@@ -431,7 +532,7 @@ public class Mob {
             dameMob = (int) Math.round(dameMob * 0.1);
         }
 
-        if (this.lvMob > 0 && player.charms != null && player.charms.tdOaiHung > System.currentTimeMillis()) {
+        if (this.naturalSuperMob && player.charms != null && player.charms.tdOaiHung > System.currentTimeMillis()) {
             // giữ nguyên dameMob
         }
 
@@ -477,13 +578,7 @@ public class Mob {
     }
 
     public int lvMob() {
-        for (Mob mobMap : this.zone.mobs) {
-            if (mobMap.lvMob > 0) {
-                return 0;
-            }
-        }
-        this.lvMob = this.tempId > 12 && this.tempId < 34 && !isBigBoss() ? Util.isTrue(0, 10000) ? 1 : 0 : 0;
-        this.point.hp = this.lvMob > 0 ? this.point.maxHp <= 20000000 ? this.point.maxHp * 10 : 2000000000 : this.point.maxHp;
+        applyNaturalSuperRespawnState();
         return this.lvMob;
     }
 
@@ -496,7 +591,10 @@ public class Mob {
             msg.writer().writeByte(lvMob());
             msg.writer().writeInt(this.point.hp);
             Service.gI().sendMessAllPlayerInMap(this.zone, msg);
-            this.sendMobMaxHp(this.point.hp);
+            this.sendMobMaxHp(this.point.maxHp);
+            if (this.naturalSuperMob) {
+                this.sendSieuQuai(this.lvMob);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -1199,6 +1297,21 @@ public class Mob {
         }
     }
 
+    public void sendSieuQuai(Player player, int type) {
+        if (player == null) {
+            return;
+        }
+        Message msg;
+        try {
+            msg = new Message(-75);
+            msg.writer().writeByte(this.id);
+            msg.writer().writeByte(type);
+            player.sendMessage(msg);
+            msg.cleanup();
+        } catch (IOException e) {
+        }
+    }
+
     public void sendDisable(boolean bool) {
         Message msg;
         try {
@@ -1302,9 +1415,10 @@ public class Mob {
         }
     }
 
-    public void startDie() {
+    public synchronized void startDie() {
         Message msg;
         try {
+            boolean wasNaturalSuper = this.naturalSuperMob;
             setDie();
             this.point.hp = -1;
             this.status = 0;
@@ -1312,6 +1426,9 @@ public class Mob {
             msg.writer().writeByte(this.id);
             Service.gI().sendMessAllPlayerInMap(this.zone, msg);
             msg.cleanup();
+            if (wasNaturalSuper) {
+                clearNaturalSuperAfterDeath();
+            }
         } catch (IOException e) {
         }
     }

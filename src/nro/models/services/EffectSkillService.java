@@ -175,6 +175,84 @@ public class EffectSkillService {
         }
     }
 
+    /**
+     * Removes every skill effect currently owned by or applied to a player.
+     * This is intentionally broader than {@link #removeControlEffects(Player)}
+     * and is reserved for explicit full-cleanse flows such as the admin hs command.
+     */
+    public void removeAllEffects(Player player) {
+        if (player == null || player.effectSkill == null) {
+            return;
+        }
+
+        removeControlEffects(player);
+
+        if (player.effectSkill.isCharging) {
+            stopCharge(player);
+        }
+        if (player.newSkill != null && player.newSkill.isStartSkillSpecial) {
+            player.newSkill.closeSkillSpecial();
+        }
+        if (player.effectSkill.isShielding) {
+            removeShield(player);
+            ItemTimeService.gI().removeItemTime(player, 3784);
+        }
+        if (player.effectSkill.isMonkey) {
+            removeMonkeyForFullCleanse(player);
+        }
+        if (player.effectSkill.tiLeHPHuytSao != 0) {
+            removeHuytSao(player);
+        }
+        if (player.effectSkill.isTanHinh) {
+            removeTanHinh(player);
+        }
+        if (player.effectSkill.isDameBuff) {
+            removeDameBuff(player);
+        }
+        if (player.effectSkill.isPKCommeson) {
+            removePKCommeson(player);
+        }
+        if (player.effectSkill.isPKSTT) {
+            removePKSTT(player);
+        }
+        if (player.effectSkill.isChibi) {
+            removeChibi(player);
+        }
+        if (player.effectSkill.isHalloween) {
+            removeHalloween(player);
+            ItemTimeService.gI().removeItemTime(player, 5101);
+        }
+
+        // Cancel pending timed skill actions without triggering their completion effect.
+        if (player.effectSkill.isUseMafuba && player.newSkill != null) {
+            player.newSkill.playersTaget.clear();
+            player.newSkill.mobsTaget.clear();
+        }
+        player.effectSkill.isUseMafuba = false;
+        player.effectSkill.isIntrinsic = false;
+        player.effectSkill.playerUseMafuba = null;
+
+        // Recalculate max stats after transformation and stat-changing effects are gone.
+        Service.gI().point(player);
+
+        // Clear any remaining client-only skill visuals in one final packet.
+        sendEffectPlayer(player, player, TURN_OFF_ALL_EFFECT, (byte) 0);
+    }
+
+    private void removeMonkeyForFullCleanse(Player player) {
+        player.effectSkill.isMonkey = false;
+        player.effectSkill.levelMonkey = 0;
+        if (player.nPoint.hp > player.nPoint.hpMax) {
+            player.nPoint.setHp(player.nPoint.hpMax);
+        }
+        Service.gI().setNotMonkey(player);
+        Service.gI().Send_Caitrang(player);
+        Service.gI().point(player);
+        PlayerService.gI().sendInfoHpMp(player);
+        Service.gI().Send_Info_NV(player);
+        Service.gI().sendInfoPlayerEatPea(player);
+    }
+
     public void setAnTroi(Player player, Player plTroi, long lastTimeAnTroi, int timeAnTroi) {
         player.effectSkill.anTroi = true;
         player.effectSkill.plTroi = plTroi;

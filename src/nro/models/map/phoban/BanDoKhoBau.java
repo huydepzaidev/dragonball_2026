@@ -66,6 +66,7 @@ public class BanDoKhoBau implements Runnable {
             if (Util.canDoWithTime(lastTimeOpen, TIME_BAN_DO_KHO_BAU) || (kickoutbdkb && Util.canDoWithTime(timeKickOutBDKB, 60000))) {
                 finish();
                 dispose();
+                return;
             }
 
             allCharactersDead = true;
@@ -168,24 +169,30 @@ public class BanDoKhoBau implements Runnable {
                 List<Mob> mobs = zone.mobs;
                 for (int i = 0; i < mobs.size(); i++) {
                     Mob mob = mobs.get(i);
-                    if (((i == 5 || i == 10) && zone.map.mapId == 135) || (i == 5 && zone.map.mapId == 136) || (i == 5 && zone.map.mapId == 137)) {
+                    boolean superMob = ((i == 5 || i == 10) && zone.map.mapId == 135)
+                            || (i == 5 && zone.map.mapId == 136)
+                            || (i == 5 && zone.map.mapId == 137);
+                    mob.level = level;
+                    if (superMob) {
                         mob.lvMob = 1;
                         mob.point.dame = (int) Math.min((long) level * 600 * mob.tempId * 10, 2_147_483_647);
-                        mob.point.maxHp = (int) Math.min((long) level * 469799 * mob.tempId, 2_147_483_647);
+                        mob.point.maxHp = TreasureMapPolicy.mobMaxHp(level, true);
                         mob.hoiSinh();
                         mob.hoiSinhMobPhoBan();
                     } else {
                         mob.lvMob = 0;
                         mob.point.dame = (int) Math.min((long) level * 200 * mob.tempId, 2_147_483_647);
-                        mob.point.maxHp = (int) Math.min((long) level * 469799 * mob.tempId, 2_147_483_647);
+                        mob.point.maxHp = TreasureMapPolicy.mobMaxHp(level, false);
                         mob.hoiSinh();
                         mob.hoiSinhMobPhoBan();
                     }
                 }
             } else {
                 for (Mob mob : zone.mobs) {
+                    mob.level = level;
+                    mob.lvMob = 0;
                     mob.point.dame = (int) Math.min((long) level * 31 * 50 * mob.tempId, 2_147_483_647);
-                    mob.point.maxHp = (int) Math.min((long) level * 310799 * 50 * mob.tempId, 2_147_483_647);
+                    mob.point.maxHp = TreasureMapPolicy.mobMaxHp(level, false);
                     mob.hoiSinh();
                     mob.hoiSinhMobPhoBan();
                 }
@@ -214,15 +221,30 @@ public class BanDoKhoBau implements Runnable {
         for (Zone zone : zones) {
             List<Player> playersSnapshot = new ArrayList<>(zone.getPlayers());
             for (Player pl : playersSnapshot) {
-                if (pl != null && pl.clan != null && pl.clan.BanDoKhoBau == this) {
-                    sendThanhTichBanDoKhoBau(pl);
+                try {
+                    if (pl != null && pl.clan != null && pl.clan.BanDoKhoBau == this) {
+                        sendThanhTichBanDoKhoBau(pl);
+                    }
+                } catch (Exception exception) {
+                    exception.printStackTrace();
                 }
-                kickOutOfBDKB(pl);
+                try {
+                    kickOutOfBDKB(pl);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
             }
         }
     }
 
     private void kickOutOfBDKB(Player player) {
+        if (player == null || player.zone == null || player.zone.map == null) {
+            return;
+        }
+        if (player.mapBeforeCapsule != null && player.mapBeforeCapsule.map != null
+                && MapService.gI().isMapBanDoKhoBau(player.mapBeforeCapsule.map.mapId)) {
+            player.mapBeforeCapsule = null;
+        }
         if (MapService.gI().isMapBanDoKhoBau(player.zone.map.mapId)) {
             ChangeMapService.gI().changeMapBySpaceShip(player, 5, -1, 1038);
         }
@@ -244,27 +266,45 @@ public class BanDoKhoBau implements Runnable {
     }
 
     private void removeTextBanDoKhoBau() {
+        if (this.clan == null) {
+            return;
+        }
         for (Player pl : this.clan.membersInGame) {
             ItemTimeService.gI().removeTextBanDoKhoBau(pl);
         }
     }
 
     public void dispose() {
-        if (boss != null) {
-            this.boss.leaveMap();
+        this.isOpened = false;
+        Clan dungeonClan = this.clan;
+        try {
+            if (boss != null) {
+                this.boss.leaveMap();
+            }
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
         for (Zone zone : zones) {
             for (int i = zone.items.size() - 1; i >= 0; i--) {
                 if (i < zone.items.size()) {
-                    ItemMapService.gI().removeItemMap(zone.items.get(i));
+                    try {
+                        ItemMapService.gI().removeItemMap(zone.items.get(i));
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                    }
                 }
             }
         }
-        this.removeTextBanDoKhoBau();
+        try {
+            this.removeTextBanDoKhoBau();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
         this.allCharactersDead = false;
         this.boss = null;
-        this.isOpened = false;
-        this.clan.BanDoKhoBau = null;
+        if (dungeonClan != null && dungeonClan.BanDoKhoBau == this) {
+            dungeonClan.BanDoKhoBau = null;
+        }
         this.clan = null;
         this.kickoutbdkb = false;
     }

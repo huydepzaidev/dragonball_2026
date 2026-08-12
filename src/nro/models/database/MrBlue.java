@@ -22,6 +22,7 @@ import nro.models.player.Player;
 import nro.models.skill.Skill;
 import nro.models.task.TaskMain;
 import nro.models.server.Client;
+import nro.models.server.Maintenance;
 import nro.models.server.Manager;
 import nro.models.network.MySession;
 import nro.models.player_system.AntiLogin;
@@ -66,6 +67,16 @@ public class MrBlue {
             if (rs.first()) {
                 session.userId = rs.getInt("account.id");
                 session.isAdmin = rs.getBoolean("is_admin");
+                if (Maintenance.isLoginRestricted() && !session.isAdmin) {
+                    Service.gI().sendThongBaoOK(session,
+                            "Server đang bảo trì, chỉ tài khoản admin được phép đăng nhập.");
+                    return null;
+                }
+                if (!session.isAdmin && Client.gI().getPlayers().size() >= Manager.MAX_PLAYER) {
+                    Service.gI().sendThongBaoOK(session, "Máy chủ hiện đang quá tải, "
+                            + "cư dân vui lòng di chuyển sang máy chủ khác.");
+                    return null;
+                }
                 session.lastTimeLogout = rs.getTimestamp("last_time_logout").getTime();
                 session.actived = rs.getBoolean("active");
                 session.goldBar = rs.getInt("account.thoi_vang");

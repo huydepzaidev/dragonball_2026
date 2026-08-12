@@ -1893,13 +1893,21 @@ public class UseItem {
         //Kiểm tra số lượng người trong khu
 
         if (zoneChose.getNumOfPlayers() > 25
+                || MapService.gI().isMapBanDoKhoBau(zoneChose.map.mapId)
                 || MapService.gI().isMapDoanhTrai(zoneChose.map.mapId)
                 || MapService.gI().isMapMaBu(zoneChose.map.mapId)
                 || MapService.gI().isMapHuyDiet(zoneChose.map.mapId)) {
+            if (MapService.gI().isMapBanDoKhoBau(zoneChose.map.mapId)) {
+                pl.mapBeforeCapsule = null;
+            }
             Service.gI().sendThongBao(pl, "Hiện tại không thể vào được khu!");
             return;
         }
-        if (index != 0 || zoneChose.map.mapId == 21
+        boolean leavingTreasureMap = pl.zone != null && pl.zone.map != null
+                && MapService.gI().isMapBanDoKhoBau(pl.zone.map.mapId);
+        if (leavingTreasureMap) {
+            pl.mapBeforeCapsule = null;
+        } else if (index != 0 || zoneChose.map.mapId == 21
                 || zoneChose.map.mapId == 22
                 || zoneChose.map.mapId == 23) {
             pl.mapBeforeCapsule = pl.zone;

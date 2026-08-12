@@ -30,6 +30,8 @@ import nro.models.Bot.BotAttackplayer;
 import nro.models.mob_bigboss.GauTuongCuop;
 import nro.models.npc.*;
 import nro.models.player.Pet;
+import nro.models.mob.NaturalSuperMobPolicy;
+import nro.models.mob.NaturalSuperMobSpawnState;
 
 public class Zone {
 
@@ -81,6 +83,8 @@ public class Zone {
     public Player Npc;
     public int mapId;
     private int nextMobId = 1000;
+    private final NaturalSuperMobSpawnState naturalSuperMobSpawnState
+            = new NaturalSuperMobSpawnState();
 
     public boolean isFullPlayer() {
         return this.players.size() >= this.maxPlayer;
@@ -205,6 +209,33 @@ public class Zone {
 
     public int getNumOfPlayers() {
         return this.players.size();
+    }
+
+    public synchronized void recordMobDefeatForNaturalSuper(Mob mob, boolean wasNaturalSuper) {
+        if (wasNaturalSuper || mob == null || !mob.canBecomeNaturalSuperMob()) {
+            return;
+        }
+
+        int playerCount = getNumOfPlayers();
+        int occupiedSlots = 0;
+        for (Mob zoneMob : this.mobs) {
+            if (zoneMob != null
+                    && (zoneMob.isNaturalSuperMob() || zoneMob.isPendingNaturalSuperMob())) {
+                occupiedSlots++;
+            }
+        }
+
+        if (naturalSuperMobSpawnState.recordEligibleNormalKill(playerCount, occupiedSlots)) {
+            mob.scheduleNaturalSuperRespawn();
+        }
+    }
+
+    public int getNaturalSuperMobKillProgress() {
+        return naturalSuperMobSpawnState.getEligibleNormalKills();
+    }
+
+    public int getNaturalSuperMobRequiredKills() {
+        return NaturalSuperMobPolicy.requiredNormalKills(getNumOfPlayers());
     }
 
     public int getNumOfBosses() {
@@ -731,6 +762,12 @@ public class Zone {
             pl.sendMessage(msg);
 
             msg.cleanup();
+
+            for (Mob mob : this.mobs) {
+                if (mob != null && mob.isNaturalSuperMob() && !mob.isDie()) {
+                    mob.sendSieuQuai(pl, mob.lvMob);
+                }
+            }
 
         } catch (Exception e) {
             Logger.logException(Service.class, e);
