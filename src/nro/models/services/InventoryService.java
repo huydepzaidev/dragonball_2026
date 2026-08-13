@@ -36,6 +36,8 @@ public class InventoryService {
     private static final int CHILDRENS_GIFT_BOX_ID = 1608;
     private static final int SANTA_DISCIPLE_CHARM_ID = 1628;
     private static final int COCONUT_ITEM_ID = 694;
+    static final int DESTROY_ITEM_POWER_REQUIRE_BILLIONS = 50;
+    static final long DESTROY_ITEM_POWER_REQUIRE = DESTROY_ITEM_POWER_REQUIRE_BILLIONS * 1_000_000_000L;
     static final byte BACK_ACCESSORY_TYPE = 11;
     static final byte SPECIAL_SKILL_BOOK_TYPE = 25;
     static final int PET_BACK_ACCESSORY_SLOT = 7;
@@ -377,13 +379,7 @@ public class InventoryService {
         }
 
         // Kiểm tra yêu cầu sức mạnh
-        long powerRequire = item.template.strRequire;
-        for (Item.ItemOption io : item.itemOptions) {
-            if (io.optionTemplate.id == 21) {
-                powerRequire = io.param * 1000000000L;
-                break;
-            }
-        }
+        long powerRequire = getPowerRequirement(item);
         if (player.nPoint.power < powerRequire) {
             Service.gI().sendThongBaoOK(player.isPet ? ((Pet) player).master : player, "Sức mạnh không đủ yêu cầu!");
             return sItem;
@@ -519,13 +515,7 @@ public class InventoryService {
                 Item itemBody = player.inventory.itemsBody.get(item.template.type == 32 ? 6 : item.template.type);
                 if (!itemBody.isNotNullItem()) {
                     if (item.template.gender == player.gender || item.template.gender == 3) {
-                        long powerRequire = item.template.strRequire;
-                        for (Item.ItemOption io : item.itemOptions) {
-                            if (io.optionTemplate.id == 21) {
-                                powerRequire = io.param * 1000000000L;
-                                break;
-                            }
-                        }
+                        long powerRequire = getPowerRequirement(item);
                         if (powerRequire <= player.nPoint.power) {
                             player.inventory.itemsBody.set(item.template.type == 32 ? 6 : item.template.type, item);
                             player.inventory.itemsBox.set(index, itemBody);
@@ -608,6 +598,7 @@ public class InventoryService {
                 if (!item.isNotNullItem()) {
                     continue;
                 }
+                normalizeDestroyItemPowerRequirement(item);
                 msg.writer().writeShort(item.template.id);
                 msg.writer().writeInt(item.quantity);
                 msg.writer().writeUTF(item.getInfo());
@@ -650,6 +641,7 @@ public class InventoryService {
                 if (!item.isNotNullItem()) {
                     msg.writer().writeShort(-1);
                 } else {
+                    normalizeDestroyItemPowerRequirement(item);
                     msg.writer().writeShort(item.template.id);
                     msg.writer().writeInt(item.quantity);
                     msg.writer().writeUTF(item.getInfo());
@@ -692,6 +684,7 @@ public class InventoryService {
             for (Item it : player.inventory.itemsBox) {
                 msg.writer().writeShort(it.isNotNullItem() ? it.template.id : -1);
                 if (it.isNotNullItem()) {
+                    normalizeDestroyItemPowerRequirement(it);
                     msg.writer().writeInt(it.quantity);
                     msg.writer().writeUTF(it.getInfo());
                     msg.writer().writeUTF(it.getContent());
@@ -1332,18 +1325,79 @@ public class InventoryService {
     }
 
     public boolean fullSetThan(Player player) {
+        if (player == null || player.inventory == null || player.inventory.itemsBody == null
+                || player.inventory.itemsBody.size() < 5) {
+            return false;
+        }
         for (int i = 0; i < 5; i++) {
             Item item = player.inventory.itemsBody.get(i);
-            if (item == null || item.template == null || item.template.level != 13) {
+            if (item == null || !item.isNotNullItem() || !item.isThanLinh()) {
                 return false;
             }
         }
         return true;
     }
 
+    static long getPowerRequirement(Item item) {
+        if (item == null || !item.isNotNullItem()) {
+            return 0;
+        }
+        if (item.isDHD()) {
+            return DESTROY_ITEM_POWER_REQUIRE;
+        }
+        if (item.itemOptions != null) {
+            for (Item.ItemOption option : item.itemOptions) {
+                if (option != null && option.optionTemplate != null && option.optionTemplate.id == 21) {
+                    return option.param * 1_000_000_000L;
+                }
+            }
+        }
+        return item.template.strRequire;
+    }
+
+    static void normalizeDestroyItemPowerRequirement(Item item) {
+        if (item == null || !item.isNotNullItem() || !item.isDHD() || item.itemOptions == null) {
+            return;
+        }
+        Item.ItemOption requirement = null;
+        for (int index = item.itemOptions.size() - 1; index >= 0; index--) {
+            Item.ItemOption option = item.itemOptions.get(index);
+            if (option != null && option.optionTemplate != null && option.optionTemplate.id == 21) {
+                if (requirement == null) {
+                    requirement = option;
+                    requirement.param = DESTROY_ITEM_POWER_REQUIRE_BILLIONS;
+                } else {
+                    item.itemOptions.remove(index);
+                }
+            }
+        }
+        if (requirement == null) {
+            item.itemOptions.add(new Item.ItemOption(21, DESTROY_ITEM_POWER_REQUIRE_BILLIONS));
+        }
+    }
+
+    public Item findBillFood(Player player) {
+        if (player == null || player.inventory == null || player.inventory.itemsBag == null) {
+            return null;
+        }
+        return player.inventory.itemsBag.stream()
+                .filter(item -> item != null && item.isNotNullItem()
+                && item.isThucAn() && item.quantity >= 99)
+                .findFirst()
+                .orElse(null);
+    }
+
     public boolean x99ThucAn(Player player) {
-        Item doAn = player.inventory.itemsBag.stream().filter(it -> it != null && it.template != null && (it.template.id == 663 || it.template.id == 664 || it.template.id == 665 || it.template.id == 666 || it.template.id == 667) && it.quantity >= 99).findFirst().orElse(null);
-        return doAn != null;
+        return findBillFood(player) != null;
+    }
+
+    public Item findEquippedDivineItem(Player player, int bodySlot) {
+        if (player == null || player.inventory == null || player.inventory.itemsBody == null
+                || bodySlot < 0 || bodySlot >= 5 || bodySlot >= player.inventory.itemsBody.size()) {
+            return null;
+        }
+        Item item = player.inventory.itemsBody.get(bodySlot);
+        return item != null && item.isNotNullItem() && item.isThanLinh() ? item : null;
     }
 
     public boolean canOpenBillShop(Player player) {

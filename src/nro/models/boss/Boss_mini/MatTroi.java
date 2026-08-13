@@ -1,8 +1,10 @@
 package nro.models.boss.Boss_mini;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import nro.models.boss.Boss;
 import nro.models.boss.BossData;
 import nro.models.boss.BossID;
@@ -11,7 +13,9 @@ import nro.models.consts.ConstPlayer;
 import nro.models.consts.ConstTaskBadges;
 import nro.models.item.Item;
 import nro.models.map.ItemMap;
+import nro.models.map.Zone;
 import nro.models.map.service.ChangeMapService;
+import nro.models.map.service.MapService;
 import nro.models.player.Player;
 import nro.models.server.Client;
 import nro.models.services.ItemTimeService;
@@ -27,11 +31,15 @@ import nro.models.utils.Util;
  */
 public class MatTroi extends Boss {
 
+    private static final Object SPAWN_ZONE_LOCK = new Object();
+    private static final long JOIN_RETRY_DELAY_MS = 5_000L;
+
     private final Map<Long, Long> globalEffectTimers = new ConcurrentHashMap<>();
     private long st;
+    private long nextJoinRetryAt;
 
     public MatTroi() throws Exception {
-        super(BossID.Virut, new BossData(
+        super(BossID.MAT_TROI, new BossData(
                 "Mặt Trời " + Util.nextInt(1, 49),
                 ConstPlayer.TRAI_DAT,
                 new short[]{1501, 1502, 1503, -1, -1, -1},
@@ -150,38 +158,99 @@ public class MatTroi extends Boss {
         this.nPoint.hp = this.nPoint.hpMax;
         this.nPoint.dameg = 1;
         this.joinMap2();
-        st = System.currentTimeMillis();
     }
 
     public void joinMap2() {
-        if (this.zone == null) {
-            if (this.parentBoss != null) {
-                this.zone = parentBoss.zone;
-            } else if (this.lastZone == null) {
-                this.zone = getMapJoin();
-            } else {
-                this.zone = this.lastZone;
+        synchronized (SPAWN_ZONE_LOCK) {
+            Zone zoneJoin = findRandomFreeZone();
+            if (zoneJoin == null) {
+                scheduleJoinRetry();
+                return;
             }
-        }
-        if (this.zone != null) {
             try {
-                int zoneid = 0;
-                this.zone = this.zone.map.zones.get(zoneid);
-                ChangeMapService.gI().changeMap(this, this.zone, -1, -1);
-
+                this.zone = zoneJoin;
+                ChangeMapService.gI().changeMap(this, zoneJoin, -1, -1);
+                if (this.zone != zoneJoin || !zoneJoin.getBosses().contains(this)) {
+                    scheduleJoinRetry();
+                    return;
+                }
+                this.nextJoinRetryAt = 0L;
+                this.st = System.currentTimeMillis();
                 this.changeStatus(BossStatus.CHAT_S);
             } catch (Exception e) {
-                this.changeStatus(BossStatus.REST);
+                if (zoneJoin.getBosses().contains(this)) {
+                    ChangeMapService.gI().exitMap(this);
+                }
+                scheduleJoinRetry();
             }
-        } else {
-            this.changeStatus(BossStatus.RESPAWN);
         }
+    }
+
+    private Zone findRandomFreeZone() {
+        List<Zone> candidates = new ArrayList<>();
+        int[] mapIds = this.data[this.currentLevel].getMapJoin();
+        for (int mapId : mapIds) {
+            nro.models.map.Map map = MapService.gI().getMapById(mapId);
+            if (map != null && map.zones != null) {
+                candidates.addAll(map.zones);
+            }
+        }
+        List<Zone> freeZones = collectFreeZones(candidates);
+        if (freeZones.isEmpty()) {
+            return null;
+        }
+        return freeZones.get(ThreadLocalRandom.current().nextInt(freeZones.size()));
+    }
+
+    static List<Zone> collectFreeZones(List<Zone> candidates) {
+        List<Zone> freeZones = new ArrayList<>();
+        if (candidates == null) {
+            return freeZones;
+        }
+        for (Zone candidate : candidates) {
+            if (candidate != null && !containsMatTroi(candidate)) {
+                freeZones.add(candidate);
+            }
+        }
+        return freeZones;
+    }
+
+    static boolean containsMatTroi(Zone zone) {
+        if (zone == null) {
+            return false;
+        }
+        for (Player boss : zone.getBosses()) {
+            if (boss != null && boss.id == BossID.MAT_TROI) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void scheduleJoinRetry() {
+        this.zone = null;
+        this.lastZone = null;
+        this.nextJoinRetryAt = System.currentTimeMillis() + JOIN_RETRY_DELAY_MS;
+        this.changeStatus(BossStatus.REST);
+    }
+
+    @Override
+    public void rest() {
+        if (this.nextJoinRetryAt > 0L) {
+            if (System.currentTimeMillis() >= this.nextJoinRetryAt) {
+                this.nextJoinRetryAt = 0L;
+                this.changeStatus(BossStatus.RESPAWN);
+            }
+            return;
+        }
+        super.rest();
     }
 
     @Override
     public void leaveMap() {
         ChangeMapService.gI().exitMap(this);
         this.lastZone = null;
+        this.nextJoinRetryAt = 0L;
         this.lastTimeRest = System.currentTimeMillis();
         this.changeStatus(BossStatus.REST);
     }

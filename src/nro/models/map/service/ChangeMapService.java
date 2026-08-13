@@ -7,6 +7,8 @@ import nro.models.consts.ConstTask;
 import nro.models.map.phoban.PotaufeuPolicy;
 import nro.models.services_dungeon.PotaufeuService;
 import nro.models.map.Map;
+import nro.models.map.PrisonPlanetAccessPolicy;
+import nro.models.map.WestSanctuaryAccessPolicy;
 import nro.models.services_dungeon.MajinBuuService;
 import nro.models.map.WayPoint;
 import nro.models.map.Zone;
@@ -892,6 +894,20 @@ public class ChangeMapService {
         if (player.isPl() && zoneJoin.map.mapId == PotaufeuPolicy.MAP_ID
                 && !PotaufeuPolicy.canEnter(TaskService.gI().getIdTask(player))) {
             Service.gI().sendThongBao(player, "Hãy hoàn thành nhiệm vụ Fide trước khi vào Hang động Potaufeu.");
+            return null;
+        }
+        if (player.isPl()
+                && zoneJoin.map.mapId == WestSanctuaryAccessPolicy.MAP_ID
+                && !WestSanctuaryAccessPolicy.canEnter(TaskService.gI().getIdTask(player))) {
+            Service.gI().sendThongBao(player,
+                    "Hãy hoàn thành nhiệm vụ tiêu diệt Fide trước khi vào Tây Thánh Địa.");
+            return null;
+        }
+        if (player.isPl()
+                && zoneJoin.map.mapId == PrisonPlanetAccessPolicy.MAP_ID
+                && !PrisonPlanetAccessPolicy.canEnter(TaskService.gI().getIdTask(player))) {
+            Service.gI().sendThongBao(player,
+                    "Hãy hoàn thành nhiệm vụ tiêu diệt Rambo trước khi vào Hành tinh ngục tù.");
             return null;
         }
         if (player.isPet || player.isBoss || player.getSession() != null && player.isAdmin()) {

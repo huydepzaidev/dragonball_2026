@@ -12,7 +12,6 @@ import nro.models.player.Player;
 import nro.models.server.Client;
 import nro.models.services.ClanService;
 import nro.models.services.Service;
-import nro.models.shop.ShopService;
 import nro.models.utils.Util;
 import org.json.simple.JSONArray;
 
@@ -31,7 +30,7 @@ public class GiuMaDauBo extends Npc {
     public void openBaseMenu(Player player) {
         if (canOpenNpc(player)) {
             this.createOtherMenu(player, ConstNpc.BASE_MENU, "Ngươi đang muốn tìm mảnh vỡ và mảnh hồn bông tai Porata trong truyền thuyết, ta sẽ đưa ngươi đến đó ?",
-                    "Khiêu chiến\nBoss", "Điểm danh\n+1 Capsule\nBang", "OK", "Cửa Hàng\nBang hội","Từ chối");
+                    "Khiêu chiến\nBoss", "Điểm danh\n+1 Capsule\nBang", "OK", "Từ chối");
         }
     }
 
@@ -127,9 +126,6 @@ public class GiuMaDauBo extends Npc {
                         player.maxTime = 5;
                         Service.gI().Transport(player);
                     }
-                }
-                case 3 -> {
-                    ShopService.gI().opendShop(player, "SHOP_CLAN", false);
                 }
                 default -> {
                 }
