@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import nro.models.boss.Boss;
 import nro.models.boss.BossID;
+import nro.models.boss.DivineTurnDropService;
 import nro.models.boss.Boss_Manager.BossManager;
 import nro.models.data.LocalManager;
 import nro.models.map.ItemMap;
@@ -54,6 +55,7 @@ public final class GameConfigService implements Runnable {
     private volatile boolean tablesAvailable = true;
     private volatile long lastCatalogSync;
     private volatile String lastError;
+    private volatile boolean legacyGuaranteedDivineEnabled;
 
     private GameConfigService() {
     }
@@ -219,12 +221,15 @@ public final class GameConfigService implements Runnable {
         if (boss == null || owner == null || boss.zone == null) {
             return;
         }
+        DivineTurnDropService.gI().onBossDefeated(boss, owner);
         List<BossDropRule> rules = bossDrops.get((int) boss.id);
         if (rules == null || rules.isEmpty()) {
             return;
         }
         for (BossDropRule rule : rules) {
-            if (rule.divineRandom && isEncounterManagedDivineBoss((int) boss.id)) {
+            // Divine equipment is planned once for the whole turn by
+            // DivineTurnDropService. Legacy per-boss rows stay disabled/read-only.
+            if (rule.divineRandom) {
                 continue;
             }
             try {
@@ -238,21 +243,8 @@ public final class GameConfigService implements Runnable {
                 int x = boss.location == null ? 0 : boss.location.x;
                 int rawY = boss.location == null ? 0 : boss.location.y - 24;
                 int y = boss.zone.map == null ? rawY : boss.zone.map.yPhysicInTop(x, rawY);
-                if (rule.divineRandom) {
-                    // Equipment cannot be stacked. quantity=N creates N independent
-                    // divine items so every item receives its own random type/options.
-                    for (int i = 0; i < quantity; i++) {
-                        int dropX = quantity == 1 ? x : x + ThreadLocalRandom.current().nextInt(-25, 26);
-                        int dropY = boss.zone.map == null
-                                ? y : boss.zone.map.yPhysicInTop(dropX, rawY);
-                        ItemMap item = ItemService.gI().randDoTLBoss(
-                                boss.zone, 1, dropX, dropY, owner.id);
-                        publishConfiguredDrop(boss, owner, rule, item, chance, roll);
-                    }
-                } else {
-                    ItemMap item = new ItemMap(boss.zone, rule.itemId, quantity, x, y, owner.id);
-                    publishConfiguredDrop(boss, owner, rule, item, chance, roll);
-                }
+                ItemMap item = new ItemMap(boss.zone, rule.itemId, quantity, x, y, owner.id);
+                publishConfiguredDrop(boss, owner, rule, item, chance, roll);
             } catch (Exception e) {
                 reportBossError(boss, "drop rule #" + rule.id, e);
             }
@@ -276,6 +268,9 @@ public final class GameConfigService implements Runnable {
     }
 
     public boolean dropGuaranteedDivine(Boss boss, Player killer, String encounterName) {
+        if (!legacyGuaranteedDivineEnabled) {
+            return false;
+        }
         Player owner = resolveRewardOwner(killer);
         if (boss == null || owner == null || boss.zone == null) {
             return false;

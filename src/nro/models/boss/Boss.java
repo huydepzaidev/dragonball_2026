@@ -107,6 +107,11 @@ public class Boss extends Player implements IBoss {
     public boolean isNotifyDisabled;
     public boolean isZone01SpawnDisabled;
     private boolean configuredDropProcessed;
+    private long divineTurnSequence;
+
+    public long getDivineTurnSequence() {
+        return divineTurnSequence;
+    }
 
     public Boss(int id, boolean isNotifyDisabled, boolean isZone01SpawnDisabled, BossData... data) throws Exception {
         this(id, data);
@@ -413,6 +418,9 @@ public class Boss extends Player implements IBoss {
         this.currentLevel++;
         if (this.currentLevel >= this.data.length) {
             this.currentLevel = 0;
+        }
+        if (this.currentLevel == 0) {
+            this.divineTurnSequence++;
         }
         this.initBase();
         this.configuredDropProcessed = false;

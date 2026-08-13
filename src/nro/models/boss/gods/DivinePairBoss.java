@@ -14,7 +14,6 @@ import nro.models.map.service.MapService;
 import nro.models.player.NewPet;
 import nro.models.player.Pet;
 import nro.models.player.Player;
-import nro.models.server.GameConfigService;
 import nro.models.server.ServerNotify;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
@@ -143,9 +142,6 @@ public abstract class DivinePairBoss extends Boss {
                 member, System.currentTimeMillis());
         if (!result.accepted()) return;
         dropDragonBall(killer);
-        if (result.dropDivine()) {
-            GameConfigService.gI().dropGuaranteedDivine(this, killer, encounterName());
-        }
         if (encounterLeader && !result.bothDefeated()) activatePartner();
     }
 

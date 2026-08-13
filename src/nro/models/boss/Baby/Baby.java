@@ -27,12 +27,6 @@ public class Baby extends Boss {
         int drop = 190; // 100% rơi item ID 190
         int quantity = Util.nextInt(20000, 30000);
         // Tạo itemMap cho item ID 190
-        if (Util.isTrue(10, 100)) {
-            ItemMap it = ItemService.gI().randDoTLBoss(this.zone, 1, x, y, plKill.id);
-            if (it != null) {
-                Service.gI().dropItemMap(zone, it);
-            }
-        }
         plKill.bossBabyDefeatParticipationCount++;
         if (Util.isTrue(1, 100)) {
             int[] costumes = {1785, 1786, 1788};

@@ -37,12 +37,6 @@ public class Cooler extends Boss {
         int drop = 190; // 100% rơi item ID 190
         int quantity = Util.nextInt(20000, 30000);
         // Tạo itemMap cho item ID 190
-        if (Util.isTrue(5 , 100)) {
-        ItemMap it = ItemService.gI().randDoTLBoss(this.zone, 1, x, y, plKill.id);
-        if (it != null) {
-        Service.gI().dropItemMap(zone, it);
-        }
-        }
         ItemMap itemMap = new ItemMap(this.zone, drop, quantity, x, y, plKill.id);
         Item item = ItemService.gI().createNewItem((short) drop);
         Service.gI().dropItemMap(zone, itemMap);
