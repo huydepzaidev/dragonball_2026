@@ -23,8 +23,8 @@ public final class TreasureMapPolicyTest {
         long superMob = TreasureMapPolicy.baseExperience(700_000, 300_000_000);
         eq(600_000, normal);
         eq(650_000, superMob);
-        eq(3_000_000, TreasureMapPolicy.multiplyMapExperience(normal));
-        eq(3_250_000, TreasureMapPolicy.multiplyMapExperience(superMob));
+        eq(1_200_000, TreasureMapPolicy.multiplyMapExperience(normal));
+        eq(1_300_000, TreasureMapPolicy.multiplyMapExperience(superMob));
         eq(Integer.MAX_VALUE, TreasureMapPolicy.toIntExperience((long) Integer.MAX_VALUE + 1));
         System.out.println("TREASURE_MAP_POLICY_OK");
     }

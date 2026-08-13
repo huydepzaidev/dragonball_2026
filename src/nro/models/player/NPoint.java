@@ -222,6 +222,17 @@ public class NPoint {
         this.setPointWhenWearClothes();
     }
 
+    private long getFusionPetContribution(long petStat) {
+        return calculateFusionPetContribution(this.player.pet, petStat);
+    }
+
+    static long calculateFusionPetContribution(Pet pet, long petStat) {
+        if (pet != null && pet.typePet >= 2 && pet.typePet <= 4) {
+            return petStat * 120L / 100L;
+        }
+        return petStat;
+    }
+
     public int getRealTlNeDon() {
         int total = this.tlNeDon;
         if (tlNeDonBuffXinbato > 0) {
@@ -642,8 +653,8 @@ public class NPoint {
                 this.tlTNSMPet += io.param;
                 break;
             case 254: // x# TNSM đệ tử
-                if (io.param > 2) {
-                    this.tlTNSMPet += (io.param - 2) * 100;
+                if (io.param > 1) {
+                    this.tlTNSMPet += petExperiencePercentForMultiplier(io.param);
                 }
                 break;
             case 252: // +#% sát thương chiêu tự sát
@@ -838,24 +849,6 @@ public class NPoint {
                 hpMax += (hpMax * percent / 100L);
             }
         }
-        // Xử lý pet mabư
-        if (this.player.isPet && ((Pet) this.player).typePet == 1 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            hpMax += (hpMax * 0 / 100L);
-        }
-
-        // Xử lý pet Uub
-        if (this.player.isPet && ((Pet) this.player).typePet == 2 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            hpMax += (hpMax * 20 / 100L);
-        }
-        // Xử lý pet vageta
-        if (this.player.isPet && ((Pet) this.player).typePet == 3 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            hpMax += (hpMax * 20 / 100L);
-        }
-        // Xử lý pet jiren
-        if (this.player.isPet && ((Pet) this.player).typePet == 4 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            hpMax += (hpMax * 20 / 100L);
-        }
-
         // Xử lý phù
         if (this.player.zone != null && MapService.gI().isMapBlackBallWar(this.player.zone.map.mapId)) {
             hpMax *= this.player.effectSkin.xHPKI;
@@ -878,7 +871,7 @@ public class NPoint {
 
         // Xử lý +hp đệ
         if (this.player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
-            hpMax += this.player.pet.nPoint.hpMax;
+            hpMax += getFusionPetContribution(this.player.pet.nPoint.hpMax);
         }
 
         // Xử lý bổ huyết
@@ -972,22 +965,6 @@ public class NPoint {
             }
         }
 
-        // Xử lý pet Uub
-        if (this.player.isPet && ((Pet) this.player).typePet == 2
-                && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            mpMax += (this.mpMax * 20 / 100L);
-        }
-        // xử lý pet beer
-        if (this.player.isPet && ((Pet) this.player).typePet == 3
-                && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            mpMax += (this.mpMax * 20 / 100L);
-        }
-        // Xử lý pet jiren
-        if (this.player.isPet && ((Pet) this.player).typePet == 4
-                && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            mpMax += (this.mpMax * 20 / 100L);
-        }
-
         // Xử lý phù
         if (this.player.zone
                 != null && MapService.gI()
@@ -1013,7 +990,7 @@ public class NPoint {
         // Xử lý hợp thể
         if (this.player.fusion.typeFusion
                 != 0) {
-            mpMax += this.player.pet.nPoint.mpMax;
+            mpMax += getFusionPetContribution(this.player.pet.nPoint.mpMax);
         }
 
         // Xử lý bổ khí
@@ -1088,29 +1065,6 @@ public class NPoint {
                 }
             }
         }
-        // Xử lý pet pic
-        if (this.player.isPet && ((Pet) this.player).typePet == 3 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            dame += (dame * 20 / 100L);
-        }
-
-        // Xử lý pet mabư
-        if (this.player.isPet && ((Pet) this.player).typePet == 1 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            dame += (dame * 0 / 100L);
-        }
-
-        // Xử lý pet Uub
-        if (this.player.isPet && ((Pet) this.player).typePet == 2 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            dame += (dame * 20 / 100L);
-        }
-        // Xử lý pet beer
-        if (this.player.isPet && ((Pet) this.player).typePet == 3 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            dame += (dame * 20 / 100L);
-        }
-        // Xử lý pet jiren
-        if (this.player.isPet && ((Pet) this.player).typePet == 4 && (((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA2 || ((Pet) this.player).master.fusion.typeFusion == ConstPlayer.HOP_THE_PORATA3)) {
-            dame += (dame * 20 / 100L);
-        }
-
         // Xử lý set tinh ấn
         if (this.isTinhAn) {
             dame += (dame * 15L / 100L);
@@ -1183,7 +1137,7 @@ public class NPoint {
 
         // Xử lý hợp thể
         if (this.player.fusion.typeFusion != 0) {
-            dame += this.player.pet.nPoint.dame;
+            dame += getFusionPetContribution(this.player.pet.nPoint.dame);
         }
 
         // Lấy tất cả option danh hiệu
@@ -1597,42 +1551,33 @@ public class NPoint {
 
     public long calSucManhTiemNang(long tiemNang) {
         if (power < getPowerLimit()) {
-            if (this.tlTNSM != null) {
-                for (Integer tl : this.tlTNSM) {
-                    if (tl != null) {
-                        tiemNang += ((long) tiemNang * tl / 100);
-                    }
-                }
-            }
+            tiemNang = applyExperiencePercentBonuses(tiemNang, this.tlTNSM);
             long tn = tiemNang;
             if (this.player.charms.tdTriTue > System.currentTimeMillis()) {
-                tiemNang += tn;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 2);
             }
             if (this.player.charms.tdTriTue3 > System.currentTimeMillis()) {
-                tiemNang += tn * 3;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 3);
             }
             if (this.player.charms.tdTriTue4 > System.currentTimeMillis()) {
-                tiemNang += tn * 4;
-            }
-            if (this.player.charms.tdTriTue4 > System.currentTimeMillis()) {
-                tiemNang += tn * 4;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 4);
             }
             if (this.player.timevip > System.currentTimeMillis()) {
-                tiemNang += tn * 3;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 4);
             }
             if (this.player.effectSkill.isChibi && this.player.typeChibi == 2) {
-                tiemNang += tn * 2;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 3);
             }
             if (this.player.getSession() != null && this.player.getSession().vip > 0 || this.player.isPet
                     && ((Pet) this.player).master.getSession() != null && ((Pet) this.player).master.getSession().vip > 0) {
-                tiemNang += tn * 3;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 4);
             }
             if (this.player.itemTime != null && this.player.itemTime.isUseDK) {
-                tiemNang += tn * 2;
+                tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 3);
             }
             if (player.zone.map.mapId >= 135 && player.zone.map.mapId <= 138) {
                 if (this.player.itemTime != null && this.player.itemTime.isUseKhoBauX2) {
-                    tiemNang += tn * 2;
+                    tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 2);
                 }
             }
             if (this.player.satellite != null && this.player.satellite.isIntelligent) {
@@ -1643,10 +1588,11 @@ public class NPoint {
             }
             if (this.player.isPet) {
                 if (((Pet) this.player).master.itemTime.isUseBuaSanta) {
-                    tiemNang += tn * 2;
+                    tiemNang = addExperienceMultiplierBonus(tiemNang, tn, 2);
                 }
                 if (((Pet) this.player).master.nPoint != null && ((Pet) this.player).master.nPoint.tlTNSMPet > 0) {
-                    tiemNang += tn / 100 * (((Pet) this.player).master.nPoint.tlTNSMPet + 100);
+                    tiemNang = saturatedAdd(tiemNang,
+                            multiplyDividePositive(tn, ((Pet) this.player).master.nPoint.tlTNSMPet, 100));
                 }
             }
             if (MapService.gI().isMapNguHanhSon(this.player.zone.map.mapId)) {
@@ -1747,6 +1693,64 @@ public class NPoint {
         }
     }
 
+    public static long applyExperiencePercentBonuses(long baseExperience, List<Integer> percentBonuses) {
+        if (baseExperience <= 0 || percentBonuses == null || percentBonuses.isEmpty()) {
+            return Math.max(0, baseExperience);
+        }
+        long totalPercent = 0;
+        for (Integer percent : percentBonuses) {
+            if (percent != null && percent > 0) {
+                totalPercent = saturatedAdd(totalPercent, percent);
+            }
+        }
+        return saturatedAdd(baseExperience, multiplyDividePositive(baseExperience, totalPercent, 100));
+    }
+
+    public static long addExperienceMultiplierBonus(long currentExperience, long baseExperience, int multiplier) {
+        if (baseExperience <= 0 || multiplier <= 1) {
+            return Math.max(0, currentExperience);
+        }
+        return saturatedAdd(currentExperience, saturatedMultiplyPositive(baseExperience, multiplier - 1L));
+    }
+
+    public static int petExperiencePercentForMultiplier(int multiplier) {
+        if (multiplier <= 1) {
+            return 0;
+        }
+        long percent = (long) (multiplier - 1) * 100L;
+        return percent > Short.MAX_VALUE ? Short.MAX_VALUE : (int) percent;
+    }
+
+    public static long calculateMasterShareFromPet(long petExperience) {
+        return Math.max(0, petExperience) / 2;
+    }
+
+    private static long multiplyDividePositive(long value, long multiplier, long divisor) {
+        if (value <= 0 || multiplier <= 0 || divisor <= 0) {
+            return 0;
+        }
+        if (value > Long.MAX_VALUE / multiplier) {
+            return Long.MAX_VALUE;
+        }
+        return value * multiplier / divisor;
+    }
+
+    private static long saturatedMultiplyPositive(long value, long multiplier) {
+        if (value <= 0 || multiplier <= 0) {
+            return 0;
+        }
+        return value > Long.MAX_VALUE / multiplier ? Long.MAX_VALUE : value * multiplier;
+    }
+
+    private static long saturatedAdd(long left, long right) {
+        if (left <= 0) {
+            return Math.max(0, right);
+        }
+        if (right <= 0) {
+            return left;
+        }
+        return left > Long.MAX_VALUE - right ? Long.MAX_VALUE : left + right;
+    }
     public long getPowerNextLimit() {
         switch (limitPower + 1) {
             case 0:

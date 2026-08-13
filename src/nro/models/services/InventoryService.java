@@ -36,12 +36,60 @@ public class InventoryService {
     private static final int CHILDRENS_GIFT_BOX_ID = 1608;
     private static final int SANTA_DISCIPLE_CHARM_ID = 1628;
     private static final int COCONUT_ITEM_ID = 694;
+    static final byte BACK_ACCESSORY_TYPE = 11;
+    static final byte SPECIAL_SKILL_BOOK_TYPE = 25;
+    static final int PET_BACK_ACCESSORY_SLOT = 7;
+    static final int PET_SPECIAL_SKILL_BOOK_SLOT = 8;
 
     public static InventoryService gI() {
         if (InventoryService.I == null) {
             InventoryService.I = new InventoryService();
         }
         return InventoryService.I;
+    }
+
+    static int resolveBodySlot(Player player, byte itemType) {
+        if (player == null) {
+            return -1;
+        }
+        return switch (itemType) {
+            case 0, 1, 2, 3, 4, 5 -> itemType;
+            case 32 -> 6;
+            case 23, 24 -> 9;
+            case BACK_ACCESSORY_TYPE -> player.isPet ? PET_BACK_ACCESSORY_SLOT : 8;
+            case 27 -> 7;
+            case SPECIAL_SKILL_BOOK_TYPE -> player.isPet ? PET_SPECIAL_SKILL_BOOK_SLOT : 10;
+            default -> -1;
+        };
+    }
+
+    static boolean canPetEquipType(Pet pet, byte itemType) {
+        if (itemType == BACK_ACCESSORY_TYPE || itemType == SPECIAL_SKILL_BOOK_TYPE) {
+            return pet != null && PetService.isSecondDiscipleType(pet.typePet);
+        }
+        return itemType != 23 && itemType != 24 && itemType != 27;
+    }
+
+    public static boolean normalizeLegacySecondDiscipleEquipmentSlots(Pet pet) {
+        if (pet == null || pet.inventory == null
+                || !PetService.isSecondDiscipleType(pet.typePet)) {
+            return false;
+        }
+        while (pet.inventory.itemsBody.size() <= PET_SPECIAL_SKILL_BOOK_SLOT) {
+            pet.inventory.itemsBody.add(new Item());
+        }
+        Item legacyAccessory = pet.inventory.itemsBody.get(PET_SPECIAL_SKILL_BOOK_SLOT);
+        if (legacyAccessory == null || !legacyAccessory.isNotNullItem()
+                || legacyAccessory.template.type != BACK_ACCESSORY_TYPE) {
+            return false;
+        }
+        Item accessorySlot = pet.inventory.itemsBody.get(PET_BACK_ACCESSORY_SLOT);
+        if (accessorySlot != null && accessorySlot.isNotNullItem()) {
+            return false;
+        }
+        pet.inventory.itemsBody.set(PET_BACK_ACCESSORY_SLOT, legacyAccessory);
+        pet.inventory.itemsBody.set(PET_SPECIAL_SKILL_BOOK_SLOT, new Item());
+        return true;
     }
 
     private void __________________Tìm_kiếm_item_____________________________() {
@@ -342,44 +390,16 @@ public class InventoryService {
         }
         handleOption210(item);
         checkOption231(item);
-        int index = -1;
-        switch (item.template.type) {
-            case 0:
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-            case 5:
-                index = item.template.type;
-                break;
-            case 32:
-                index = 6;
-                break;
-            case 23:
-            case 24:
-                index = 9;
-                break;
-            case 11:
-                index = 8;
-                break;
-            case 27:
-                index = 7;
-                break;
-            case 25:
-                index = player.isPet ? 8 : 10;
-                break;
-        }
-        if (player.isPet && (item.template.type == 11 || item.template.type == 25)) {
+        byte itemType = item.template.type;
+        int index = resolveBodySlot(player, itemType);
+        if (player.isPet && !canPetEquipType((Pet) player, itemType)) {
             Pet pet = (Pet) player;
-            if (pet.type != 2 && pet.type != 3 && pet.type != 4) {
+            if (itemType == BACK_ACCESSORY_TYPE || itemType == SPECIAL_SKILL_BOOK_TYPE) {
                 Player recipient = pet.master != null ? pet.master : player;
                 Service.gI().sendThongBaoOK(recipient, "Chỉ đệ tử vip mới sử dụng được vật phẩm này!");
                 return sItem;
             }
-        }
-
-        if (player.isPet && (item.template.type == 23 || item.template.type == 24 || item.template.type == 27)) {
-            Player recipient = ((Pet) player).master;
+            Player recipient = pet.master;
             if (recipient == null) {
                 recipient = player;
             }
@@ -456,6 +476,9 @@ public class InventoryService {
                     if (!itemSwap.equals(item)) {
                         Service.gI().point(player);
                         Service.gI().showInfoPet(player);
+                        if (player.pet.zone != null) {
+                            Service.gI().sendFlagBag(player.pet);
+                        }
                     }
                     Service.gI().Send_Caitrang(player.pet);
                     Service.gI().Send_Caitrang(player);
@@ -478,6 +501,9 @@ public class InventoryService {
             Service.gI().Send_Caitrang(player.pet);
             Service.gI().Send_Caitrang(player);
             Service.gI().showInfoPet(player);
+            if (player.pet.zone != null) {
+                Service.gI().sendFlagBag(player.pet);
+            }
         }
     }
 

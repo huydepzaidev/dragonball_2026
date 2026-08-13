@@ -79,6 +79,7 @@ import nro.models.server.Client;
 import nro.models.server.Maintenance;
 import nro.models.server.Manager;
 import nro.models.services_func.Input;
+import nro.models.services_func.UseItem;
 import nro.models.utils.Logger;
 import nro.models.utils.Util;
 import nro.models.services_dungeon.SuperDivineWaterService;
@@ -343,6 +344,10 @@ public class NpcFactory {
                                 }
                             }
                         }
+                    }
+                    case ConstNpc.MENU_CONFIRM_CHANGE_SECOND_DISCIPLE -> {
+                        Object pendingItem = PLAYERID_OBJECT.remove(player.id);
+                        UseItem.gI().confirmChangeSecondDisciple(player, pendingItem, select);
                     }
                     case 206783 -> {
                         switch (select) {

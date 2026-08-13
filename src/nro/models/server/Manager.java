@@ -255,7 +255,7 @@ public final class Manager {
         ResultSet rs = null;
         try (Connection con = LocalManager.getConnection();) {
             //load part
-            ps = con.prepareStatement("select * from part");
+            ps = con.prepareStatement("select * from part order by id");
             rs = ps.executeQuery();
             List<Part> parts = new ArrayList<>();
             while (rs.next()) {
@@ -299,7 +299,7 @@ public final class Manager {
         ResultSet rs = null;
         try (Connection ConnectionDatabase = LocalManager.getConnection()) {
             //load part
-            ps = ConnectionDatabase.prepareStatement("select * from part");
+            ps = ConnectionDatabase.prepareStatement("select * from part order by id");
             rs = ps.executeQuery();
             List<Part> parts = new ArrayList<>();
             while (rs.next()) {

@@ -55,6 +55,7 @@ import nro.models.daily_Giftcode.DailyGiftData;
 import nro.models.daily_Giftcode.DailyGiftService;
 import nro.models.services.InventoryService;
 import nro.models.services_dungeon.NgocRongNamecService;
+import nro.models.services_dungeon.PotaufeuService;
 import nro.models.server.Maintenance;
 import nro.models.services.shenron.Shenron_Event;
 import java.util.Calendar;
@@ -123,6 +124,8 @@ public class Player implements Runnable {
     public boolean goHome;
 
     public long lastPkCommesonTime;
+    public long potaufeuReturnHomeAt;
+    public boolean potaufeuReturnStarted;
 
     public boolean callBossPocolo;
     public Zone zoneSieuThanhThuy;
@@ -521,6 +524,7 @@ public class Player implements Runnable {
                         this.achievement.done(ConstAchievement.HOAT_DONG_CHAM_CHI, 1000);
                     }
                     if (this.isPl()) {
+                        PotaufeuService.gI().update(this);
                         Calendar calendar = Calendar.getInstance();
                         int hour = calendar.get(Calendar.HOUR_OF_DAY);
                         if (hour >= 22 && hour < 23) {

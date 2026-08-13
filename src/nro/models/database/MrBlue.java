@@ -28,6 +28,7 @@ import nro.models.network.MySession;
 import nro.models.player_system.AntiLogin;
 import nro.models.services.ClanService;
 import nro.models.services.IntrinsicService;
+import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
 import nro.models.map.service.MapService;
 import nro.models.services.Service;
@@ -836,6 +837,19 @@ public class MrBlue {
                 player.fusion.lastTimeFusion = System.currentTimeMillis()
                         - (Fusion.TIME_FUSION - Integer.parseInt(String.valueOf(dataArray.get(4))));
                 pet.status = Byte.parseByte(String.valueOf(dataArray.get(5)));
+                pet.isTransform = dataArray.size() > 6
+                        && Boolean.parseBoolean(String.valueOf(dataArray.get(6)));
+
+                if (pet.typePet == 2) {
+                    pet.gender = ConstPlayer.TRAI_DAT;
+                } else if (pet.typePet == 3) {
+                    pet.gender = ConstPlayer.XAYDA;
+                    if ("$Kid Beer".equals(pet.name)) {
+                        pet.name = "$Kid Beerus";
+                    }
+                } else if (pet.typePet == 4) {
+                    pet.gender = ConstPlayer.NAMEC;
+                }
 
                 // data chỉ số
                 dataArray = (JSONArray) JSONValue.parse(String.valueOf(petData.get(1)));
@@ -851,6 +865,9 @@ public class MrBlue {
                 pet.nPoint.critg = Integer.parseInt(String.valueOf(dataArray.get(9)));
                 int hp = Integer.parseInt(String.valueOf(dataArray.get(10)));
                 int mp = Integer.parseInt(String.valueOf(dataArray.get(11)));
+                if (pet.typePet >= 2 && pet.typePet <= 4 && pet.nPoint.limitPower < 5) {
+                    pet.nPoint.limitPower = 5;
+                }
 
                 //data body
                 dataArray = (JSONArray) JSONValue.parse(String.valueOf(petData.get(2)));
@@ -903,6 +920,7 @@ public class MrBlue {
                 while (pet.inventory.itemsBody.size() < requiredSize) {
                     pet.inventory.itemsBody.add(ItemService.gI().createItemNull());
                 }
+                InventoryService.normalizeLegacySecondDiscipleEquipmentSlots(pet);
                 // data skills
                 dataArray = (JSONArray) JSONValue.parse(String.valueOf(petData.get(3)));
                 for (int i = 0; i < dataArray.size(); i++) {
@@ -928,12 +946,23 @@ public class MrBlue {
                     pet.playerSkill.skills.add(skill);
                 }
 
-                int maxSkillCount = 4;
-                if (pet.typePet == 3 || pet.typePet == 4) {
-                    maxSkillCount = 5;
+                int maxSkillCount = pet.typePet >= 2 && pet.typePet <= 4 ? 5 : 4;
+                while (pet.typePet >= 2 && pet.typePet <= 4
+                        && pet.playerSkill.skills.size() > maxSkillCount) {
+                    pet.playerSkill.skills.remove(pet.playerSkill.skills.size() - 1);
                 }
                 while (pet.playerSkill.skills.size() < maxSkillCount) {
                     pet.playerSkill.skills.add(SkillUtil.createSkillLevel0(-1));
+                }
+                if (pet.typePet >= 2 && pet.typePet <= 4
+                        && pet.nPoint.power < 60_000_000_000L
+                        && pet.playerSkill.skills.get(4).skillId != -1) {
+                    pet.playerSkill.skills.set(4, SkillUtil.createSkillLevel0(-1));
+                }
+                if (pet.typePet >= 2 && pet.typePet <= 4
+                        && pet.nPoint.power >= 60_000_000_000L
+                        && pet.playerSkill.skills.get(4).skillId == -1) {
+                    pet.openSkill5();
                 }
 
                 pet.nPoint.hp = hp;

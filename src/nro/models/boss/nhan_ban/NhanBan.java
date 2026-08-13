@@ -13,6 +13,7 @@ import nro.models.matches.PKCommeson;
 import nro.models.player.Player;
 import nro.models.server.ServerNotify;
 import nro.models.services.PlayerService;
+import nro.models.services.EffectSkillService;
 import nro.models.services.Service;
 import nro.models.services.SkillService;
 import nro.models.map.service.ChangeMapService;
@@ -100,6 +101,7 @@ public class NhanBan extends Boss {
 
     @Override
     public void die(Player plKill) {
+        EffectSkillService.gI().removePKCommeson(playerAtt);
         if (plKill != null) {
             reward(plKill);
             ServerNotify.gI().notify(plKill.name + " đã đánh bại bản sao Commeson, mọi người đều ngưỡng mộ");
@@ -121,6 +123,9 @@ public class NhanBan extends Boss {
 
     @Override
     public void leaveMap() {
+        if (playerAtt != null && playerAtt.pvp != null && playerAtt.pvp.isInPVP(this)) {
+            playerAtt.pvp.dispose();
+        }
         ChangeMapService.gI().exitMap(this);
         this.lastZone = null;
         this.lastTimeRest = System.currentTimeMillis();

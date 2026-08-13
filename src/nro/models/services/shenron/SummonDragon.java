@@ -49,9 +49,9 @@ public class SummonDragon {
             + "Để gọi rồng 1 sao cần ngọc từ 1 sao đến 7 sao\n"
             + "Để gọi rồng 2 sao cần ngọc từ 2 sao đến 7 sao\n"
             + "Để gọi rồng 3 sao cần ngọc từ 3 sao đến 7sao\n"
-            + "Điều ước rồng 3 sao: Capsule 3 sao, hoặc 2 triệu sức mạnh, hoặc 200k vàng\n"
-            + "Điều ước rồng 2 sao: Capsule 2 sao, hoặc 20 triệu sức mạnh, hoặc 2 triệu vàng\n"
-            + "Điều ước rồng 1 sao: Capsule 1 sao, hoặc 200 triệu sức mạnh, hoặc 20 triệu vàng, hoặc đẹp trai, hoặc....\n"
+            + "Điều ước rồng 3 sao: 200 ngọc, hoặc 20 triệu vàng\n"
+            + "Điều ước rồng 2 sao: 2.000 ngọc, hoặc 200 triệu vàng\n"
+            + "Điều ước rồng 1 sao: nhiều phần thưởng đặc biệt, không bao gồm sức mạnh và tiềm năng\n"
             + "Ngọc rồng sẽ mất ngay khi gọi rồng dù bạn có ước hay không\n"
             + "Quá 5 phút nếu không ước rồng thần sẽ bay mất";
     public static final String SHENRON_SAY
@@ -61,16 +61,16 @@ public class SummonDragon {
             = new String[]{"Giàu có\n+2 Tỏi\nVàng", "Găng tay\nđang mang\nlên 1 cấp", "Chí mạng\nGốc +2%",
                 "Thay\nChiêu 2-3\nĐệ tử", "Điều ước\nkhác"};
     public static final String[] SHENRON_1_STAR_WISHES_2
-            = new String[]{"Đẹp trai\nnhất\nVũ trụ", "Giàu có\n+10K\nNgọc", "+200 Tr\nSức mạnh\nvà tiềm\nnăng",
+            = new String[]{"Đẹp trai\nnhất\nVũ trụ", "Giàu có\n+10K\nHồng Ngọc",
                 "Găng tay đệ\nđang mang\nlên 1 cấp",
                 "Điều ước\nkhác"};
     public static final String[] SHENRON_1_STAR_WISHES_3
             = new String[]{"Quần\nđang mang\nlên 1 cấp", "Quần đệ\nđang mang\nlên 1 cấp",
                 "Điều ước\nkhác"};
     public static final String[] SHENRON_2_STARS_BlackGokuHES
-            = new String[]{"Giàu có\n+2K\nNgọc", "+20 Tr\nSức mạnh\nvà tiềm năng", "Giàu có\n+200 Tr\nVàng"};
+            = new String[]{"Giàu có\n+2K\nNgọc", "Giàu có\n+200 Tr\nVàng"};
     public static final String[] SHENRON_3_STARS_BlackGokuHES
-            = new String[]{"Giàu có\n+200\nNgọc", "+2 Tr\nSức mạnh\nvà tiềm năng", "Giàu có\n+20 Tr\nVàng"};
+            = new String[]{"Giàu có\n+200\nNgọc", "Giàu có\n+20 Tr\nVàng"};
     //--------------------------------------------------------------------------
     private static SummonDragon instance;
     private final Map pl_dragonStar;
@@ -375,14 +375,12 @@ public class SummonDragon {
                             return;
                         }
                         break;
-                    case 1: //+1,5 ngọc
-                        this.playerSummonShenron.inventory.gem += 10000;
+                    case 1: //+10k hồng ngọc
+                        this.playerSummonShenron.inventory.ruby = (int) Math.min(Integer.MAX_VALUE,
+                                (long) this.playerSummonShenron.inventory.ruby + 10000);
                         PlayerService.gI().sendInfoHpMpMoney(this.playerSummonShenron);
                         break;
-                    case 2: //+200 tr smtn
-                        Service.gI().addSMTN(this.playerSummonShenron, (byte) 2, 200000000, false);
-                        break;
-                    case 3: //găng tay đệ lên 1 cấp
+                    case 2: //găng tay đệ lên 1 cấp
                         if (this.playerSummonShenron.pet != null) {
                             Item item = this.playerSummonShenron.pet.inventory.itemsBody.get(2);
                             if (item.isNotNullItem()) {
@@ -431,10 +429,7 @@ public class SummonDragon {
                         this.playerSummonShenron.inventory.gem += 2000;
                         PlayerService.gI().sendInfoHpMpMoney(this.playerSummonShenron);
                         break;
-                    case 1: //+20 tr smtn
-                        Service.gI().addSMTN(this.playerSummonShenron, (byte) 2, 20000000, false);
-                        break;
-                    case 2: //2 tr vàng
+                    case 1: //200 tr vàng
                         if (this.playerSummonShenron.inventory.gold > 1800000000) {
                             this.playerSummonShenron.inventory.gold = Inventory.LIMIT_GOLD;
                         } else {
@@ -450,10 +445,7 @@ public class SummonDragon {
                         this.playerSummonShenron.inventory.gem += 200;
                         PlayerService.gI().sendInfoHpMpMoney(this.playerSummonShenron);
                         break;
-                    case 1: //+2 tr smtn
-                        Service.gI().addSMTN(this.playerSummonShenron, (byte) 2, 2000000, false);
-                        break;
-                    case 2: //200k vàng
+                    case 1: //20 tr vàng
                         if (this.playerSummonShenron.inventory.gold > (2000000000 - 20000000)) {
                             this.playerSummonShenron.inventory.gold = Inventory.LIMIT_GOLD;
                         } else {

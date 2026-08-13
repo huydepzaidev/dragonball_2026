@@ -3,7 +3,6 @@ package nro.models.boss.Boss_mini;
 import nro.models.boss.Boss;
 import nro.models.boss.BossData;
 import nro.models.boss.BossID;
-import nro.models.boss.RubyCapsuleDropService;
 import nro.models.consts.BossStatus;
 import static nro.models.consts.BossType.ANTROM;
 import nro.models.consts.ConstPlayer;
@@ -164,7 +163,7 @@ public class Odo extends Boss {
 
     @Override
     public void reward(Player plKill) {
-        RubyCapsuleDropService.dropPublicRubyCapsules(this, 5);
+        MiniBossRubyCapsuleRewardService.dropPublicRubyCapsules(this);
         try {
             int count1591 = Util.nextInt(1, 1);
             int count1594 = Util.nextInt(1, 1);

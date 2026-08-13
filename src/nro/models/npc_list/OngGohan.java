@@ -95,7 +95,7 @@ public class OngGohan extends Npc {
         return \u0022Các boss có thể rơi Capsule hồng ngọc:\n\n\u0022
                 + \u0022- Tiểu đội sát thủ Namek: Số 1 Namek, Số 2 Namek, Số 3 Namek, Số 4 Namek, Tiểu đội trưởng Namek (10 capsule mỗi boss).\n\u0022
                 + \u0022- Tiểu đội Bojack Trái Đất: Bojack, Bujin, Kogu, Bido, Zangya, Siêu Bojack (10 capsule mỗi boss).\n\u0022
-                + \u0022- Boss mini: Ăn Trộm, Mặt Trời, Ở Dơ (5 capsule mỗi boss).\n\n\u0022
+                + \u0022- Boss mini: Ăn Trộm, Mặt Trời, Ở Dơ (ngẫu nhiên 1-5 capsule mỗi boss).\n\n\u0022
                 + \u0022Mở mỗi capsule nhận từ 1 đến 100 hồng ngọc.\u0022;
     }
 

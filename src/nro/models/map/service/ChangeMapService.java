@@ -4,6 +4,8 @@ import nro.models.consts.ConstMap;
 import nro.models.consts.ConstNpc;
 import nro.models.consts.ConstPlayer;
 import nro.models.consts.ConstTask;
+import nro.models.map.phoban.PotaufeuPolicy;
+import nro.models.services_dungeon.PotaufeuService;
 import nro.models.map.Map;
 import nro.models.services_dungeon.MajinBuuService;
 import nro.models.map.WayPoint;
@@ -877,6 +879,19 @@ public class ChangeMapService {
             return null;
         }
         if (zoneJoin.map.mapId == -1 || zoneJoin.map.mapId == -1) {
+            return null;
+        }
+        if (player.isPl()
+                && (zoneJoin.map.mapId == ConstMap.HANH_TINH_POTAUFEU
+                || zoneJoin.map.mapId == PotaufeuPolicy.MAP_ID)
+                && PotaufeuService.gI().hasUsedDailyChallenge(player)) {
+            Service.gI().sendThongBao(player,
+                    "Hôm nay bạn đã thách đấu bản sao, hãy trở lại sau 0 giờ ngày mai.");
+            return null;
+        }
+        if (player.isPl() && zoneJoin.map.mapId == PotaufeuPolicy.MAP_ID
+                && !PotaufeuPolicy.canEnter(TaskService.gI().getIdTask(player))) {
+            Service.gI().sendThongBao(player, "Hãy hoàn thành nhiệm vụ Fide trước khi vào Hang động Potaufeu.");
             return null;
         }
         if (player.isPet || player.isBoss || player.getSession() != null && player.isAdmin()) {

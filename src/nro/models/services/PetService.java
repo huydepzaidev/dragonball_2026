@@ -1,6 +1,7 @@
 package nro.models.services;
 
 import nro.models.consts.ConstPlayer;
+import nro.models.item.Item;
 import nro.models.player.NewPet;
 import nro.models.player.Pet;
 import nro.models.player.Player;
@@ -22,6 +23,57 @@ public class PetService {
             instance = new PetService();
         }
         return instance;
+    }
+
+    public static boolean isSecondDisciple(Player player) {
+        return player != null && player.pet != null && isSecondDiscipleType(player.pet.typePet);
+    }
+
+    public static boolean isSecondDiscipleType(byte typePet) {
+        return typePet >= 2 && typePet <= 4;
+    }
+
+    public boolean canReplacePet(Player player) {
+        if (player == null) {
+            return false;
+        }
+        if (player.pet == null || player.pet.inventory == null) {
+            Service.gI().sendThongBao(player, "Bạn chưa có đệ tử để thay đổi.");
+            return false;
+        }
+        if (hasEquippedItems(player.pet)) {
+            Service.gI().sendThongBao(player,
+                    "Đệ tử vẫn đang mặc trang bị. Hãy tháo toàn bộ trang bị và cải trang trước khi đổi.");
+            return false;
+        }
+        return true;
+    }
+
+    static boolean hasEquippedItems(Pet pet) {
+        if (pet == null || pet.inventory == null) {
+            return false;
+        }
+        for (Item item : pet.inventory.itemsBody) {
+            if (item != null && item.isNotNullItem()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean replaceWithSecondDisciple(Player player, byte typePet) {
+        if (typePet < 2 || typePet > 4 || !canReplacePet(player)) {
+            return false;
+        }
+        Pet newPet = createSecondDisciple(player, typePet);
+        Pet oldPet = player.pet;
+        if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
+            oldPet.unFusion();
+        }
+        ChangeMapService.gI().exitMap(oldPet);
+        oldPet.dispose();
+        player.pet = newPet;
+        return true;
     }
 
     public void createNormalPet(Player player, int gender, byte... limitPower) {
@@ -123,6 +175,9 @@ public class PetService {
     }
 
     public void changeNormalPet(Player player, int gender) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
         }
@@ -134,6 +189,9 @@ public class PetService {
     }
 
     public void changeNormalPet(Player player) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
         }
@@ -144,6 +202,9 @@ public class PetService {
     }
 
     public void changeMabuPet(Player player) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
         }
@@ -154,6 +215,9 @@ public class PetService {
     }
 
     public void changeUubPet(Player player) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         byte gender = player.pet.gender;
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
@@ -165,6 +229,9 @@ public class PetService {
     }
 
     public void changeKidBeerPet(Player player) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         byte gender = player.pet.gender;
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
@@ -176,6 +243,9 @@ public class PetService {
     }
     
     public void changeJirenPet(Player player) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         byte gender = player.pet.gender;
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
@@ -187,6 +257,9 @@ public class PetService {
     }
 
     public void changeMabuPet(Player player, int gender) {
+        if (!canReplacePet(player)) {
+            return;
+        }
         if (player.fusion.typeFusion != ConstPlayer.NON_FUSION) {
             player.pet.unFusion();
         }
@@ -273,6 +346,51 @@ public class PetService {
         return petData;
     }
 
+    private Pet createSecondDisciple(Player player, byte typePet) {
+        int[] data = switch (typePet) {
+            case 2 -> getDataPetUub();
+            case 3 -> getDataPetKidBeer();
+            case 4 -> getDataPetJiren();
+            default -> throw new IllegalArgumentException("Invalid second disciple type: " + typePet);
+        };
+
+        Pet pet = new Pet(player);
+        pet.typePet = typePet;
+        pet.name = switch (typePet) {
+            case 2 -> "$Uub";
+            case 3 -> "$Kid Beerus";
+            default -> "$Kid Jiren";
+        };
+        pet.gender = switch (typePet) {
+            case 2 -> ConstPlayer.TRAI_DAT;
+            case 3 -> ConstPlayer.XAYDA;
+            default -> ConstPlayer.NAMEC;
+        };
+        pet.id = player.isPl() ? -player.id : -Math.abs(player.id) - 100000;
+        pet.nPoint.power = 40_000_000_000L;
+        pet.nPoint.limitPower = 5;
+        pet.nPoint.stamina = 1000;
+        pet.nPoint.maxStamina = 1000;
+        pet.nPoint.hpg = data[0];
+        pet.nPoint.mpg = data[1];
+        pet.nPoint.dameg = data[2];
+        pet.nPoint.defg = data[3];
+        pet.nPoint.critg = data[4];
+
+        for (int i = 0; i < 9; i++) {
+            pet.inventory.itemsBody.add(ItemService.gI().createItemNull());
+        }
+        pet.playerSkill.skills.add(SkillUtil.createSkill(Util.nextInt(0, 2) * 2, 1));
+        for (int i = 1; i < 5; i++) {
+            pet.playerSkill.skills.add(SkillUtil.createEmptySkill());
+        }
+        pet.openSkill2();
+        pet.openSkill3();
+        pet.openSkill4();
+        pet.nPoint.setFullHpMp();
+        return pet;
+    }
+
     private void createNewPet(Player player, boolean isMabu, boolean isUub, boolean isKidBeer, boolean isJiren, byte... gender) {
         int[] data;
 
@@ -290,15 +408,21 @@ public class PetService {
 
         Pet pet = new Pet(player);
 
-        pet.name = "$" + (isMabu ? "Mabư" : isUub ? "Uub" : isKidBeer ? "Kid Beer" : isJiren ? "Kid Jiren" : "Đệ tử");
+        pet.name = "$" + (isMabu ? "Mabư" : isUub ? "Uub" : isKidBeer ? "Kid Beerus" : isJiren ? "Kid Jiren" : "Đệ tử");
 
-        pet.gender = (gender != null && gender.length != 0) ? gender[0] : (byte) Util.nextInt(0, 2);
+        pet.gender = isUub ? ConstPlayer.TRAI_DAT
+                : isKidBeer ? ConstPlayer.XAYDA
+                : isJiren ? ConstPlayer.NAMEC
+                : (gender != null && gender.length != 0) ? gender[0] : (byte) Util.nextInt(0, 2);
 
         pet.id = player.isPl() ? -player.id : -Math.abs(player.id) - 100000;
 
         pet.nPoint.power = isUub ? 40000000000L : isMabu ? 1500000L : isKidBeer ? 40000000000L : isJiren ? 40000000000L : 2000L;
 
         pet.typePet = (byte) (isMabu ? 1 : isUub ? 2 : isKidBeer ? 3 : isJiren ? 4 : 0);
+        if (pet.typePet >= 2 && pet.typePet <= 4) {
+            pet.nPoint.limitPower = 5;
+        }
 
         pet.nPoint.stamina = 1000;
         pet.nPoint.maxStamina = 1000;
@@ -317,7 +441,8 @@ public class PetService {
         }
 
         pet.playerSkill.skills.add(SkillUtil.createSkill(Util.nextInt(0, 2) * 2, 1));
-        for (int i = 0; i < 6; i++) {
+        int emptySkillCount = pet.typePet >= 2 && pet.typePet <= 4 ? 4 : 6;
+        for (int i = 0; i < emptySkillCount; i++) {
             pet.playerSkill.skills.add(SkillUtil.createEmptySkill());
         }
 

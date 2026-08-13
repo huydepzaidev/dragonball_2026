@@ -326,6 +326,7 @@ public class ConstNpc {
     public static final int MENU_OPTION_PAY_SIDE_TASK = 501;
     public static final int MENU_MAILBOX_LIST = 99001;
     public static final int MENU_MAILBOX_DETAIL = 99002;
+    public static final int MENU_CONFIRM_CHANGE_SECOND_DISCIPLE = 99003;
     public static final int event3 = 3333;
     public static final int event3_1 = 3334;
 

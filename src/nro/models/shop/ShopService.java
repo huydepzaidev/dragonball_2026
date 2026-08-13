@@ -22,6 +22,7 @@ import nro.models.player_badges.BadgesService;
 import nro.models.player_badges.BagesTemplate;
 import nro.models.services.AchievementService;
 import nro.models.services.ItemService;
+import nro.models.services.PetService;
 import nro.models.services.Service;
 import nro.models.services_func.Input;
 import nro.models.services_func.BuyBackService;
@@ -678,6 +679,11 @@ public class ShopService {
         }
         if (!EventControlService.gI().canAcquireItem(itemTempId)) {
             Service.gI().sendThongBao(player, "Vật phẩm thuộc sự kiện đang tắt.");
+            return;
+        }
+
+        if (itemTempId == ConstItem.DOI_DE_TU_2 && !PetService.isSecondDisciple(player)) {
+            Service.gI().sendThongBao(player, "Bạn phải có Đệ tử 2 mới có thể mua vật phẩm này.");
             return;
         }
 

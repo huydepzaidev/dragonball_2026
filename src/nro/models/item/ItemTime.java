@@ -18,7 +18,7 @@ public class ItemTime {
     public static final int TIME_ITEM = 600000;
     public static final int TIME_OPEN_POWER = 8640000;
     public static final int TIME_MAY_DO = 1800000;
-    public static final int TIME_MAY_DO2 = 1800000;
+    public static final int TIME_MAY_DO2 = 15 * 60 * 1000;
     public static final long TIME_CO_BON_LA = 30 * 60 * 1000L;
     public static final int TIME_KILIS = 3600000;
     public static final int TIME_NUOC_MIA1 = 600_000;

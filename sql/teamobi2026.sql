@@ -14205,4 +14205,261 @@ WHERE `item_id`=568;
 COMMIT;
 -- END MIGRATION: 2026_08_07_1944_item_568_normal_egg.sql
 
+-- BEGIN MIGRATION: 2026_08_12_1405_treasure_map_ruby_shop.sql
+-- Add the permanent Treasure Map to Santa's Ruby shop.
+-- Safe to run more than once: one shop row and one permanent-stack option.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_shop`
+(`tab_id`,`temp_id`,`is_new`,`is_sell`,`type_sell`,`cost`,`icon_spec`,`create_time`)
+SELECT 64,611,1,1,3,2000,0,CURRENT_TIMESTAMP
+WHERE EXISTS (
+    SELECT 1
+    FROM `tab_shop` tab
+    INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+    WHERE tab.id=64
+      AND ruby_shop.tag_name='SATAN_RUBY'
+)
+AND EXISTS (
+    SELECT 1 FROM `item_template` WHERE id=611
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM `item_shop`
+    WHERE tab_id=64 AND temp_id=611
+);
+
+UPDATE `item_shop`
+SET `is_new`=1,
+    `is_sell`=1,
+    `type_sell`=3,
+    `cost`=2000,
+    `icon_spec`=0
+WHERE `tab_id`=64
+  AND `temp_id`=611;
+
+UPDATE `item_shop_option` option_row
+INNER JOIN `item_shop` shop_item ON shop_item.id=option_row.item_shop_id
+SET option_row.param=0
+WHERE shop_item.tab_id=64
+  AND shop_item.temp_id=611
+  AND option_row.option_id=73;
+
+INSERT INTO `item_shop_option` (`item_shop_id`,`option_id`,`param`)
+SELECT shop_item.id,73,0
+FROM `item_shop` shop_item
+WHERE shop_item.tab_id=64
+  AND shop_item.temp_id=611
+  AND NOT EXISTS (
+      SELECT 1
+      FROM `item_shop_option` existing_option
+      WHERE existing_option.item_shop_id=shop_item.id
+        AND existing_option.option_id=73
+  );
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1405_treasure_map_ruby_shop.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1707_second_disciple_change_item.sql
+-- Refresh the normal disciple changer icon and add a guarded second-disciple changer.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `icon_id`=25002
+WHERE `id`=401;
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2007,27,3,'Đổi đệ tử 2',
+ 'Chỉ dùng khi đang có Đệ tử 2; đổi ngẫu nhiên sang một Đệ tử 2 khác',
+ 1,25001,-1,1,0,0,0,-1,-1,-1)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),
+`gender`=VALUES(`gender`),
+`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),
+`level`=VALUES(`level`),
+`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),
+`is_up_to_up`=VALUES(`is_up_to_up`),
+`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),
+`gem`=VALUES(`gem`),
+`head`=VALUES(`head`),
+`body`=VALUES(`body`),
+`leg`=VALUES(`leg`);
+
+INSERT INTO `item_shop`
+(`tab_id`,`temp_id`,`is_new`,`is_sell`,`type_sell`,`cost`,`icon_spec`,`create_time`)
+SELECT 64,2007,1,1,3,2000,0,CURRENT_TIMESTAMP
+WHERE EXISTS (
+    SELECT 1
+    FROM `tab_shop` tab
+    INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+    WHERE tab.id=64
+      AND ruby_shop.tag_name='SATAN_RUBY'
+)
+AND EXISTS (
+    SELECT 1 FROM `item_template` WHERE id=2007
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM `item_shop`
+    WHERE tab_id=64 AND temp_id=2007
+);
+
+UPDATE `item_shop`
+SET `is_new`=1,
+    `is_sell`=1,
+    `type_sell`=3,
+    `cost`=2000,
+    `icon_spec`=0
+WHERE `tab_id`=64
+  AND `temp_id`=2007;
+
+UPDATE `item_shop_option` option_row
+INNER JOIN `item_shop` shop_item ON shop_item.id=option_row.item_shop_id
+SET option_row.param=0
+WHERE shop_item.tab_id=64
+  AND shop_item.temp_id=2007
+  AND option_row.option_id=30;
+
+INSERT INTO `item_shop_option` (`item_shop_id`,`option_id`,`param`)
+SELECT shop_item.id,30,0
+FROM `item_shop` shop_item
+WHERE shop_item.tab_id=64
+  AND shop_item.temp_id=2007
+  AND NOT EXISTS (
+      SELECT 1
+      FROM `item_shop_option` existing_option
+      WHERE existing_option.item_shop_id=shop_item.id
+        AND existing_option.option_id=30
+  );
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1707_second_disciple_change_item.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1725_restore_item_2006_name_card.sql
+-- Restore the missing name-change card so item template IDs remain dense through 2007.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2006,27,3,'Thẻ đổi tên','Dùng để đổi tên nhân vật',1,2989,-1,1,0,0,0,-1,-1,-1)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),
+`gender`=VALUES(`gender`),
+`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),
+`level`=VALUES(`level`),
+`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),
+`is_up_to_up`=VALUES(`is_up_to_up`),
+`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),
+`gem`=VALUES(`gem`),
+`head`=VALUES(`head`),
+`body`=VALUES(`body`),
+`leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1725_restore_item_2006_name_card.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1727_restore_item_2004_rocket_board.sql
+-- Restore the missing rocket board template so fresh installs keep dense item IDs.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2004,5,3,'Ván bay tên lửa','Cải trang Ván bay tên lửa',0,6755,-1,0,0,0,0,727,728,729)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),
+`gender`=VALUES(`gender`),
+`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),
+`level`=VALUES(`level`),
+`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),
+`is_up_to_up`=VALUES(`is_up_to_up`),
+`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),
+`gem`=VALUES(`gem`),
+`head`=VALUES(`head`),
+`body`=VALUES(`body`),
+`leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1727_restore_item_2004_rocket_board.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1749_fix_uub_part_sprites.sql
+-- Point Uub parts 946-948 back to the matching Uub sprite range 8586-8616.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `part`
+SET `DATA`=CASE `id`
+    WHEN 946 THEN '[[8586,1,-4],[8587,-2,-4],[2955,0,0]]'
+    WHEN 947 THEN '[[8589,2,-1],[8588,-1,-2],[8590,0,-3],[8591,0,-2],[8592,0,-2],[8593,0,-1],[8594,0,-1],[8595,2,0],[8596,2,0],[8597,2,0],[8598,5,0],[8599,1,-1],[8600,2,-1],[8601,2,-2],[8602,3,1],[8603,3,-1],[2955,0,0]]'
+    WHEN 948 THEN '[[8605,0,0],[8604,0,1],[8606,0,0],[8607,0,0],[8608,0,0],[8609,0,0],[8610,0,0],[8611,1,1],[8612,1,3],[8613,1,0],[8614,1,0],[8615,1,2],[8616,1,1],[2955,0,0]]'
+END
+WHERE `id` IN (946,947,948);
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1749_fix_uub_part_sprites.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1801_fix_uub_offsets_avatar.sql
+-- Restore the original Uub frame offsets and map its head to the matching avatar.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `part`
+SET `DATA`=CASE `id`
+    WHEN 946 THEN '[[8586,4,7],[8587,2,5],[2955,0,0]]'
+    WHEN 947 THEN '[[8588,2,6],[8589,1,4],[8590,-1,2],[8591,1,2],[8592,1,1],[8593,2,2],[8594,1,2],[8595,3,4],[8596,3,7],[8597,1,8],[8598,1,3],[8599,1,3],[8600,2,6],[8601,2,3],[8602,2,5],[8603,0,2],[2955,0,0]]'
+    WHEN 948 THEN '[[8604,9,9],[8605,1,4],[8606,0,3],[8607,1,2],[8608,0,2],[8609,2,2],[8610,0,4],[8611,3,9],[8612,0,7],[8613,1,3],[8614,1,5],[8615,0,8],[8616,0,7],[2955,0,0]]'
+END
+WHERE `id` IN (946,947,948);
+
+INSERT INTO `head_avatar` (`head_id`,`avatar_id`) VALUES (946,8617)
+ON DUPLICATE KEY UPDATE `avatar_id`=VALUES(`avatar_id`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1801_fix_uub_offsets_avatar.sql
+
+-- BEGIN MIGRATION: 2026_08_12_1814_fix_part_binary_integrity.sql
+-- Repair two malformed rows that shift the implicit part IDs in update_data/part.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `part` (`id`,`TYPE`,`DATA`)
+SELECT 1919, source_part.`TYPE`, source_part.`DATA`
+FROM `part` source_part
+WHERE source_part.`id`=1949
+  AND source_part.`DATA` LIKE '[[21326,%'
+  AND NOT EXISTS (SELECT 1 FROM `part` target_part WHERE target_part.`id`=1919);
+
+DELETE FROM `part`
+WHERE `id`=1949
+  AND `DATA` LIKE '[[21326,%';
+
+UPDATE `part`
+SET `DATA`='[[15288,0,10],[2955,0,0],[2955,0,0]]'
+WHERE `id`=1999;
+
+COMMIT;
+-- END MIGRATION: 2026_08_12_1814_fix_part_binary_integrity.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS

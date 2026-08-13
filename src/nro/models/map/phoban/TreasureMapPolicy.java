@@ -5,7 +5,7 @@ public final class TreasureMapPolicy {
     public static final int MIN_LEVEL = 1;
     public static final int MAX_LEVEL = 110;
     public static final int MAX_EXP_DAME = 500_000;
-    public static final int EXP_MULTIPLIER = 5;
+    public static final int EXP_MULTIPLIER = 2;
     public static final int NORMAL_HP_AT_MAX_LEVEL = 200_000_000;
     public static final int SUPER_HP_AT_MAX_LEVEL = 300_000_000;
 

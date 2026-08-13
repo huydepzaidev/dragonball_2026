@@ -10,6 +10,7 @@ import nro.models.utils.SkillUtil;
 import java.util.List;
 import nro.models.utils.Util;
 import nro.models.map.MaBuHold;
+import nro.models.services_dungeon.PotaufeuService;
 
 /**
  *
@@ -563,8 +564,12 @@ public class EffectSkillService {
     }
 
     public void removePKCommeson(Player player) {
+        boolean wasFightingCommeson = player.effectSkill.isPKCommeson;
         player.effectSkill.isPKCommeson = false;
         ItemTimeService.gI().sendItemTime(player, 2295, 0);
+        if (wasFightingCommeson) {
+            PotaufeuService.gI().finishChallenge(player);
+        }
     }
 
     public void setPKSTT(Player player, int time) {

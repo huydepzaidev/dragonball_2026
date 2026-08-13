@@ -31,12 +31,16 @@ import nro.models.player_system.Template.BgItem;
 
 public class DataGame {
 
-    public static byte vsData = 9;
+    public static byte vsData = 10;
     public static byte vsMap = 3;
     public static byte vsSkill = 1;
     public static byte vsItem = 9;
     public static int vsRes = 1;
     public static short maxSmallVersion = 32767;
+
+    private static final int UUB_AVATAR_ICON_ID = 8617;
+    private static final int JIREN_AVATAR_ICON_ID = 8094;
+    private static final byte SECOND_DISCIPLE_AVATAR_VERSION = 1;
 
     public static String LINK_IP_PORT = "Ngọc Rồng Online:36.50.134.190:14446:0";
     public static Map<Object, Object> MAP_MOUNT_NUM = new HashMap<>();
@@ -322,7 +326,7 @@ public class DataGame {
             msg = new Message(-77);
             msg.writer().writeShort(maxSmallVersion);
             for (int i = 0; i < maxSmallVersion; i++) {
-                msg.writer().writeByte(0);
+                msg.writer().writeByte(getSmallImageVersion(i));
             }
             session.sendMessage(msg);
             msg.cleanup();
@@ -351,6 +355,12 @@ public class DataGame {
             msg.cleanup();
         } catch (Exception e) {
         }
+    }
+
+    static byte getSmallImageVersion(int iconId) {
+        return iconId == UUB_AVATAR_ICON_ID || iconId == JIREN_AVATAR_ICON_ID
+                ? SECOND_DISCIPLE_AVATAR_VERSION
+                : 0;
     }
 
     public static void sendTileSetInfo(MySession session) {

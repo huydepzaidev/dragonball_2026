@@ -2,6 +2,8 @@ package nro.models.services;
 
 import nro.models.map.service.MapService;
 import nro.models.map.service.NpcService;
+import nro.models.map.phoban.PotaufeuPolicy;
+import nro.models.services_dungeon.PotaufeuService;
 import nro.models.utils.Functions;
 import nro.models.data.LocalManager;
 import nro.models.consts.ConstNpc;
@@ -20,6 +22,7 @@ import nro.models.item.Item;
 import nro.models.map.ItemMap;
 import nro.models.mob.Mob;
 import nro.models.player.Pet;
+import nro.models.player.NPoint;
 import nro.models.item.Item.ItemOption;
 import java.io.DataOutputStream;
 import java.util.concurrent.Executors;
@@ -958,7 +961,7 @@ public class Service {
 
             Player master = ((Pet) player).master;
 
-            long masterParam = (long) (param * 0.5);
+            long masterParam = NPoint.calculateMasterShareFromPet(param);
             masterParam = master.nPoint.calSubTNSM(masterParam);
 
             long maxPower = master.nPoint.getPowerLimit();
@@ -968,9 +971,6 @@ public class Service {
             if (master.nPoint.power + masterParam > maxPower) {
                 masterParam = maxPower - master.nPoint.power;
             }
-
-            master.nPoint.powerUp(masterParam);
-            master.nPoint.tiemNangUp(masterParam);
 
             addSMTN(master, type, masterParam, true);
 
@@ -1623,11 +1623,12 @@ public class Service {
                 msg.writer().writeShort(pl.pet.nPoint.maxStamina); //stamina full
                 msg.writer().writeByte(pl.pet.nPoint.crit); //crit
                 msg.writer().writeShort(pl.pet.nPoint.def); //def
-                int sizeSkill = pl.pet.playerSkill.skills.size();
                 msg.writer().writeByte(5); //count pet skill
-                for (int i = 0; i < sizeSkill; i++) {
-                    if (pl.pet.playerSkill.skills.get(i).skillId != -1) {
-                        msg.writer().writeShort(pl.pet.playerSkill.skills.get(i).skillId);
+                for (int i = 0; i < 5; i++) {
+                    Skill petSkill = i < pl.pet.playerSkill.skills.size()
+                            ? pl.pet.playerSkill.skills.get(i) : null;
+                    if (petSkill != null && petSkill.skillId != -1) {
+                        msg.writer().writeShort(petSkill.skillId);
                     } else {
                         switch (i) {
                             case 1:
@@ -1645,7 +1646,7 @@ public class Service {
                             case 4:
                                 msg.writer().writeShort(-1);
                                 if (pl.pet.typePet == 2 || pl.pet.typePet == 3 || pl.pet.typePet == 4) {
-                                    msg.writer().writeUTF("Cần đạt sức mạnh 40tỷ để mở");
+                                    msg.writer().writeUTF("Cần đạt sức mạnh 60 tỷ để mở");
                                 } else {
                                     msg.writer().writeUTF("Không thể mở kỹ năng này");
                                 }
@@ -2252,6 +2253,10 @@ public class Service {
     }
 
     public void callNhanBan(Player player) {
+        if (PotaufeuService.gI().hasUsedDailyChallenge(player)) {
+            Service.gI().sendThongBao(player, "Hôm nay bạn đã thách đấu bản sao, hãy trở lại vào ngày mai.");
+            return;
+        }
         List<Skill> skillList = new ArrayList<>();
         for (byte i = 0; i < player.playerSkill.skills.size(); i++) {
             Skill skill = player.playerSkill.skills.get(i);
@@ -2284,8 +2289,8 @@ public class Service {
 
         try {
             new NhanBan(player, bossDataClone);
-            EffectSkillService.gI().setPKCommeson(player, 300000);
-            player.lastPkCommesonTime = System.currentTimeMillis();
+            EffectSkillService.gI().setPKCommeson(player, PotaufeuPolicy.CHALLENGE_DURATION_MS);
+            PotaufeuService.gI().startChallenge(player);
         } catch (Exception e) {
             e.printStackTrace();
         }

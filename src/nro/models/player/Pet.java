@@ -2,7 +2,6 @@ package nro.models.player;
 
 import nro.models.consts.ConstPlayer;
 import nro.models.item.Item;
-import lombok.Getter;
 import nro.models.map.service.MapService;
 import nro.models.mob.Mob;
 import nro.models.skill.Skill;
@@ -40,7 +39,6 @@ public class Pet extends Player {
     public static final byte HTVV = 5;
 
     public Player master;
-    @Getter
     public byte status = 0;
 
     public byte typePet;
@@ -65,6 +63,10 @@ public class Pet extends Player {
     public Pet(Player master) {
         this.master = master;
         this.isPet = true;
+    }
+
+    public byte getStatus() {
+        return status;
     }
 
     public void changeStatus(byte status) {
@@ -358,7 +360,10 @@ public class Pet extends Player {
 
                         playerAttack = findPlayerAttack();
                         if (playerAttack != null) {
-                            if ((this.typePet == 2 || this.typePet == 4 || this.typePet == 5)
+                            if (approachPlayerAttackIfFar(playerAttack)) {
+                                return;
+                            }
+                            if ((this.typePet == 2 || this.typePet == 3 || this.typePet == 4)
                                     && Util.isTrue(1, 5)
                                     && playerAttack.nPoint.hp < 1_000_000_000
                                     && !playerAttack.nPoint.islinhthuydanhbac
@@ -454,6 +459,9 @@ public class Pet extends Player {
 
                         playerAttack = findPlayerAttack();
                         if (playerAttack != null) {
+                            if (approachPlayerAttackIfFar(playerAttack)) {
+                                return;
+                            }
                             int disToPlayer = Util.getDistance(this, playerAttack);
                             if (disToPlayer <= ARANGE_ATT_SKILL1) {
                                 this.playerSkill.skillSelect = getSkill(1);
@@ -722,10 +730,13 @@ public class Pet extends Player {
                     short y = dy;
                     byte dir = 1;
 
-                    Player target = this.zone.findNearestPlayer(this);
-                    Mob mobTarget = this.zone.findNearestMob(this);
+                    Player target = this.findPlayerAttack();
+                    Mob mobTarget = target == null ? this.zone.findNearestMob(this) : null;
 
                     if (target != null) {
+                        if (approachPlayerAttackIfFar(target)) {
+                            return true;
+                        }
                         x = (short) target.location.x;
                         y = (short) target.location.y;
                     } else if (mobTarget != null) {
@@ -827,11 +838,11 @@ public class Pet extends Player {
             return 412;
         } else if (this.typePet == 1) {
             return 297;
-        } else if (this.typePet == 2) {
+        } else if (this.typePet == 2 && !this.isTransform) {
             return 946;
-        } else if (this.typePet == 3) {
+        } else if (this.typePet == 3 && !this.isTransform) {
             return 1422;
-        } else if (this.typePet == 4) {
+        } else if (this.typePet == 4 && !this.isTransform) {
             return 876;
         } else if (inventory.itemsBody.get(5).isNotNullItem()) {
             int part = inventory.itemsBody.get(5).template.head;
@@ -867,7 +878,7 @@ public class Pet extends Player {
             return 947;
         } else if (this.typePet == 3 && !this.isTransform) {
             return 1423;
-        } else if (this.typePet == 4) {
+        } else if (this.typePet == 4 && !this.isTransform) {
             return 877;
         } else if (inventory.itemsBody.get(5).isNotNullItem()) {
             int body = inventory.itemsBody.get(5).template.body;
@@ -906,7 +917,7 @@ public class Pet extends Player {
             return 948;
         } else if (this.typePet == 3 && !this.isTransform) {
             return 1424;
-        } else if (this.typePet == 4) {
+        } else if (this.typePet == 4 && !this.isTransform) {
             return 878;
         } else if (inventory.itemsBody.get(5).isNotNullItem()) {
             int leg = inventory.itemsBody.get(5).template.leg;
@@ -927,28 +938,47 @@ public class Pet extends Player {
 
     private Player findPlayerAttack() {
         List<Player> playersMap = zone.getHumanoids();
-        int dis = ARANGE_CAN_ATTACK;
-        Player plAtt = null;
+        int bossDistance = Integer.MAX_VALUE;
+        int playerDistance = Integer.MAX_VALUE;
+        Player bossAttack = null;
+        Player playerAttack = null;
 
         for (int i = playersMap.size() - 1; i >= 0; i--) {
             Player pl = playersMap.get(i);
             if (!cantAttack(pl)) {
                 int d = Util.getDistance(this, pl);
-                if (d <= dis) {
-                    dis = d;
-                    plAtt = pl;
+                if (pl.isBoss && d < bossDistance) {
+                    bossDistance = d;
+                    bossAttack = pl;
+                } else if (!pl.isBoss && d < playerDistance) {
+                    playerDistance = d;
+                    playerAttack = pl;
                 }
             }
         }
 
-        return plAtt;
+        return bossAttack != null ? bossAttack : playerAttack;
     }
 
     private boolean cantAttack(Player player) {
-        return player == null || player.location == null || player.isDie() || Util.getDistance(this, player) > 500
-                || this.equals(player) || (player.equals(master) || this.typePet != 5 && this.typePet != 2 && this.typePet != 4)
+        return player == null || player.location == null || player.zone != this.zone || player.isDie()
+                || this.equals(player) || player.equals(master)
                 || (!temporaryEnemies.contains(player) && !master.temporaryEnemies.contains(player))
-                || (!SkillService.gI().canAttackPlayer(this, player));
+                || (!player.isBoss && !SkillService.gI().canAttackPlayer(this, player));
+    }
+
+    private boolean approachPlayerAttackIfFar(Player target) {
+        if (!needsApproachPlayerAttack(this, target)) {
+            return false;
+        }
+        int offset = this.location.x <= target.location.x ? -100 : 100;
+        PlayerService.gI().playerMove(this, target.location.x + offset, target.location.y);
+        return true;
+    }
+
+    static boolean needsApproachPlayerAttack(Pet pet, Player target) {
+        return pet != null && target != null && pet.zone != null && target.zone == pet.zone
+                && Util.getDistance(pet, target) > ARANGE_CAN_ATTACK;
     }
 
     private Mob findMobAttack() {
@@ -986,7 +1016,7 @@ public class Pet extends Player {
                     }
                     break;
                 case 4:
-                    if ((this.typePet == 2 || this.typePet == 3 || this.typePet == 4) && this.nPoint.power >= 40000000000L) {
+                    if (canOpenSecondDiscipleSkill5(this)) {
                         openSkill5();
                     }
                     break;
@@ -1078,23 +1108,17 @@ public class Pet extends Player {
     }
 
     public void openSkill5() {
-        Skill skill = null;
-
-        switch (this.gender) {
-            case 0 ->
-                skill = SkillUtil.createSkill(Skill.SUPER_KAME, 1);
-            case 1 ->
-                skill = SkillUtil.createSkill(Skill.MA_PHONG_BA, 1);
-            case 2 ->
-                skill = SkillUtil.createSkill(Skill.LIEN_HOAN_CHUONG, 1);
-            default -> {
-                return;
-            }
+        if (!canOpenSecondDiscipleSkill5(this)
+                || this.playerSkill.skills.size() < 5 || this.playerSkill.skills.get(4).skillId != -1) {
+            return;
         }
+        byte[] skills = {Skill.SUPER_KAME, Skill.MA_PHONG_BA, Skill.LIEN_HOAN_CHUONG};
+        this.playerSkill.skills.set(4, SkillUtil.createSkill(skills[Util.nextInt(0, skills.length - 1)], 1));
+    }
 
-        if (skill != null) {
-            this.playerSkill.skills.set(4, skill);
-        }
+    static boolean canOpenSecondDiscipleSkill5(Pet pet) {
+        return pet != null && pet.typePet >= 2 && pet.typePet <= 4
+                && pet.nPoint.power >= 60_000_000_000L;
     }
 
     private Skill getSkill(int indexSkill) {
@@ -1102,26 +1126,19 @@ public class Pet extends Player {
     }
 
     public void transform() {
-        if (this.typePet == 1) {
-            this.isTransform = !this.isTransform;
-            Service.gI().Send_Caitrang(this);
-            Service.gI().chat(this, "Bố Mày Là Bư Nè !! Bư..Bư..Bư..Ma..Nhân..Bư....");
+        if (this.typePet < 1 || this.typePet > 4) {
+            Service.gI().sendThongBao(master, "Đệ tử này không thể biến hình.");
+            return;
         }
-        if (this.typePet == 2) {
-            this.isTransform = !this.isTransform;
-            Service.gI().Send_Caitrang(this);
-            Service.gI().chat(this, "Tao là thần");
-        }
-        if (this.typePet == 2) {
-            this.isTransform = !this.isTransform;
-            Service.gI().Send_Caitrang(this);
-            Service.gI().chat(this, "Chúng mày quỳ xuống");
-        }
-        if (this.typePet == 4) {
-            this.isTransform = !this.isTransform;
-            Service.gI().Send_Caitrang(this);
-            Service.gI().chat(this, "Hỡi nhân loại thấp kém! Hãy chiêm ngưỡng vẻ đẹp của ta!");
-        }
+        this.isTransform = !this.isTransform;
+        Service.gI().Send_Caitrang(this);
+        String message = switch (this.typePet) {
+            case 1 -> "Bư..Bư..Bư..Ma Nhân Bư!";
+            case 2 -> "Uub biến hình!";
+            case 3 -> "Hãy chiêm ngưỡng sức mạnh của Thần Hủy Diệt!";
+            default -> "Sức mạnh của Jiren không có giới hạn!";
+        };
+        Service.gI().chat(this, message);
     }
 
     public long lastTimeAskAttack;

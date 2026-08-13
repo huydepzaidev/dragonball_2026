@@ -52,9 +52,15 @@ public class MabuEgg {
 
     public void openEgg(int gender) {
         if (this.player.pet != null) {
+            if (!PetService.gI().canReplacePet(this.player)) {
+                return;
+            }
             try {
-                destroyEgg();
                 Thread.sleep(4000);
+                if (this.player.pet != null && !PetService.gI().canReplacePet(this.player)) {
+                    return;
+                }
+                destroyEgg();
                 if (this.player.pet == null) {
                     PetService.gI().createMabuPet(this.player, gender);
                 } else {

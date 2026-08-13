@@ -44,6 +44,7 @@ import nro.models.services.PlayerService;
 import nro.models.services.TaskService;
 import nro.models.services.InventoryService;
 import nro.models.map.service.MapService;
+import nro.models.map.phoban.PotaufeuPolicy;
 import nro.models.services_dungeon.NgocRongNamecService;
 import nro.models.map.service.ItemMapService;
 import nro.models.npc.DuaHauEgg;
@@ -942,7 +943,10 @@ public class UseItem {
                             break;
                             case 1795: //đổi đệ tử
                                 changePetRamdom(pl, item);
-                                break;
+                                return;
+                            case ConstItem.DOI_DE_TU_2:
+                                changeSecondDisciple(pl, item);
+                                return;
                             case 1760: {
                                 Player player = pl;
                                 if (player.pet != null) {
@@ -1301,6 +1305,9 @@ public class UseItem {
 
     private void changePet(Player player, Item item) {
         if (player.pet != null) {
+            if (!PetService.gI().canReplacePet(player)) {
+                return;
+            }
             int gender = player.pet.gender + 1;
             if (gender > 2) {
                 gender = 0;
@@ -1313,39 +1320,113 @@ public class UseItem {
     }
 
     private void changePetRamdom(Player player, Item item) {
-        if (item.template.id != 1795) {
-            Service.gI().sendThongBao(player, "Vật phẩm không hợp lệ!");
+        if (!validateSecondDiscipleChange(player, item)) {
             return;
         }
+        NpcService.gI().createMenuConMeo(player, ConstNpc.MENU_CONFIRM_CHANGE_SECOND_DISCIPLE, -1,
+                "Bạn đã tháo hết trang bị của đệ tử cũ ra chưa?\nKhi đổi, đệ tử cũ sẽ mất.",
+                new String[]{"OK", "Từ chối"}, item);
+    }
 
-        if (!item.hasOption(250, 3000)) {
-            Service.gI().sendThongBao(player, "Cần ít nhất 3000 sức mạnh Kilis để mở!");
+    private void changeSecondDisciple(Player player, Item item) {
+        if (!validateSecondDiscipleReroll(player, item)) {
             return;
         }
+        NpcService.gI().createMenuConMeo(player, ConstNpc.MENU_CONFIRM_CHANGE_SECOND_DISCIPLE, -1,
+                "Bạn đã tháo hết trang bị của Đệ tử 2 cũ ra chưa?\nKhi đổi, đệ tử cũ sẽ mất.",
+                new String[]{"OK", "Từ chối"}, item);
+    }
 
-        if (player.pet == null || player.pet.typePet != 1 || player.pet.nPoint.power < 40_000_000_000L) {
-            Service.gI().sendThongBao(player, "Cần có đệ Mabư đạt 40 tỷ sức mạnh để thực hiện!");
+    public void confirmChangeSecondDisciple(Player player, Object pendingItem, int select) {
+        if (select != 0) {
             return;
         }
-
-        int[] petTypes = {2, 3, 4};
-        int randomType = petTypes[rand.nextInt(petTypes.length)];
-        switch (randomType) {
-            case 2:
-                PetService.gI().createUubPet(player);
-                break;
-            case 3:
-                PetService.gI().createKidBeerPet(player);
-                break;
-            case 4:
-                PetService.gI().createJirenPet(player);
-                break;
+        if (!(pendingItem instanceof Item item)) {
+            Service.gI().sendThongBao(player, "Yêu cầu đổi đệ tử đã hết hiệu lực, vui lòng thử lại.");
+            return;
         }
+        synchronized (player) {
+            if (!item.isNotNullItem() || item.template == null) {
+                Service.gI().sendThongBao(player, "Vật phẩm không hợp lệ hoặc không còn trong hành trang!");
+                return;
+            }
+            boolean rerollSecondDisciple = item.template.id == ConstItem.DOI_DE_TU_2;
+            if (rerollSecondDisciple) {
+                if (!validateSecondDiscipleReroll(player, item)) {
+                    return;
+                }
+            } else if (!validateSecondDiscipleChange(player, item)) {
+                return;
+            }
+            byte oldPetType = player.pet.typePet;
+            byte newPetType = rerollSecondDisciple
+                    ? chooseDifferentSecondDiscipleType(oldPetType, rand.nextInt(2))
+                    : (byte) (2 + rand.nextInt(3));
+            if (!PetService.gI().replaceWithSecondDisciple(player, newPetType)) {
+                return;
+            }
+            InventoryService.gI().subQuantityItemsBag(player, item, 1);
+            if (oldPetType == 0 && player.mabuEgg != null) {
+                player.mabuEgg.destroyEgg();
+            }
+            TaskService.gI().checkDoneTaskUseItem(player, item);
+            InventoryService.gI().sendItemBags(player);
+            Service.gI().showInfoPet(player);
+            Service.gI().sendThongBao(player, "Bạn đã nhận được " + player.pet.name.substring(1) + "!");
+        }
+    }
 
-        InventoryService.gI().removeItemBag(player, item);
-        InventoryService.gI().sendItemBags(player);
+    private boolean validateSecondDiscipleChange(Player player, Item item) {
+        if (item == null || !item.isNotNullItem() || item.template.id != 1795
+                || !player.inventory.itemsBag.contains(item)) {
+            Service.gI().sendThongBao(player, "Vật phẩm không hợp lệ hoặc không còn trong hành trang!");
+            return false;
+        }
+        if (!hasRequiredSecondDiscipleKilis(item)) {
+            Service.gI().sendThongBao(player, "Không đủ 3.000 Kilis để đổi Đệ tử 2!");
+            return false;
+        }
+        if (player.pet == null) {
+            Service.gI().sendThongBao(player, "Bạn chưa có đệ tử để đổi!");
+            return false;
+        }
+        if (player.pet.typePet != 0 && player.pet.typePet != 1) {
+            Service.gI().sendThongBao(player, "Chỉ có thể dùng đệ thường hoặc đệ Mabư để đổi Đệ tử 2!");
+            return false;
+        }
+        if (player.pet.nPoint.power < 40_000_000_000L) {
+            Service.gI().sendThongBao(player, "Đệ tử phải đạt ít nhất 40 tỷ sức mạnh!");
+            return false;
+        }
+        if (player.pet.typePet == 0 && player.mabuEgg == null) {
+            Service.gI().sendThongBao(player, "Đệ thường cần có trứng Mabư để đổi Đệ tử 2!");
+            return false;
+        }
+        return PetService.gI().canReplacePet(player);
+    }
 
-        Service.gI().sendThongBao(player, "Bạn đã nhận được đệ tử mới!");
+    private boolean validateSecondDiscipleReroll(Player player, Item item) {
+        if (item == null || !item.isNotNullItem() || item.template.id != ConstItem.DOI_DE_TU_2
+                || !player.inventory.itemsBag.contains(item)) {
+            Service.gI().sendThongBao(player, "Vật phẩm không hợp lệ hoặc không còn trong hành trang!");
+            return false;
+        }
+        if (!PetService.isSecondDisciple(player)) {
+            Service.gI().sendThongBao(player, "Bạn phải có Đệ tử 2 mới có thể sử dụng vật phẩm này!");
+            return false;
+        }
+        return PetService.gI().canReplacePet(player);
+    }
+
+    static byte chooseDifferentSecondDiscipleType(byte currentType, int roll) {
+        if (!PetService.isSecondDiscipleType(currentType) || roll < 0 || roll > 1) {
+            throw new IllegalArgumentException("Invalid second disciple reroll input");
+        }
+        return (byte) (2 + ((currentType - 2 + roll + 1) % 3));
+    }
+
+    static boolean hasRequiredSecondDiscipleKilis(Item item) {
+        return item != null && item.hasOption(250, 3000);
     }
 
     private void eatGrapes(Player pl, Item item) {
@@ -1905,7 +1986,9 @@ public class UseItem {
         }
         boolean leavingTreasureMap = pl.zone != null && pl.zone.map != null
                 && MapService.gI().isMapBanDoKhoBau(pl.zone.map.mapId);
-        if (leavingTreasureMap) {
+        boolean leavingPotaufeu = pl.zone != null && pl.zone.map != null
+                && pl.zone.map.mapId == PotaufeuPolicy.MAP_ID;
+        if (leavingTreasureMap || leavingPotaufeu) {
             pl.mapBeforeCapsule = null;
         } else if (index != 0 || zoneChose.map.mapId == 21
                 || zoneChose.map.mapId == 22

@@ -353,7 +353,8 @@ public class Mob {
         if (pl.nPoint != null) {
             long calculatedExperience = pl.nPoint.calSucManhTiemNang(tiemNang);
             tiemNang = treasureMap
-                    ? TreasureMapPolicy.toIntExperience(calculatedExperience)
+                    ? TreasureMapPolicy.toIntExperience(
+                            TreasureMapPolicy.multiplyMapExperience(calculatedExperience))
                     : (int) calculatedExperience;
         } else {
             return 0;
