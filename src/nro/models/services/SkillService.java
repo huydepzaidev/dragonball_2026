@@ -907,6 +907,9 @@ public class SkillService {
             plAtt.nPoint.isCrit100 = true;
         }
         long dameAttack = plAtt.nPoint.getDameAttack(false, !plInjure.isBoss);
+        if (plInjure.isBoss) {
+            dameAttack = plAtt.nPoint.applyBossDamageBonuses(dameAttack);
+        }
         if (plAtt.isPl() && plAtt.effectSkin != null && plAtt.effectSkin.isXDame) {
             plAtt.effectSkin.isXDame = false;
         }

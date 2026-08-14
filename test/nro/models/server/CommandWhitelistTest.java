@@ -15,7 +15,8 @@ public final class CommandWhitelistTest {
                 "boss", "brl", "a", "item", "getitem", "hs", "kol", "d",
                 "toado", "1", "2", "b", "m 5", "n 4", "dm 100",
                 "hp 100", "ki 100", "up 100", "upp 100", "i 14",
-                "i 14 2", "i 14 2 50:10", " BOSS ", "DM 100")) {
+                "i 14 2", "i 14 2 50:10", "i 2041", "i 2041 1",
+                " BOSS ", "DM 100")) {
             if (!Command.isSupportedAdminCommand(command)) {
                 throw new AssertionError("supported command rejected: " + command);
             }

@@ -42,8 +42,6 @@ import nro.models.consts.ConstDailyGift;
 import nro.models.utils.Logger;
 import nro.models.utils.Util;
 import java.util.ArrayList;
-import lombok.Getter;
-import lombok.Setter;
 import nro.models.services_dungeon.BlackBallWarService;
 import nro.models.matches.giai_dau.The23rdMartialArtCongressManager;
 import nro.models.map.ItemMap;
@@ -82,9 +80,15 @@ public class Player implements Runnable {
 
     public long lastTimeEatPea;
     public Map<Integer, Long> activeEffects = new HashMap<>();
-    @Setter
-    @Getter
     public MySession session;
+
+    public MySession getSession() {
+        return session;
+    }
+
+    public void setSession(MySession session) {
+        this.session = session;
+    }
     public long id;
     public String name;
     public byte gender;
@@ -1340,6 +1344,10 @@ public class Player implements Runnable {
             Item it = inventory.itemsBody.get(7);
             if (it != null && it.isNotNullItem() && newPet == null) {
                 switch (it.template.id) {
+                    case 2019 -> {
+                        PetService.summonNarutoCollaborationPet(this);
+                        Service.gI().point(this);
+                    }
                     case 892 -> {
                         PetService.Pet2(this, 882, 883, 884);
                         Service.gI().point(this);

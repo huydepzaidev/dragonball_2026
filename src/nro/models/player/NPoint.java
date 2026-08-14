@@ -51,6 +51,7 @@ public class NPoint {
         this.tlDef = new ArrayList<>();
         this.tlDame = new ArrayList<>();
         this.tlDameAttMob = new ArrayList<>();
+        this.tlDameAttBoss = new ArrayList<>();
         this.tlTNSM = new ArrayList<>();
         this.tlDameCrit = new ArrayList<>();
     }
@@ -106,7 +107,7 @@ public class NPoint {
     /**
      * Tỉ lệ sức đánh/ sức đánh khi đánh quái
      */
-    public List<Integer> tlDame, tlDameAttMob;
+    public List<Integer> tlDame, tlDameAttMob, tlDameAttBoss;
 
     /**
      * Lượng hp, mp hồi mỗi 30s, mp hồi cho người khác
@@ -481,6 +482,7 @@ public class NPoint {
                 }
             }
         }
+        applyNarutoCollaborationSynergies();
         setDameTrainArmor();
         setBasePoint();
         setOutfitFusion();
@@ -679,6 +681,9 @@ public class NPoint {
             case 173: //Phục hồi #% HP và KI cho đồng đội
                 this.tlHpHoiBanThanVaDongDoi += io.param;
                 this.tlMpHoiBanThanVaDongDoi += io.param;
+                break;
+            case 204: // Tấn công +#% lên Boss
+                this.tlDameAttBoss.add(io.param);
                 break;
             case 211:
                 this.setltdb += 1;
@@ -1234,6 +1239,7 @@ public class NPoint {
         this.tlDame.clear();
         this.tlDameCrit.clear();
         this.tlDameAttMob.clear();
+        this.tlDameAttBoss.clear();
         this.tlSDCM = 0;
         this.tlHpHoiBanThanVaDongDoi = 0;
         this.tlMpHoiBanThanVaDongDoi = 0;
@@ -1525,6 +1531,35 @@ public class NPoint {
             dameAttack = 2_147_483_647;
         }
         return (int) dameAttack;
+    }
+
+    public int applyBossDamageBonuses(long damage) {
+        long result = Math.max(0L, damage);
+        for (Integer percent : this.tlDameAttBoss) {
+            if (percent != null) {
+                result += result * percent / 100L;
+            }
+        }
+        return (int) Math.min(2_147_483_647L, result);
+    }
+
+    private void applyNarutoCollaborationSynergies() {
+        if (hasEquippedItem(5, 2026) && hasEquippedItem(7, 2019)) {
+            this.tlHp.add(7);
+        }
+        if (hasEquippedItem(5, 2027) && hasEquippedItem(8, 2030)) {
+            this.tlDame.add(1);
+        }
+    }
+
+    private boolean hasEquippedItem(int slot, int itemId) {
+        if (this.player == null || this.player.inventory == null
+                || this.player.inventory.itemsBody == null
+                || slot < 0 || slot >= this.player.inventory.itemsBody.size()) {
+            return false;
+        }
+        Item item = this.player.inventory.itemsBody.get(slot);
+        return item != null && item.isNotNullItem() && item.template.id == itemId;
     }
 
     public int getCurrPercentHP() {
@@ -2070,6 +2105,7 @@ public class NPoint {
         this.tlDef = null;
         this.tlDame = null;
         this.tlDameAttMob = null;
+        this.tlDameAttBoss = null;
         this.tlTNSM = null;
     }
 

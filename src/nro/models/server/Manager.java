@@ -137,6 +137,35 @@ public final class Manager {
         return instance;
     }
 
+    static void addItemTemplateAtId(List<ItemTemplate> templates, ItemTemplate itemTemplate) {
+        if (templates == null || itemTemplate == null || itemTemplate.id < 0) {
+            throw new IllegalArgumentException("Invalid item template index");
+        }
+        while (templates.size() < itemTemplate.id) {
+            templates.add(createMissingItemTemplate((short) templates.size()));
+        }
+        if (templates.size() == itemTemplate.id) {
+            templates.add(itemTemplate);
+        } else {
+            templates.set(itemTemplate.id, itemTemplate);
+        }
+    }
+
+    private static ItemTemplate createMissingItemTemplate(short id) {
+        ItemTemplate placeholder = new ItemTemplate();
+        placeholder.id = id;
+        placeholder.type = 27;
+        placeholder.gender = 3;
+        placeholder.name = "Vật phẩm chưa cấu hình";
+        placeholder.description = "Không sử dụng";
+        placeholder.iconID = 0;
+        placeholder.part = -1;
+        placeholder.head = -1;
+        placeholder.body = -1;
+        placeholder.leg = -1;
+        return placeholder;
+    }
+
     public static boolean hasNewTopScores() {
         return isTopMaydamChanged || isTopSukien2Changed || isTopSukienChanged || isTopSukien1Changed || isTopWhisChanged;
     }
@@ -657,7 +686,7 @@ public final class Manager {
                         itemTemp.body = rs.getInt("body");
                         itemTemp.leg = rs.getInt("leg");
 
-                        ITEM_TEMPLATES.add(itemTemp);
+                        addItemTemplateAtId(ITEM_TEMPLATES, itemTemp);
                     } while (rs.next());
                     offset += batchSize;
                 }
@@ -678,6 +707,7 @@ public final class Manager {
                     Logger.error("Error closing resources: " + e.getMessage());
                 }
             }
+
 
             //load item option template
             ps = ConnectionDatabase.prepareStatement("select id, name from item_option_template order by id");

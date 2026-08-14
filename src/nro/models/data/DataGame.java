@@ -31,11 +31,11 @@ import nro.models.player_system.Template.BgItem;
 
 public class DataGame {
 
-    public static byte vsData = 10;
+    public static byte vsData = 12;
     public static byte vsMap = 3;
     public static byte vsSkill = 1;
-    public static byte vsItem = 9;
-    public static int vsRes = 1;
+    public static byte vsItem = 12;
+    public static int vsRes = 2;
     public static short maxSmallVersion = 32767;
 
     private static final int UUB_AVATAR_ICON_ID = 8617;

@@ -82,6 +82,11 @@ public class UseItem {
     static final int BABY_DRAGON_WEIGHT_TOTAL = 100;
     static final int BABY_DRAGON_PERMANENT_RATE_PERCENT = 1;
     static final int BABY_DRAGON_MAX_EXPIRATION_DAYS = 30;
+    static final int[] NARUTO_COLLAB_REWARD_ITEM_IDS = {2019, 2026, 2027, 2030, 2039};
+    static final int NARUTO_COLLAB_PERMANENT_RATE_PERCENT = 5;
+    static final int NARUTO_COLLAB_MAX_STAT_RATE_PERCENT = 1;
+    static final int NARUTO_COLLAB_HIGH_STAT_ROLL_LIMIT_PERCENT = 15;
+    static final int NARUTO_COLLAB_MAX_EXPIRATION_DAYS = 30;
 
     private static UseItem instance;
     private static final Random rand = new Random();
@@ -299,6 +304,14 @@ public class UseItem {
                     }
                     default:
                         switch (item.template.id) {
+                            case 2019:
+                                InventoryService.gI().itemBagToBody(pl, indexBag);
+                                PetService.summonNarutoCollaborationPet(pl);
+                                Service.gI().point(pl);
+                                break;
+                            case ConstItem.RUONG_HOP_TAC_NARUTO:
+                                openNarutoCollaborationChest(pl, item);
+                                break;
                             case ConstItem.CAPSULE_HONG_NGOC:
                                 openRubyCapsule(pl, item);
                                 break;
@@ -2173,6 +2186,170 @@ public class UseItem {
         } else {
             Service.gI().sendThongBao(player, "Yêu cầu có ít nhất 1 ô trống trong hành trang.");
         }
+    }
+
+    private void openNarutoCollaborationChest(Player player, Item chest) {
+        if (player == null || player.inventory == null || chest == null
+                || !chest.isNotNullItem() || chest.quantity < 1) {
+            return;
+        }
+        if (InventoryService.gI().getCountEmptyBag(player) <= 0) {
+            Service.gI().sendThongBao(player,
+                    "Yêu cầu có ít nhất 1 ô trống trong hành trang.");
+            return;
+        }
+
+        int rewardId = narutoCollaborationRewardIdForRoll(
+                rand.nextInt(NARUTO_COLLAB_REWARD_ITEM_IDS.length));
+        Item reward = ItemService.gI().createNewItem((short) rewardId);
+        if (reward == null || !reward.isNotNullItem()) {
+            Service.gI().sendThongBao(player,
+                    "Không thể tạo phần thưởng, rương chưa bị sử dụng.");
+            return;
+        }
+        int permanentRoll = rand.nextInt(100);
+        int limitedDayRoll = rand.nextInt(NARUTO_COLLAB_MAX_EXPIRATION_DAYS);
+        applyNarutoCollaborationOptions(reward, permanentRoll, limitedDayRoll,
+                randomNarutoCollaborationStats(rewardId));
+        if (!InventoryService.gI().addItemBag(player, reward)) {
+            Service.gI().sendThongBao(player,
+                    "Không thể thêm phần thưởng vào hành trang, rương chưa bị sử dụng.");
+            return;
+        }
+
+        InventoryService.gI().subQuantityItemsBag(player, chest, 1);
+        InventoryService.gI().sendItemBags(player);
+        int expirationDays = narutoCollaborationExpirationDays(permanentRoll, limitedDayRoll);
+        String duration = expirationDays == 0 ? "vĩnh viễn" : expirationDays + " ngày";
+        Service.gI().sendThongBao(player,
+                "Bạn đã nhận được " + reward.template.name + " (" + duration + ")!");
+    }
+
+    static int narutoCollaborationRewardIdForRoll(int roll) {
+        if (roll < 0 || roll >= NARUTO_COLLAB_REWARD_ITEM_IDS.length) {
+            throw new IllegalArgumentException("Naruto collaboration chest roll is out of range");
+        }
+        return NARUTO_COLLAB_REWARD_ITEM_IDS[roll];
+    }
+
+    private static int[] randomNarutoCollaborationStats(int itemId) {
+        int qualityRoll = rand.nextInt(100);
+        return switch (itemId) {
+            case 2026 -> new int[]{randomHuntStat(10, 25, qualityRoll),
+                randomHuntStat(10, 35, qualityRoll) * 1_000,
+                randomHuntStat(5, 15, qualityRoll)};
+            case 2027 -> new int[]{randomHuntStat(15, 25, qualityRoll),
+                randomHuntStat(5_000, 12_000, qualityRoll),
+                randomHuntStat(10, 15, qualityRoll),
+                randomHuntStat(10, 20, qualityRoll)};
+            default -> new int[0];
+        };
+    }
+
+    private static int randomHuntStat(int min, int max, int qualityRoll) {
+        int[] bounds = narutoCollaborationStatBounds(min, max, qualityRoll);
+        return nextIntInclusive(bounds[0], bounds[1]);
+    }
+
+    static int[] narutoCollaborationStatBounds(int min, int max, int qualityRoll) {
+        if (max - min < 2) {
+            throw new IllegalArgumentException("Stat range must contain at least three values");
+        }
+        if (qualityRoll < 0 || qualityRoll >= 100) {
+            throw new IllegalArgumentException("Quality roll must be from 0 to 99");
+        }
+        if (qualityRoll < NARUTO_COLLAB_MAX_STAT_RATE_PERCENT) {
+            return new int[]{max, max};
+        }
+        int midpoint = min + (max - min) / 2;
+        if (qualityRoll < NARUTO_COLLAB_HIGH_STAT_ROLL_LIMIT_PERCENT) {
+            return new int[]{midpoint + 1, max - 1};
+        }
+        return new int[]{min, midpoint};
+    }
+
+    private static int nextIntInclusive(int min, int max) {
+        return min + rand.nextInt(max - min + 1);
+    }
+
+    static void applyNarutoCollaborationOptions(Item item, int permanentRoll,
+            int limitedDayRoll, int... randomStats) {
+        if (item == null || item.template == null || item.itemOptions == null) {
+            throw new IllegalStateException("Missing Naruto collaboration item template");
+        }
+        item.itemOptions.clear();
+        for (int[] option : narutoCollaborationBaseOptions(item.template.id, randomStats)) {
+            item.itemOptions.add(new ItemOption(option[0], option[1]));
+        }
+        int expirationDays = narutoCollaborationExpirationDays(permanentRoll, limitedDayRoll);
+        if (expirationDays > 0) {
+            item.itemOptions.add(new ItemOption(93, expirationDays));
+        }
+    }
+
+    static int[][] narutoCollaborationBaseOptions(int itemId, int... randomStats) {
+        return switch (itemId) {
+            case 2019 -> {
+                requireRandomStatCount(itemId, randomStats, 0);
+                yield new int[][]{{50, 15}, {77, 15}, {103, 15}, {204, 10}, {14, 7}};
+            }
+            case 2026 -> {
+                requireRandomStatCount(itemId, randomStats, 3);
+                requireStatRange("Naruto HP percent", randomStats[0], 10, 25);
+                requireStatRange("Naruto HP", randomStats[1], 10_000, 35_000);
+                requireStatStep("Naruto HP", randomStats[1], 1_000);
+                requireStatRange("Naruto damage reduction", randomStats[2], 5, 15);
+                yield new int[][]{{77, randomStats[0]}, {22, randomStats[1] / 1_000},
+                    {94, randomStats[2]}};
+            }
+            case 2027 -> {
+                requireRandomStatCount(itemId, randomStats, 4);
+                requireStatRange("Sasuke damage percent", randomStats[0], 15, 25);
+                requireStatRange("Sasuke attack", randomStats[1], 5_000, 12_000);
+                requireStatRange("Sasuke critical", randomStats[2], 10, 15);
+                requireStatRange("Sasuke critical damage", randomStats[3], 10, 20);
+                yield new int[][]{{50, randomStats[0]}, {0, randomStats[1]},
+                    {14, randomStats[2]}, {5, randomStats[3]}};
+            }
+            case 2030 -> {
+                requireRandomStatCount(itemId, randomStats, 0);
+                yield new int[][]{{50, 20}, {77, 20}, {103, 20}, {95, 10}, {96, 10}, {14, 15}};
+            }
+            case 2039 -> {
+                requireRandomStatCount(itemId, randomStats, 0);
+                yield new int[][]{{50, 22}, {77, 22}, {103, 22}, {101, 55}, {14, 10}};
+            }
+            default -> throw new IllegalArgumentException("Unknown Naruto collaboration item " + itemId);
+        };
+    }
+
+    private static void requireRandomStatCount(int itemId, int[] randomStats, int expected) {
+        if (randomStats == null || randomStats.length != expected) {
+            throw new IllegalArgumentException(
+                    "Naruto collaboration item " + itemId + " requires " + expected + " random stats");
+        }
+    }
+
+    private static void requireStatRange(String name, int value, int min, int max) {
+        if (value < min || value > max) {
+            throw new IllegalArgumentException(name + " must be from " + min + " to " + max);
+        }
+    }
+
+    private static void requireStatStep(String name, int value, int step) {
+        if (value % step != 0) {
+            throw new IllegalArgumentException(name + " must be divisible by " + step);
+        }
+    }
+
+    static int narutoCollaborationExpirationDays(int permanentRoll, int limitedDayRoll) {
+        if (permanentRoll < 0 || permanentRoll >= 100) {
+            throw new IllegalArgumentException("Permanent roll must be from 0 to 99");
+        }
+        if (limitedDayRoll < 0 || limitedDayRoll >= NARUTO_COLLAB_MAX_EXPIRATION_DAYS) {
+            throw new IllegalArgumentException("Limited day roll must be from 0 to 29");
+        }
+        return permanentRoll < NARUTO_COLLAB_PERMANENT_RATE_PERCENT ? 0 : limitedDayRoll + 1;
     }
 
     private int randomInRange(int min, int max) {

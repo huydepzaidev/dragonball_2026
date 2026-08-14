@@ -16,6 +16,10 @@ import nro.models.utils.Util;
  */
 public class PetService {
 
+    public static final short NARUTO_PET_HEAD_PART = 2102;
+    public static final short NARUTO_PET_BODY_PART = 1990;
+    public static final short NARUTO_PET_LEG_PART = 1991;
+
     private static PetService instance;
 
     public static PetService gI() {
@@ -470,5 +474,9 @@ public class PetService {
         pl.newPet.nPoint.stamina = 1;
         pl.newPet.nPoint.setBasePoint();
         pl.newPet.nPoint.setFullHpMp();
+    }
+
+    public static void summonNarutoCollaborationPet(Player player) {
+        Pet2(player, NARUTO_PET_HEAD_PART, NARUTO_PET_BODY_PART, NARUTO_PET_LEG_PART);
     }
 }

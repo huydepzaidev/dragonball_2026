@@ -9,11 +9,13 @@ import nro.models.player_system.Template;
 
 public class ItemData {
 
+    static final int ITEM_TEMPLATE_SPLIT_INDEX = 900;
+
     public static void updateItem(MySession session) {
         updateItemOptionItemplate(session);
         updateItemArrHead2FTemplate(session);
-        updateItemTemplate(session, 750);
-        updateItemTemplate(session, 750, Manager.ITEM_TEMPLATES.size());
+        updateItemTemplate(session, ITEM_TEMPLATE_SPLIT_INDEX);
+        updateItemTemplate(session, ITEM_TEMPLATE_SPLIT_INDEX, Manager.ITEM_TEMPLATES.size());
     }
 
     private static void updateItemOptionItemplate(MySession session) {

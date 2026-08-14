@@ -14804,5 +14804,236 @@ WHERE ruby_shop.tag_name='SATAN_RUBY'
 COMMIT;
 
 -- END MIGRATION: 2026_08_14_1540_dragon_ball_radars_ruby_shop.sql
+-- BEGIN MIGRATION: 2026_08_14_1607_naruto_resource_bundle.sql
+-- Import the requested Naruto resource bundle while preserving the existing Christmas-tree NPC.
+-- Resource PNGs 16937-16944, 16996-17088 and 17135-17163 are stored under data/res/x1..x4.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+-- Parts 2003-2005 currently belong to the Christmas-tree NPC. Preserve them before
+-- assigning the source-compatible IDs to Sasuke, whose client data expects those IDs.
+DELETE FROM `part` WHERE `id` IN (2099,2100,2101);
+
+INSERT INTO `part` (`id`,`TYPE`,`DATA`) VALUES
+(2099,0,'[[15041,-5,-20],[15041,0,0],[2955,0,0]]'),
+(2100,1,'[[2955,0,0],[2955,10,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]'),
+(2101,2,'[[2955,0,0],[15042,-5,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]');
+
+UPDATE `npc_template`
+SET `head`=2099,`body`=2100,`leg`=2101
+WHERE `id`=79 AND `head`=2003 AND `body`=2004 AND `leg`=2005;
+
+DELETE FROM `part`
+WHERE `id` IN (1990,1991,2000,2001,2002,2003,2004,2005,2012,2013,2014);
+
+INSERT INTO `part` (`id`,`TYPE`,`DATA`) VALUES
+-- Pet Cửu Vĩ Hồ
+(1990,1,'[[2955,0,0],[16937,0,-13],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]'),
+(1991,2,'[[16940,-25,-13],[16938,-30,-23],[16939,-31,-31],[16940,-34,-27],[16941,-33,-32],[16942,-32,-25],[16943,-28,-29],[16943,-34,-25],[16939,-38,-27],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]'),
+-- Naruto
+(2000,0,'[[16996,-3,-9],[16997,-6,-11],[2955,0,0]]'),
+(2001,1,'[[16998,-14,-7],[16999,-8,-9],[17000,-11,-13],[2955,-13,-19],[2955,0,0],[2955,0,0],[2955,0,0],[17001,-8,-14],[17002,-4,-4],[17003,-10,-29],[17004,-13,-29],[17005,-10,-18],[17006,-12,-12],[17007,-4,-11],[17008,-17,-9],[17009,-18,-8],[2955,0,0]]'),
+(2002,2,'[[17010,6,5],[17011,-1,-2],[17012,-5,-3],[17013,-8,-19],[17014,-13,-19],[17015,-7,-18],[17016,-9,-18],[17017,-5,-2],[17018,-1,-2],[17019,-5,-6],[17020,-48,-42],[17021,-3,2],[17022,-1,-1],[2955,0,0]]'),
+-- Sasuke
+(2003,0,'[[17025,3,-8],[17026,2,-7],[2955,0,0]]'),
+(2004,1,'[[17027,-4,-7],[17028,-8,-9],[17029,-11,-11],[2955,-7,0],[2955,0,0],[2955,0,0],[2955,0,0],[17030,0,-3],[17031,-4,-8],[17032,-4,-24],[17033,-9,-38],[17034,-27,-7],[17035,-1,-13],[17036,-1,-9],[17037,-6,-8],[17038,-6,-9],[2955,0,0]]'),
+(2005,2,'[[17039,4,5],[17040,-1,-5],[17041,-6,-3],[17053,-7,-16],[17042,-12,-17],[17043,-7,-16],[17044,-9,-17],[17045,-2,-3],[17046,-2,-2],[17047,-3,-5],[17048,-38,-27],[17049,-4,0],[17050,-1,-2],[2955,0,0]]'),
+-- Akatsuki
+(2012,0,'[[17135,-2,-8],[17136,-4,-10],[2955,0,0]]'),
+(2013,1,'[[17137,-4,-5],[17138,-5,-10],[17139,-12,-11],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[17140,-6,-5],[17141,-15,-7],[17142,-7,-11],[17143,-6,-10],[17144,-6,-11],[17145,-10,-12],[17146,-13,-10],[17163,-9,-8],[17147,-17,-9],[2955,0,0]]'),
+(2014,2,'[[17148,4,4],[17149,-3,-3],[17150,-5,-4],[17151,-8,-16],[17152,-12,-17],[17153,-8,-17],[17154,-10,-17],[17155,-4,-2],[17156,-3,-1],[17157,-2,-5],[17158,3,-1],[17159,-4,4],[17160,-4,-4],[2955,0,0]]');
+
+INSERT INTO `head_avatar` (`head_id`,`avatar_id`) VALUES
+(2000,17024),
+(2003,17052),
+(2012,17162)
+ON DUPLICATE KEY UPDATE `avatar_id`=VALUES(`avatar_id`);
+
+INSERT INTO `flag_bag`
+(`id`,`icon_data`,`NAME`,`gold`,`gem`,`icon_id`) VALUES
+(180,'17054,17055,17056,17057,17058,17059,17060,17061,17062,17063,17064,17065,17066,17067,17068,17069,17070,17071,17072,17073,17074,17075,17076,17077,17078,17079,17080,17081,17082,17083,17084,17085,17086,17087','Sharingan Vạn Hoa Đồng',-1,-1,17088)
+ON DUPLICATE KEY UPDATE
+`icon_data`=VALUES(`icon_data`),`NAME`=VALUES(`NAME`),`gold`=VALUES(`gold`),
+`gem`=VALUES(`gem`),`icon_id`=VALUES(`icon_id`);
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2019,18,3,'Pet Cửu Vĩ Hồ','Vật phẩm sự kiện',1,16944,-1,0,0,0,0,-1,-1,-1),
+(2026,5,3,'Cải trang Naruto','Đi cùng Pet Cửu Vĩ Hồ +7% HP',1,17023,-1,0,0,0,0,2000,2001,2002),
+(2027,5,3,'Cải trang Sasuke','Đi cùng Sharingan Vạn Hoa Đồng tăng 1% sát thương cuối',1,17051,-1,0,0,0,0,2003,2004,2005),
+(2030,11,3,'Đeo lưng Sharingan Vạn Hoa Đồng','Ảo thuật tăng 50% sức đánh, giảm 50% sát thương nhận vào trong 3 giây; hồi chiêu 120 giây',1,17088,180,0,0,0,0,-1,-1,-1),
+(2039,5,3,'Cải trang Akatsuki','Vật phẩm sự kiện',1,17161,-1,0,0,0,0,2012,2013,2014)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),`gender`=VALUES(`gender`),`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),`level`=VALUES(`level`),`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),`is_up_to_up`=VALUES(`is_up_to_up`),`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),`gem`=VALUES(`gem`),`head`=VALUES(`head`),`body`=VALUES(`body`),`leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1607_naruto_resource_bundle.sql
+-- BEGIN MIGRATION: 2026_08_14_1622_remap_naruto_resources_after_dragon_ball_flags.sql
+-- Move the Naruto resource bundle after the remapped Dragon Ball flags (ending at 25123).
+-- Every resource ID uses one constant offset: new_id = old_id + 8187.
+-- Pet: 25124-25131; Naruto: 25183-25211; Sasuke: 25212-25240;
+-- Sharingan: 25241-25275; Akatsuki: 25322-25350.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `part`
+SET `DATA`=CASE `id`
+    WHEN 1990 THEN '[[2955,0,0],[25124,0,-13],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]'
+    WHEN 1991 THEN '[[25127,-25,-13],[25125,-30,-23],[25126,-31,-31],[25127,-34,-27],[25128,-33,-32],[25129,-32,-25],[25130,-28,-29],[25130,-34,-25],[25126,-38,-27],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0]]'
+    WHEN 2000 THEN '[[25183,-3,-9],[25184,-6,-11],[2955,0,0]]'
+    WHEN 2001 THEN '[[25185,-14,-7],[25186,-8,-9],[25187,-11,-13],[2955,-13,-19],[2955,0,0],[2955,0,0],[2955,0,0],[25188,-8,-14],[25189,-4,-4],[25190,-10,-29],[25191,-13,-29],[25192,-10,-18],[25193,-12,-12],[25194,-4,-11],[25195,-17,-9],[25196,-18,-8],[2955,0,0]]'
+    WHEN 2002 THEN '[[25197,6,5],[25198,-1,-2],[25199,-5,-3],[25200,-8,-19],[25201,-13,-19],[25202,-7,-18],[25203,-9,-18],[25204,-5,-2],[25205,-1,-2],[25206,-5,-6],[25207,-48,-42],[25208,-3,2],[25209,-1,-1],[2955,0,0]]'
+    WHEN 2003 THEN '[[25212,3,-8],[25213,2,-7],[2955,0,0]]'
+    WHEN 2004 THEN '[[25214,-4,-7],[25215,-8,-9],[25216,-11,-11],[2955,-7,0],[2955,0,0],[2955,0,0],[2955,0,0],[25217,0,-3],[25218,-4,-8],[25219,-4,-24],[25220,-9,-38],[25221,-27,-7],[25222,-1,-13],[25223,-1,-9],[25224,-6,-8],[25225,-6,-9],[2955,0,0]]'
+    WHEN 2005 THEN '[[25226,4,5],[25227,-1,-5],[25228,-6,-3],[25240,-7,-16],[25229,-12,-17],[25230,-7,-16],[25231,-9,-17],[25232,-2,-3],[25233,-2,-2],[25234,-3,-5],[25235,-38,-27],[25236,-4,0],[25237,-1,-2],[2955,0,0]]'
+    WHEN 2012 THEN '[[25322,-2,-8],[25323,-4,-10],[2955,0,0]]'
+    WHEN 2013 THEN '[[25324,-4,-5],[25325,-5,-10],[25326,-12,-11],[2955,0,0],[2955,0,0],[2955,0,0],[2955,0,0],[25327,-6,-5],[25328,-15,-7],[25329,-7,-11],[25330,-6,-10],[25331,-6,-11],[25332,-10,-12],[25333,-13,-10],[25350,-9,-8],[25334,-17,-9],[2955,0,0]]'
+    WHEN 2014 THEN '[[25335,4,4],[25336,-3,-3],[25337,-5,-4],[25338,-8,-16],[25339,-12,-17],[25340,-8,-17],[25341,-10,-17],[25342,-4,-2],[25343,-3,-1],[25344,-2,-5],[25345,3,-1],[25346,-4,4],[25347,-4,-4],[2955,0,0]]'
+END
+WHERE `id` IN (1990,1991,2000,2001,2002,2003,2004,2005,2012,2013,2014);
+
+UPDATE `head_avatar`
+SET `avatar_id`=CASE `head_id`
+    WHEN 2000 THEN 25211
+    WHEN 2003 THEN 25239
+    WHEN 2012 THEN 25349
+END
+WHERE `head_id` IN (2000,2003,2012);
+
+UPDATE `flag_bag`
+SET `icon_data`='25241,25242,25243,25244,25245,25246,25247,25248,25249,25250,25251,25252,25253,25254,25255,25256,25257,25258,25259,25260,25261,25262,25263,25264,25265,25266,25267,25268,25269,25270,25271,25272,25273,25274',
+    `icon_id`=25275
+WHERE `id`=180;
+
+UPDATE `item_template`
+SET `icon_id`=CASE `id`
+    WHEN 2019 THEN 25131
+    WHEN 2026 THEN 25210
+    WHEN 2027 THEN 25238
+    WHEN 2030 THEN 25275
+    WHEN 2039 THEN 25348
+END
+WHERE `id` IN (2019,2026,2027,2030,2039);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1622_remap_naruto_resources_after_dragon_ball_flags.sql
+-- BEGIN MIGRATION: 2026_08_14_1645_naruto_collaboration_chest.sql
+-- Add the Naruto collaboration chest after the Naruto resource bundle.
+-- Item icon 25351 is copied from source icon 16899 into data/icon/x1..x4.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2041,27,3,'Rương hợp tác Naruto',
+ 'Mở ngẫu nhiên nhận vật phẩm hợp tác Naruto: pet, cải trang hoặc đeo lưng.',
+ 1,25351,-1,0,0,0,0,-1,-1,-1)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),`gender`=VALUES(`gender`),`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),`level`=VALUES(`level`),`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),`is_up_to_up`=VALUES(`is_up_to_up`),`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),`gem`=VALUES(`gem`),`head`=VALUES(`head`),`body`=VALUES(`body`),`leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1645_naruto_collaboration_chest.sql
+
+-- BEGIN MIGRATION: 2026_08_14_1708_naruto_collaboration_item_stats.sql
+-- Configure Naruto collaboration equipment metadata and make the mini pet wearable.
+-- Runtime options are rolled by UseItem when opening item 2041.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `TYPE`=CASE `id` WHEN 2019 THEN 27 ELSE `TYPE` END,
+    `description`=CASE `id`
+        WHEN 2019 THEN 'Sức đánh, HP, KI +15%; tấn công Boss +10%; chí mạng +7%'
+        WHEN 2026 THEN 'Đi cùng Pet Cửu Vĩ Hồ: +7% HP'
+        WHEN 2027 THEN 'Đi cùng Đeo lưng Sharingan Vạn Hoa Đồng: +1% sát thương'
+        WHEN 2030 THEN 'Sức đánh, HP, KI +20%; chuyển 10% tấn công thành HP và KI; chí mạng +15%'
+        WHEN 2039 THEN 'Sức đánh, HP, KI +22%; tiềm năng, sức mạnh +55%; chí mạng +10%'
+    END,
+    `head`=CASE `id` WHEN 2019 THEN -1 ELSE `head` END,
+    `body`=CASE `id` WHEN 2019 THEN 1990 ELSE `body` END,
+    `leg`=CASE `id` WHEN 2019 THEN 1991 ELSE `leg` END
+WHERE `id` IN (2019,2026,2027,2030,2039);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1708_naruto_collaboration_item_stats.sql
+
+-- BEGIN MIGRATION: 2026_08_14_1948_sharingan_display_name.sql
+-- Remove the equipment-category prefix from the Sharingan display text.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME`='Sharingan Vạn Hoa Đồng'
+WHERE `id`=2030;
+
+UPDATE `item_template`
+SET `description`='Đi cùng Sharingan Vạn Hoa Đồng: +1% sát thương'
+WHERE `id`=2027;
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1948_sharingan_display_name.sql
+
+-- BEGIN MIGRATION: 2026_08_14_2020_naruto_pet_head_part.sql
+-- Give the Naruto collaboration pet a valid transparent head part.
+-- NewPet is rendered as a normal three-part character and cannot use head -1.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+DELETE FROM `part` WHERE `id`=2102;
+
+INSERT INTO `part` (`id`,`TYPE`,`DATA`) VALUES
+(2102,0,'[[2955,0,0],[2955,0,0],[2955,0,0]]');
+
+UPDATE `item_template`
+SET `head`=2102,`body`=1990,`leg`=1991
+WHERE `id`=2019;
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_2020_naruto_pet_head_part.sql
+
+-- BEGIN MIGRATION: 2026_08_14_2041_naruto_stats_display_fix.sql
+-- Keep Naruto collaboration names and descriptions aligned with the event specification.
+-- Naruto's absolute HP uses the existing HP+#K option so values up to 35,000 fit the client protocol.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME`=CASE `id`
+        WHEN 2019 THEN 'Pet Cửu Vĩ Hồ'
+        WHEN 2026 THEN 'Cải trang Naruto'
+        WHEN 2027 THEN 'Cải trang Sasuke'
+        WHEN 2030 THEN 'Cờ Sharingan Vạn Hoa Đồng'
+        WHEN 2039 THEN 'Cải trang Akatsuki'
+    END,
+    `description`=CASE `id`
+        WHEN 2019 THEN 'Sức đánh, HP, KI +15%; tấn công Boss +10%; chí mạng +7%'
+        WHEN 2026 THEN 'Đi cùng Pet Cửu Vĩ Hồ: +7% HP'
+        WHEN 2027 THEN 'Đi cùng Cờ Sharingan Vạn Hoa Đồng: +1% sát thương'
+        WHEN 2030 THEN 'Sức đánh, HP, KI +20%; chuyển 10% tấn công thành HP và KI; chí mạng +15%'
+        WHEN 2039 THEN 'Sức đánh, HP, KI +22%; tiềm năng, sức mạnh +55%; chí mạng +10%'
+    END
+WHERE `id` IN (2019,2026,2027,2030,2039);
+
+UPDATE `flag_bag`
+SET NAME='Cờ Sharingan Vạn Hoa Đồng'
+WHERE `id`=180;
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_2041_naruto_stats_display_fix.sql
 
 -- END CONSOLIDATED PROJECT MIGRATIONS
