@@ -10,6 +10,7 @@ import nro.models.radar.Card;
 import nro.models.services.RadarService;
 import nro.models.radar.RadarCard;
 import nro.models.consts.ConstMap;
+import nro.models.item.DragonBallFlagRadarPolicy;
 import nro.models.item.Item;
 import nro.models.consts.ConstNpc;
 import nro.models.consts.ConstPlayer;
@@ -684,10 +685,10 @@ public class UseItem {
                             case 1608:
                                 UseItem.gI().QuaThieuNhi(pl, item);
                                 break;
-                            case 1822: // rada ngọc rồng
+                            case DragonBallFlagRadarPolicy.NORMAL_RADAR_ITEM_ID: // rada cờ ngọc rồng
                                 UseItem.gI().RadaNgocRong(pl, item.template.id);
                                 break;
-                            case 1823: // rada ngọc rồng vip
+                            case DragonBallFlagRadarPolicy.VIP_RADAR_ITEM_ID: // rada cờ ngọc rồng VIP
                                 UseItem.gI().RadaNgocRongVip(pl, item.template.id);
                                 break;
                             case 1569: // kho báu hải tặc
@@ -1189,80 +1190,43 @@ public class UseItem {
     }
     
     public void RadaNgocRong(Player player, int itemUseiD) {
-        if (InventoryService.gI().getCountEmptyBag(player) > 0) {
-            Item itemused = InventoryService.gI().findItemBag(player, 1822);
-
-            if (itemused == null || itemused.quantity < 1) {
-                Service.gI().sendThongBao(player, "Bạn không có vật phẩm cần dùng!");
-                return;
-            }
-
-            int[] itemIds = {1579, 1580, 1581, 1582, 1583, 1584, 1585};
-            int randomIndex = (int) (Math.random() * itemIds.length);
-            short randomItemId = (short) itemIds[randomIndex];
-
-            Item newItem = ItemService.gI().createNewItem(randomItemId);
-            RewardService.gI().initChiSoItem(newItem);
-
-            int dame = randomInRange(10, 17);
-            int hp = randomInRange(10, 17);
-            int ki = randomInRange(10, 17);
-            int khongthegiaodich = randomInRange(0, 0);
-
-            newItem.itemOptions.add(new ItemOption(50, dame));
-            newItem.itemOptions.add(new ItemOption(77, hp));
-            newItem.itemOptions.add(new ItemOption(103, ki));
-            newItem.itemOptions.add(new ItemOption(30, khongthegiaodich));
-
-            int randomOption = (int) (Math.random() * 100);
-            newItem.itemOptions.add(new ItemOption(93, randomOption < 0.5 ? 0 : 15));
-
-            InventoryService.gI().addItemBag(player, newItem);
-            InventoryService.gI().subQuantityItemsBag(player, itemused, 1);
-
-            PlayerService.gI().sendInfoHpMpMoney(player);
-            InventoryService.gI().sendItemBags(player);
-        }
+        openDragonBallFlagRadar(player, itemUseiD, false);
     }
     
     public void RadaNgocRongVip(Player player, int itemUseiD) {
-        if (InventoryService.gI().getCountEmptyBag(player) > 0) {
-            Item itemused = InventoryService.gI().findItemBag(player, 1823);
-
-            if (itemused == null || itemused.quantity < 1) {
-                Service.gI().sendThongBao(player, "Bạn không có vật phẩm cần dùng!");
-                return;
-            }
-
-            int[] itemIds = {1586, 1809, 1810, 1811, 1812, 1813, 1814};
-            int randomIndex = (int) (Math.random() * itemIds.length);
-            short randomItemId = (short) itemIds[randomIndex];
-
-            Item newItem = ItemService.gI().createNewItem(randomItemId);
-            RewardService.gI().initChiSoItem(newItem);
-
-            int dame = randomInRange(10, 20);
-            int hp = randomInRange(10, 20);
-            int ki = randomInRange(10, 20);
-            int khongthegiaodich = randomInRange(0, 0);
-
-            newItem.itemOptions.add(new ItemOption(50, dame));
-            newItem.itemOptions.add(new ItemOption(77, hp));
-            newItem.itemOptions.add(new ItemOption(103, ki));
-            newItem.itemOptions.add(new ItemOption(210, 3));
-            newItem.itemOptions.add(new ItemOption(30, khongthegiaodich));
-
-            int randomOption = (int) (Math.random() * 100);
-            newItem.itemOptions.add(new ItemOption(93, randomOption < 0.5 ? 0 : 15));
-
-            InventoryService.gI().addItemBag(player, newItem);
-            InventoryService.gI().subQuantityItemsBag(player, itemused, 1);
-
-            PlayerService.gI().sendInfoHpMpMoney(player);
-            InventoryService.gI().sendItemBags(player);
-        }
+        openDragonBallFlagRadar(player, itemUseiD, true);
     }
     
+    private void openDragonBallFlagRadar(Player player, int itemUseId, boolean vip) {
+        if (itemUseId != DragonBallFlagRadarPolicy.radarItemId(vip)) {
+            Service.gI().sendThongBao(player, "Vật phẩm radar không hợp lệ.");
+            return;
+        }
+        Item used = InventoryService.gI().findItemBag(player, itemUseId);
+        if (used == null || used.quantity < 1) {
+            Service.gI().sendThongBao(player, "Bạn không có vật phẩm cần dùng.");
+            return;
+        }
+        if (InventoryService.gI().getCountEmptyBag(player) <= 0) {
+            Service.gI().sendThongBao(player, "Hành trang đã đầy.");
+            return;
+        }
+        Item reward = ItemService.gI().createNewItem(DragonBallFlagRadarPolicy.rewardId(
+                vip, randomInRange(0, Integer.MAX_VALUE - 1)));
+        ItemService.gI().initDragonBallFlagOptionsIfEmpty(reward);
+        reward.itemOptions.removeIf(o -> o != null && o.optionTemplate != null
+                && (o.optionTemplate.id == 231 || o.optionTemplate.id == 93));
+        if (!DragonBallFlagRadarPolicy.isPermanent(vip, randomInRange(0, 99))) {
+            reward.itemOptions.add(new ItemOption(93, DragonBallFlagRadarPolicy.LIMITED_DURATION_DAYS));
+        }
+        if (InventoryService.gI().addItemBag(player, reward)) {
+            InventoryService.gI().subQuantityItemsBag(player, used, 1);
+            InventoryService.gI().sendItemBags(player);
+            Service.gI().sendThongBao(player, "Bạn nhận được " + reward.template.name
+                    + (reward.getOptionById(93) == null ? " vĩnh viễn" : " 15 ngày"));
+        }
+    }
+
     public void KhoBauHaiTac(Player player, int itemUseiD) {
         if (InventoryService.gI().getCountEmptyBag(player) > 0) {
             Item itemused = InventoryService.gI().findItemBag(player, 1569);
@@ -1631,20 +1595,19 @@ public class UseItem {
 
     private void openCSKB(Player pl, Item item) {
         if (InventoryService.gI().getCountEmptyBag(pl) > 0) {
-            short[] temp = {76, 188, 189, 190, 381, 382, 383, 384, 385};
-            int[][] gold = {{5000, 20000}};
-            byte index = (byte) Util.nextInt(0, temp.length - 1);
+            short rewardId = MysteryCapsuleRewardPolicy.rewardForRoll(
+                    Util.nextInt(0, MysteryCapsuleRewardPolicy.ROLL_BOUND - 1));
             short[] icon = new short[2];
             icon[0] = item.template.iconID;
-            if (index <= 3) {
-                pl.inventory.gold += Util.nextInt(gold[0][0], gold[0][1]);
+            if (rewardId == MysteryCapsuleRewardPolicy.GOLD_REWARD) {
+                pl.inventory.gold += Util.nextInt(5000, 20000);
                 if (pl.inventory.gold > Inventory.LIMIT_GOLD) {
                     pl.inventory.gold = Inventory.LIMIT_GOLD;
                 }
                 PlayerService.gI().sendInfoHpMpMoney(pl);
                 icon[1] = 930;
             } else {
-                Item it = ItemService.gI().createNewItem(temp[index]);
+                Item it = ItemService.gI().createNewItem(rewardId);
                 it.itemOptions.add(new ItemOption(73, 0));
                 InventoryService.gI().addItemBag(pl, it);
                 icon[1] = it.template.iconID;
@@ -1661,8 +1624,11 @@ public class UseItem {
     private void useItemTime(Player pl, Item item) {
         switch (item.template.id) {
             case 379: // máy dò capsule
-                pl.itemTime.lastTimeUseMayDo = System.currentTimeMillis();
-                pl.itemTime.isUseMayDo = true;
+                long addedMayDoTime = pl.itemTime.addMayDoTime(System.currentTimeMillis());
+                if (addedMayDoTime <= 0) {
+                    Service.gI().sendThongBao(pl, item.template.name);
+                    return;
+                }
                 break;
             case 1635: // co bon la
                 pl.itemTime.lastTimeUseCoBonLa = System.currentTimeMillis();
@@ -1733,6 +1699,10 @@ public class UseItem {
                 Service.gI().point(pl);
                 break;
             case 385: // ẩn danh
+                if (pl.itemTime.isUseAnDanh2) {
+                    Service.gI().sendThongBao(pl, "Chỉ có thể sử dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
+                    return;
+                }
                 pl.itemTime.lastTimeAnDanh = System.currentTimeMillis();
                 pl.itemTime.isUseAnDanh = true;
                 break;
@@ -1740,49 +1710,26 @@ public class UseItem {
                 pl.itemTime.lastTimeKhauTrang = System.currentTimeMillis();
                 pl.itemTime.isUseKhauTrang = true;
                 break;
-            case 1150: // cuồng nộ 2
-                if (pl.itemTime.isUseCuongNo) {
-                    Service.gI().sendThongBao(pl, "Chỉ có thể sự dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
+            case ConstItem.CUONG_NO_2:
+            case ConstItem.BO_KHI_2:
+            case ConstItem.BO_HUYET_2:
+            case ConstItem.GIAP_XEN_BO_HUNG_2:
+            case ConstItem.AN_DANH_2:
+                if (pl.itemTime.hasActiveNormalCounterpart(item.template.id)) {
+                    Service.gI().sendThongBao(pl, "Chỉ có thể sử dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
                     return;
                 }
-                pl.itemTime.lastTimeCuongNo2 = System.currentTimeMillis();
-                pl.itemTime.isUseCuongNo2 = true;
-                Service.gI().point(pl);
-                break;
-
-            case 1151: // bổ khí 2
-                if (pl.itemTime.isUseBoKhi) {
-                    Service.gI().sendThongBao(pl, "Chỉ có thể sự dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
+                long addedSuperTime = pl.itemTime.addSuperItemTime(
+                        item.template.id, System.currentTimeMillis());
+                if (addedSuperTime <= 0) {
+                    Service.gI().sendThongBao(pl,
+                            "Thời gian " + item.template.name + " đã đạt tối đa 120 phút");
                     return;
                 }
-                pl.itemTime.lastTimeBoKhi2 = System.currentTimeMillis();
-                pl.itemTime.isUseBoKhi2 = true;
-                Service.gI().point(pl);
-                break;
-
-            case 1152: // bổ huyết 2
-                if (pl.itemTime.isUseBoHuyet) {
-                    Service.gI().sendThongBao(pl, "Chỉ có thể sự dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
-                    return;
-                }
-                pl.itemTime.lastTimeBoHuyet2 = System.currentTimeMillis();
-                pl.itemTime.isUseBoHuyet2 = true;
-                Service.gI().point(pl);
-                break;
-
-            case 1153: // giáp xên 2
-                if (pl.itemTime.isUseGiapXen) {
-                    Service.gI().sendThongBao(pl, "Chỉ có thể sự dụng cùng lúc 1 vật phẩm bổ trợ cùng loại");
-                    return;
-                }
-                pl.itemTime.lastTimeGiapXen2 = System.currentTimeMillis();
-                pl.itemTime.isUseGiapXen2 = true;
-                Service.gI().point(pl);
-                break;
-
-            case 1154: // an danh
-                pl.itemTime.lastTimeAnDanh2 = System.currentTimeMillis();
-                pl.itemTime.isUseAnDanh2 = true;
+                long remainingSuperMinutes = Math.max(1,
+                        pl.itemTime.getRemainingSuperItemTime(item.template.id) / 60_000);
+                Service.gI().sendThongBao(pl,
+                        item.template.name + " còn " + remainingSuperMinutes + " phút");
                 break;
 
             case 638: //Commeson

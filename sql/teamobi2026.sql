@@ -14641,4 +14641,168 @@ WHERE id BETWEEN 1765 AND 1771;
 COMMIT;
 -- END MIGRATION: 2026_08_14_1200_baby_dragon_pet_stats.sql
 
+-- BEGIN MIGRATION: 2026_08_14_1210_dragon_ball_flag_resources.sql
+-- Add the remapped Dragon Ball flag resources without overwriting icon IDs 13055-13175.
+-- Source icon IDs 13055-13175 are stored at 25003-25123 (offset +11948).
+-- Type-11 item_template.part points to flag_bag.id, not to the part table.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `flag_bag`
+(`id`,`icon_data`,`NAME`,`gold`,`gem`,`icon_id`) VALUES
+(157,'25003,25004,25005,25006,25007,25008,25009,25010','Cờ ngọc rồng 1 sao',-1,-1,25011),
+(158,'25012,25013,25014,25015,25016,25017,25018,25019','Cờ ngọc rồng 2 sao',-1,-1,25066),
+(159,'25020,25021,25022,25023,25024,25025,25026,25027','Cờ ngọc rồng 3 sao',-1,-1,25028),
+(160,'25029,25030,25031,25032,25033,25034,25035,25036,25037','Cờ ngọc rồng 4 sao',-1,-1,25038),
+(161,'25039,25040,25041,25042,25043,25044,25045,25046','Cờ ngọc rồng 5 sao',-1,-1,25047),
+(162,'25048,25049,25050,25051,25052,25053,25054,25055','Cờ ngọc rồng 6 sao',-1,-1,25056),
+(163,'25057,25058,25059,25060,25061,25062,25063,25064','Cờ ngọc rồng 7 sao',-1,-1,25065),
+(164,'25067,25068,25069,25070,25071,25072,25073,25074','Cờ ngọc rồng Super',-1,-1,25123)
+ON DUPLICATE KEY UPDATE
+`icon_data`=VALUES(`icon_data`),`NAME`=VALUES(`NAME`),`gold`=VALUES(`gold`),
+`gem`=VALUES(`gem`),`icon_id`=VALUES(`icon_id`);
+
+INSERT INTO `item_template`
+(`id`,`TYPE`,`gender`,`NAME`,`description`,`level`,`icon_id`,`part`,
+ `is_up_to_up`,`power_require`,`gold`,`gem`,`head`,`body`,`leg`) VALUES
+(2008,11,3,'Cờ ngọc rồng 1 sao','Vật phẩm sự kiện',0,25011,157,0,0,0,0,-1,-1,-1),
+(2009,11,3,'Cờ ngọc rồng 2 sao','Vật phẩm sự kiện',0,25066,158,0,0,0,0,-1,-1,-1),
+(2010,11,3,'Cờ ngọc rồng 3 sao','Vật phẩm sự kiện',0,25028,159,0,0,0,0,-1,-1,-1),
+(2011,11,3,'Cờ ngọc rồng 4 sao','Vật phẩm sự kiện',0,25038,160,0,0,0,0,-1,-1,-1),
+(2012,11,3,'Cờ ngọc rồng 5 sao','Vật phẩm sự kiện',0,25047,161,0,0,0,0,-1,-1,-1),
+(2013,11,3,'Cờ ngọc rồng 6 sao','Vật phẩm sự kiện',0,25056,162,0,0,0,0,-1,-1,-1),
+(2014,11,3,'Cờ ngọc rồng 7 sao','Vật phẩm sự kiện',0,25065,163,0,0,0,0,-1,-1,-1),
+(2015,11,3,'Cờ ngọc rồng Super','Vật phẩm sự kiện',0,25123,164,0,0,0,0,-1,-1,-1)
+ON DUPLICATE KEY UPDATE
+`TYPE`=VALUES(`TYPE`),`gender`=VALUES(`gender`),`NAME`=VALUES(`NAME`),
+`description`=VALUES(`description`),`level`=VALUES(`level`),`icon_id`=VALUES(`icon_id`),
+`part`=VALUES(`part`),`is_up_to_up`=VALUES(`is_up_to_up`),`power_require`=VALUES(`power_require`),
+`gold`=VALUES(`gold`),`gem`=VALUES(`gem`),`head`=VALUES(`head`),`body`=VALUES(`body`),`leg`=VALUES(`leg`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1210_dragon_ball_flag_resources.sql
+
+-- BEGIN MIGRATION: 2026_08_14_1211_super_support_items.sql
+-- Rename and document the existing super support items.
+-- Each use adds 10 minutes, capped at 120 minutes by the server.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME` = CASE `id`
+        WHEN 1150 THEN 'Cuồng nộ siêu cấp'
+        WHEN 1151 THEN 'Bổ khí siêu cấp'
+        WHEN 1152 THEN 'Bổ huyết siêu cấp'
+        WHEN 1153 THEN 'Giáp Xên siêu cấp'
+        WHEN 1154 THEN 'Ẩn danh siêu cấp'
+        ELSE `NAME`
+    END,
+    `description` = CASE `id`
+        WHEN 1150 THEN 'Mỗi lần dùng +10 phút, tối đa 120 phút, tăng 120% sức đánh gốc'
+        WHEN 1151 THEN 'Mỗi lần dùng +10 phút, tối đa 120 phút, tăng 120% KI'
+        WHEN 1152 THEN 'Mỗi lần dùng +10 phút, tối đa 120 phút, tăng 120% HP'
+        WHEN 1153 THEN 'Mỗi lần dùng +10 phút, tối đa 120 phút, giảm 60% sát thương'
+        WHEN 1154 THEN 'Mỗi lần dùng +10 phút ẩn danh, cộng dồn tối đa 120 phút'
+        ELSE `description`
+    END,
+    `icon_id` = CASE `id`
+        WHEN 1150 THEN 10716
+        WHEN 1151 THEN 10715
+        WHEN 1152 THEN 10714
+        WHEN 1153 THEN 10712
+        WHEN 1154 THEN 10717
+        ELSE `icon_id`
+    END,
+    `is_up_to_up` = 1
+WHERE `id` BETWEEN 1150 AND 1154;
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1211_super_support_items.sql
+
+-- BEGIN MIGRATION: 2026_08_14_1212_future_bulma_mystery_capsule.sql
+-- Sell the mystery capsule detector in the future Bulma shop for 10 rubies.
+-- Access control, stacking time, drop rate, and reward odds are enforced by the server.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_shop` shop_item
+INNER JOIN `tab_shop` shop_tab ON shop_tab.`id`=shop_item.`tab_id`
+INNER JOIN `shop` future_shop ON future_shop.`id`=shop_tab.`shop_id`
+SET shop_item.`type_sell`=3,
+    shop_item.`cost`=10,
+    shop_item.`is_sell`=1
+WHERE future_shop.`tag_name`='BUNMA_FUTURE'
+  AND shop_item.`temp_id`=379;
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_1212_future_bulma_mystery_capsule.sql
+
+-- BEGIN MIGRATION: 2026_08_14_1540_dragon_ball_radars_ruby_shop.sql
+-- Add the two Dragon Ball flag radars to Santa's Ruby shop.
+-- Item IDs are 1822/1823; icon IDs are 15002/15003.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `NAME`='Rada cờ ngọc rồng',
+    `description`='Mở cờ 1-7 sao, không có Super; 1% nhận cờ vĩnh viễn',
+    `is_up_to_up`=1
+WHERE `id`=1822;
+
+UPDATE `item_template`
+SET `NAME`='Rada cờ ngọc rồng VIP',
+    `description`='Mở đủ 8 cờ, có cờ Super; 10% nhận cờ vĩnh viễn',
+    `is_up_to_up`=1
+WHERE `id`=1823;
+
+INSERT INTO `item_shop`
+(`tab_id`,`temp_id`,`is_new`,`is_sell`,`type_sell`,`cost`,`icon_spec`,`create_time`)
+SELECT 64,1822,1,1,3,50,0,CURRENT_TIMESTAMP
+WHERE EXISTS (
+    SELECT 1
+    FROM `tab_shop` tab
+    INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+    WHERE tab.id=64
+      AND ruby_shop.tag_name='SATAN_RUBY'
+)
+AND EXISTS (SELECT 1 FROM `item_template` WHERE id=1822)
+AND NOT EXISTS (
+    SELECT 1 FROM `item_shop` WHERE tab_id=64 AND temp_id=1822
+);
+
+INSERT INTO `item_shop`
+(`tab_id`,`temp_id`,`is_new`,`is_sell`,`type_sell`,`cost`,`icon_spec`,`create_time`)
+SELECT 64,1823,1,1,3,100,0,CURRENT_TIMESTAMP
+WHERE EXISTS (
+    SELECT 1
+    FROM `tab_shop` tab
+    INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+    WHERE tab.id=64
+      AND ruby_shop.tag_name='SATAN_RUBY'
+)
+AND EXISTS (SELECT 1 FROM `item_template` WHERE id=1823)
+AND NOT EXISTS (
+    SELECT 1 FROM `item_shop` WHERE tab_id=64 AND temp_id=1823
+);
+
+UPDATE `item_shop` shop_item
+INNER JOIN `tab_shop` shop_tab ON shop_tab.id=shop_item.tab_id
+INNER JOIN `shop` ruby_shop ON ruby_shop.id=shop_tab.shop_id
+SET shop_item.is_new=1,
+    shop_item.is_sell=1,
+    shop_item.type_sell=3,
+    shop_item.cost=CASE shop_item.temp_id WHEN 1822 THEN 50 ELSE 100 END,
+    shop_item.icon_spec=0
+WHERE ruby_shop.tag_name='SATAN_RUBY'
+  AND shop_tab.id=64
+  AND shop_item.temp_id IN (1822,1823);
+
+COMMIT;
+
+-- END MIGRATION: 2026_08_14_1540_dragon_ball_radars_ruby_shop.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS

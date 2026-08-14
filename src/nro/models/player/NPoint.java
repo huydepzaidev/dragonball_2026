@@ -1637,18 +1637,16 @@ public class NPoint {
 
     public long calSubTNSM(long tiemNang) {
         int reductionPercent = 0;
-        if (power >= 90_000_000_000L) {
-            reductionPercent = 30;
-        } else if (power >= 80_000_000_000L) {
-            reductionPercent = 25;
+        if (power >= 80_000_000_000L) {
+            reductionPercent = 40;
         } else if (power >= 70_000_000_000L) {
-            reductionPercent = 20;
+            reductionPercent = 35;
         } else if (power >= 60_000_000_000L) {
-            reductionPercent = 15;
+            reductionPercent = 30;
         } else if (power >= 50_000_000_000L) {
-            reductionPercent = 10;
+            reductionPercent = 25;
         } else if (power >= 40_000_000_000L) {
-            reductionPercent = 5;
+            reductionPercent = 15;
         }
         return tiemNang - (tiemNang * reductionPercent / 100L);
     }

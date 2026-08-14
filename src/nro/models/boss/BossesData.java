@@ -1,5 +1,6 @@
 package nro.models.boss;
 
+import nro.models.boss.Baby.BabyEncounterState;
 import nro.models.consts.AppearType;
 import nro.models.consts.ConstPlayer;
 import nro.models.skill.Skill;
@@ -2602,7 +2603,7 @@ public class BossesData {
             new short[]{1715, 1716, 1717, -1, -1, -1},
             200000,
             new int[]{2000000000},
-            new int[]{14},
+            BabyEncounterState.spawnMapIds(),
             new int[][]{
                 {Skill.GALICK, 7, 100},
                 {Skill.DRAGON, 7, 100},
@@ -2634,7 +2635,7 @@ public class BossesData {
                 "|-1|Lại thêm một tên ngốc nữa chán sống!"
             }, //text chat 2
             new String[]{"|-2|Khốn kiếp, vegeta.. hắn bị baby kí sinh rồi!!"}, //text chat 3
-            REST_15_M
+            REST_10_M
     );
 
     public static final BossData BABY_2 = new BossData(
@@ -2643,7 +2644,7 @@ public class BossesData {
             new short[]{1718, 1719, 1720, -1, -1, -1},
             250000,
             new int[]{2000000000},
-            new int[]{14},
+            BabyEncounterState.spawnMapIds(),
             new int[][]{
                 {Skill.GALICK, 7, 100},
                 {Skill.DRAGON, 7, 100},
@@ -2675,7 +2676,7 @@ public class BossesData {
             new short[]{1721, 1722, 1723, -1, -1, -1},
             30000,
             new int[]{2000000000},
-            new int[]{14},
+            BabyEncounterState.spawnMapIds(),
             new int[][]{
                 {Skill.GALICK, 7, 100},
                 {Skill.DRAGON, 7, 100},

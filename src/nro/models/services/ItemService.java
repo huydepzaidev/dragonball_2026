@@ -4,6 +4,7 @@ import nro.models.combine.CombineService;
 import nro.models.player_system.Template;
 import nro.models.player_system.Template.ItemOptionTemplate;
 import nro.models.item.Item;
+import nro.models.item.DragonBallFlagOptionPolicy;
 import nro.models.map.ItemMap;
 import nro.models.player.Player;
 import nro.models.shop.ItemShop;
@@ -88,6 +89,16 @@ public class ItemService {
         item.content = item.getContent();
         item.info = item.getInfo();
         return item;
+    }
+
+    public void initDragonBallFlagOptionsIfEmpty(Item item) {
+        if (item == null || item.template == null || item.itemOptions == null
+                || !item.itemOptions.isEmpty()) {
+            return;
+        }
+        for (int[] option : DragonBallFlagOptionPolicy.optionsFor(item.template.id)) {
+            item.itemOptions.add(new ItemOption(option[0], option[1]));
+        }
     }
 
     public Item otpts(short tempId, int quantity) {

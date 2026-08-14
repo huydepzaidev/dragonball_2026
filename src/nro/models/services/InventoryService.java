@@ -864,6 +864,7 @@ public class InventoryService {
         if (getCountEmptyBag(player) > 0) {
             return true;
         }
+        ItemService.gI().initDragonBallFlagOptionsIfEmpty(itemAdd);
         ItemService.gI().normalizePermanentExpiration(itemAdd);
         if (!isStackableItem(itemAdd)) {
             return false;
@@ -901,6 +902,7 @@ public class InventoryService {
                 && !EventControlService.gI().canAcquireItem(itemAdd.template.id)) {
             return false;
         }
+        ItemService.gI().initDragonBallFlagOptionsIfEmpty(itemAdd);
         ItemService.gI().normalizePermanentExpiration(itemAdd);
         if (itemAdd.itemOptions.isEmpty()) {
             itemAdd.itemOptions.add(new Item.ItemOption(73, 0));

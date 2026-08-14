@@ -1,5 +1,6 @@
 package nro.models.item;
 
+import nro.models.consts.ConstItem;
 import nro.models.player.NPoint;
 import nro.models.player.Player;
 import nro.models.services.Service;
@@ -16,8 +17,12 @@ public class ItemTime {
     public static final byte TEXT_NHAN_BUA_MIEN_PHI = 5;
 
     public static final int TIME_ITEM = 600000;
+    public static final long TIME_SUPER_ITEM_PER_USE = 10 * 60 * 1000L;
+    public static final long MAX_TIME_SUPER_ITEM = 120 * 60 * 1000L;
     public static final int TIME_OPEN_POWER = 8640000;
-    public static final int TIME_MAY_DO = 1800000;
+    public static final long TIME_MAY_DO_PER_USE = 30 * 60 * 1000L;
+    public static final long MAX_TIME_MAY_DO = 120 * 60 * 1000L;
+    public static final long TIME_MAY_DO = MAX_TIME_MAY_DO;
     public static final int TIME_MAY_DO2 = 15 * 60 * 1000;
     public static final long TIME_CO_BON_LA = 30 * 60 * 1000L;
     public static final int TIME_KILIS = 3600000;
@@ -166,31 +171,31 @@ public class ItemTime {
         }
 
         if (isUseBoHuyet2) {
-            if (Util.canDoWithTime(lastTimeBoHuyet2, TIME_ITEM)) {
+            if (getRemainingSuperItemTime(ConstItem.BO_HUYET_2) <= 0) {
                 isUseBoHuyet2 = false;
                 Service.gI().point(player);
             }
         }
 
         if (isUseBoKhi2) {
-            if (Util.canDoWithTime(lastTimeBoKhi2, TIME_ITEM)) {
+            if (getRemainingSuperItemTime(ConstItem.BO_KHI_2) <= 0) {
                 isUseBoKhi2 = false;
                 Service.gI().point(player);
             }
         }
         if (isUseGiapXen2) {
-            if (Util.canDoWithTime(lastTimeGiapXen2, TIME_ITEM)) {
+            if (getRemainingSuperItemTime(ConstItem.GIAP_XEN_BO_HUNG_2) <= 0) {
                 isUseGiapXen2 = false;
             }
         }
         if (isUseCuongNo2) {
-            if (Util.canDoWithTime(lastTimeCuongNo2, TIME_ITEM)) {
+            if (getRemainingSuperItemTime(ConstItem.CUONG_NO_2) <= 0) {
                 isUseCuongNo2 = false;
                 Service.gI().point(player);
             }
         }
         if (isUseAnDanh2) {
-            if (Util.canDoWithTime(lastTimeAnDanh2, TIME_ITEM)) {
+            if (getRemainingSuperItemTime(ConstItem.AN_DANH_2) <= 0) {
                 isUseAnDanh2 = false;
             }
         }
@@ -220,7 +225,7 @@ public class ItemTime {
             }
         }
         if (isUseMayDo) {
-            if (Util.canDoWithTime(lastTimeUseMayDo, TIME_MAY_DO)) {
+            if (getRemainingMayDoTime() <= 0) {
                 isUseMayDo = false;
             }
         }
@@ -281,6 +286,131 @@ public class ItemTime {
 
     public void dispose() {
         this.player = null;
+    }
+
+    public static boolean isSuperItem(int itemId) {
+        return itemId == ConstItem.CUONG_NO_2
+                || itemId == ConstItem.BO_KHI_2
+                || itemId == ConstItem.BO_HUYET_2
+                || itemId == ConstItem.GIAP_XEN_BO_HUNG_2
+                || itemId == ConstItem.AN_DANH_2;
+    }
+
+    public boolean hasActiveNormalCounterpart(int superItemId) {
+        return switch (superItemId) {
+            case ConstItem.CUONG_NO_2 -> isUseCuongNo;
+            case ConstItem.BO_KHI_2 -> isUseBoKhi;
+            case ConstItem.BO_HUYET_2 -> isUseBoHuyet;
+            case ConstItem.GIAP_XEN_BO_HUNG_2 -> isUseGiapXen;
+            case ConstItem.AN_DANH_2 -> isUseAnDanh;
+            default -> false;
+        };
+    }
+
+    public long getRemainingSuperItemTime(int itemId) {
+        return getRemainingSuperItemTime(itemId, System.currentTimeMillis());
+    }
+
+    public long getRemainingSuperItemTime(int itemId, long now) {
+        return switch (itemId) {
+            case ConstItem.CUONG_NO_2 -> remainingSuperTime(isUseCuongNo2, lastTimeCuongNo2, now);
+            case ConstItem.BO_KHI_2 -> remainingSuperTime(isUseBoKhi2, lastTimeBoKhi2, now);
+            case ConstItem.BO_HUYET_2 -> remainingSuperTime(isUseBoHuyet2, lastTimeBoHuyet2, now);
+            case ConstItem.GIAP_XEN_BO_HUNG_2 -> remainingSuperTime(isUseGiapXen2, lastTimeGiapXen2, now);
+            case ConstItem.AN_DANH_2 -> remainingSuperTime(isUseAnDanh2, lastTimeAnDanh2, now);
+            default -> 0;
+        };
+    }
+
+    private long remainingSuperTime(boolean active, long lastTime, long now) {
+        if (!active) {
+            return 0;
+        }
+        return Math.max(0, MAX_TIME_SUPER_ITEM - (now - lastTime));
+    }
+
+    public long addSuperItemTime(int itemId, long now) {
+        if (!isSuperItem(itemId)) {
+            return 0;
+        }
+        long remaining = getRemainingSuperItemTime(itemId, now);
+        if (remaining > MAX_TIME_SUPER_ITEM - TIME_SUPER_ITEM_PER_USE) {
+            return 0;
+        }
+        long newRemaining = remaining + TIME_SUPER_ITEM_PER_USE;
+        setSuperItemRemainingTime(itemId, newRemaining, now);
+        return TIME_SUPER_ITEM_PER_USE;
+    }
+
+    public void restoreSuperItemTime(int itemId, long remaining, long now) {
+        if (!isSuperItem(itemId)) {
+            return;
+        }
+        setSuperItemRemainingTime(itemId, Math.max(0, Math.min(MAX_TIME_SUPER_ITEM, remaining)), now);
+    }
+
+    private void setSuperItemRemainingTime(int itemId, long remaining, long now) {
+        boolean active = remaining > 0;
+        long lastTime = active ? now - (MAX_TIME_SUPER_ITEM - remaining) : 0;
+        switch (itemId) {
+            case ConstItem.CUONG_NO_2 -> {
+                isUseCuongNo2 = active;
+                lastTimeCuongNo2 = lastTime;
+            }
+            case ConstItem.BO_KHI_2 -> {
+                isUseBoKhi2 = active;
+                lastTimeBoKhi2 = lastTime;
+            }
+            case ConstItem.BO_HUYET_2 -> {
+                isUseBoHuyet2 = active;
+                lastTimeBoHuyet2 = lastTime;
+            }
+            case ConstItem.GIAP_XEN_BO_HUNG_2 -> {
+                isUseGiapXen2 = active;
+                lastTimeGiapXen2 = lastTime;
+            }
+            case ConstItem.AN_DANH_2 -> {
+                isUseAnDanh2 = active;
+                lastTimeAnDanh2 = lastTime;
+            }
+            default -> {
+            }
+        }
+    }
+
+    public long getRemainingMayDoTime() {
+        return getRemainingMayDoTime(System.currentTimeMillis());
+    }
+
+    public long getRemainingMayDoTime(long now) {
+        if (!isUseMayDo) {
+            return 0;
+        }
+        return Math.max(0, MAX_TIME_MAY_DO - (now - lastTimeUseMayDo));
+    }
+
+    /**
+     * Adds up to 30 minutes to the detector, capped at 120 minutes.
+     *
+     * @return the time actually added, or zero when already at the cap
+     */
+    public long addMayDoTime(long now) {
+        long remaining = getRemainingMayDoTime(now);
+        long newRemaining = Math.min(MAX_TIME_MAY_DO, remaining + TIME_MAY_DO_PER_USE);
+        long added = newRemaining - remaining;
+        if (added > 0) {
+            setMayDoRemainingTime(newRemaining, now);
+        }
+        return added;
+    }
+
+    public void restoreMayDoTime(long remaining, long now) {
+        setMayDoRemainingTime(Math.max(0, Math.min(MAX_TIME_MAY_DO, remaining)), now);
+    }
+
+    private void setMayDoRemainingTime(long remaining, long now) {
+        isUseMayDo = remaining > 0;
+        lastTimeUseMayDo = isUseMayDo ? now - (MAX_TIME_MAY_DO - remaining) : 0;
     }
 
     public long getRemainingBuaSantaTime() {

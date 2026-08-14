@@ -1,6 +1,7 @@
 package nro.models.services;
 
 import nro.models.consts.ConstPlayer;
+import nro.models.consts.ConstItem;
 import nro.models.item.Item;
 import static nro.models.item.ItemTime.*;
 import nro.models.player.Fusion;
@@ -56,20 +57,20 @@ public class ItemTimeService {
             sendItemTime(player, 2760, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeAnDanh)) / 1000));
         }
         if (player.itemTime.isUseBoHuyet2) {
-            sendItemTime(player, 10714, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoHuyet2)) / 1000));
+            sendItemTime(player, 10714, (int) (player.itemTime.getRemainingSuperItemTime(ConstItem.BO_HUYET_2) / 1000));
         }
         if (player.itemTime.isUseBoKhi2) {
-            sendItemTime(player, 10715, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoKhi2)) / 1000));
+            sendItemTime(player, 10715, (int) (player.itemTime.getRemainingSuperItemTime(ConstItem.BO_KHI_2) / 1000));
         }
         if (player.itemTime.isUseGiapXen2) {
-            sendItemTime(player, 10712, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeGiapXen2)) / 1000));
+            sendItemTime(player, 10712, (int) (player.itemTime.getRemainingSuperItemTime(ConstItem.GIAP_XEN_BO_HUNG_2) / 1000));
         }
         if (player.itemTime.isUseCuongNo2) {
-            sendItemTime(player, 10716, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeCuongNo2)) / 1000));
+            sendItemTime(player, 10716, (int) (player.itemTime.getRemainingSuperItemTime(ConstItem.CUONG_NO_2) / 1000));
         }
 
         if (player.itemTime.isUseAnDanh2) {
-            sendItemTime(player, 10717, (int) ((TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeAnDanh2)) / 1000));
+            sendItemTime(player, 10717, (int) (player.itemTime.getRemainingSuperItemTime(ConstItem.AN_DANH_2) / 1000));
         }
         if (player.itemTime.isUseCMS) {
             sendItemTime(player, 5829, (int) ((TIME_CMS - (System.currentTimeMillis() - player.itemTime.lastTimeUseCMS)) / 1000));
@@ -87,7 +88,7 @@ public class ItemTimeService {
             sendItemTime(player, 3783, (int) ((TIME_OPEN_POWER - (System.currentTimeMillis() - player.itemTime.lastTimeOpenPower)) / 1000));
         }
         if (player.itemTime.isUseMayDo) {
-            sendItemTime(player, 2758, (int) ((TIME_MAY_DO - (System.currentTimeMillis() - player.itemTime.lastTimeUseMayDo)) / 1000));
+            sendItemTime(player, 2758, (int) (player.itemTime.getRemainingMayDoTime() / 1000));
         }
         if (player.itemTime.isUseCoBonLa) {
             sendItemTime(player, 13618, (int) ((TIME_CO_BON_LA - (System.currentTimeMillis() - player.itemTime.lastTimeUseCoBonLa)) / 1000));

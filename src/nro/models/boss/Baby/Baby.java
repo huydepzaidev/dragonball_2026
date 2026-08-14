@@ -1,12 +1,18 @@
 package nro.models.boss.Baby;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import nro.models.consts.BossStatus;
 import nro.models.consts.ConstPlayer;
 import nro.models.boss.Boss;
 import nro.models.boss.BossesData;
 import nro.models.boss.BossID;
 import nro.models.item.Item;
 import nro.models.map.ItemMap;
+import nro.models.map.Map;
+import nro.models.map.Zone;
+import nro.models.map.service.ChangeMapService;
+import nro.models.map.service.MapService;
 import nro.models.player.Player;
 import nro.models.services.EffectSkillService;
 import nro.models.services.ItemService;
@@ -16,8 +22,74 @@ import nro.models.utils.Util;
 
 public class Baby extends Boss {
 
+    private static final long SPAWN_RETRY_MS = 1_000L;
+    private static final int[] SPAWN_MAP_IDS = BabyEncounterState.spawnMapIds();
+
+    private final BabyEncounterState encounterState;
+    private boolean spawnRequested;
+    private long lastSpawnRetryAt;
+
     public Baby() throws Exception {
         super(BossID.BABY, BossesData.BABY, BossesData.BABY_2, BossesData.BABY_3);
+        encounterState = new BabyEncounterState(System.currentTimeMillis());
+    }
+
+    @Override
+    public void update() {
+        BabyEncounterState.Action action = encounterState.poll(System.currentTimeMillis());
+        if (action != BabyEncounterState.Action.NONE) {
+            prepareNextRound();
+        }
+        super.update();
+    }
+
+    @Override
+    public void rest() {
+        if (spawnRequested
+                && (lastSpawnRetryAt == 0L
+                || Util.canDoWithTime(lastSpawnRetryAt, SPAWN_RETRY_MS))) {
+            changeStatus(BossStatus.JOIN_MAP);
+        }
+    }
+
+    @Override
+    public void joinMap() {
+        if (!spawnRequested || currentLevel != 0) {
+            super.joinMap();
+            return;
+        }
+
+        Zone emptyZone = findEmptyBossZone();
+        if (emptyZone == null) {
+            zone = null;
+            lastZone = null;
+            lastSpawnRetryAt = System.currentTimeMillis();
+            changeStatus(BossStatus.REST);
+            return;
+        }
+
+        joinMapByZone(emptyZone);
+        Service.gI().sendFlagBag(this);
+        encounterState.startRound();
+        spawnRequested = false;
+        lastSpawnRetryAt = 0L;
+        notifyJoinMap();
+        changeStatus(BossStatus.CHAT_S);
+        wakeupAnotherBossWhenAppear();
+    }
+
+    @Override
+    public void die(Player killer) {
+        super.die(killer);
+        encounterState.defeat(currentLevel, System.currentTimeMillis());
+    }
+
+    @Override
+    public synchronized void recoverFromRuntimeError() {
+        super.recoverFromRuntimeError();
+        currentLevel = -1;
+        spawnRequested = true;
+        lastSpawnRetryAt = 0L;
     }
 
     @Override
@@ -128,6 +200,42 @@ public class Baby extends Boss {
         } else {
             return 0;
         }
+    }
+
+    private void prepareNextRound() {
+        if (zone != null) {
+            ChangeMapService.gI().exitMap(this);
+        }
+        zone = null;
+        lastZone = null;
+        playerTarger = null;
+        typePk = ConstPlayer.NON_PK;
+        if (effectSkill != null) {
+            effectSkill.removeSkillEffectWhenDie();
+        }
+        currentLevel = -1;
+        spawnRequested = true;
+        lastSpawnRetryAt = 0L;
+        changeStatus(BossStatus.RESPAWN);
+    }
+
+    private Zone findEmptyBossZone() {
+        int mapOffset = ThreadLocalRandom.current().nextInt(SPAWN_MAP_IDS.length);
+        for (int i = 0; i < SPAWN_MAP_IDS.length; i++) {
+            Map map = MapService.gI().getMapById(
+                    SPAWN_MAP_IDS[(i + mapOffset) % SPAWN_MAP_IDS.length]);
+            if (map == null || map.zones == null || map.zones.isEmpty()) {
+                continue;
+            }
+            int zoneOffset = ThreadLocalRandom.current().nextInt(map.zones.size());
+            for (int j = 0; j < map.zones.size(); j++) {
+                Zone candidate = map.zones.get((j + zoneOffset) % map.zones.size());
+                if (candidate != null && candidate.getBosses().isEmpty()) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
     }
 
 }

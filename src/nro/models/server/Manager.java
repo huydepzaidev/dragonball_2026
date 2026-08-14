@@ -632,7 +632,7 @@ public final class Manager {
 
             try {
                 while (true) {
-                    ps = ConnectionDatabase.prepareStatement("SELECT * FROM item_template LIMIT ? OFFSET ?");
+                    ps = ConnectionDatabase.prepareStatement("SELECT * FROM item_template ORDER BY id LIMIT ? OFFSET ?");
                     ps.setInt(1, batchSize);
                     ps.setInt(2, offset);
                     rs = ps.executeQuery();

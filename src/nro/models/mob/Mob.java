@@ -723,6 +723,7 @@ public class Mob {
         Player crystalHunter = player;
         Player petMaster = killedByPet ? ((Pet) player).master : null;
         Player summerPlayer = petMaster != null ? petMaster : player;
+        Player capsuleHunter = petMaster != null ? petMaster : player;
 
         // Summer materials drop while wearing the correct beach shorts without
         // a shirt or costume; other equipment does not disable the effect.
@@ -740,10 +741,11 @@ public class Mob {
             }
         }
         //========================Capsul Kì Bí========================
-        if (player.itemTime.isUseMayDo
-                && (Util.isTrue(20, 100))
-                && this.tempId > 57 && this.tempId < 66) {
-            list.add(new ItemMap(zone, 380, 1, x, yEnd, player.id));
+        if (capsuleHunter.itemTime.isUseMayDo
+                && MysteryCapsuleDropPolicy.isEligibleMob(this.tempId)
+                && MysteryCapsuleDropPolicy.dropsForRoll(
+                        Util.nextInt(0, MysteryCapsuleDropPolicy.ROLL_BOUND - 1))) {
+            list.add(new ItemMap(zone, 380, 1, x, yEnd, capsuleHunter.id));
         }
 
         //========================TASK========================

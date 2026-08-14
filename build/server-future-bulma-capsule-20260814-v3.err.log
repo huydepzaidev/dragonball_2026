@@ -1,0 +1,5 @@
+Exception in thread "ServerMain" java.lang.NoSuchMethodError: 'void nro.models.database.PlayerDAO.migrateInitialEventPoints()'
+	at nro.models.server.ServerManager.init(ServerManager.java:71)
+	at nro.models.server.ServerManager.gI(ServerManager.java:79)
+	at nro.models.server.ServerManager.lambda$main$0(ServerManager.java:90)
+	at java.base/java.lang.Thread.run(Thread.java:1583)

@@ -1,6 +1,7 @@
 package nro.models.npc_list;
 
 import nro.models.consts.ConstNpc;
+import nro.models.consts.ConstTask;
 import nro.models.item.Item;
 import nro.models.npc.Npc;
 import nro.models.player.Player;
@@ -32,7 +33,12 @@ public class BulmaTuongLai extends Npc {
                 }
             } else if (this.mapId == 102) {
                 if (!TaskService.gI().checkDoneTaskTalkNpc(player, this)) {
-                    this.createOtherMenu(player, ConstNpc.BASE_MENU, "learn", "Cửa hàng");
+                    if (hasCompletedXenLevel5Mission(player)) {
+                        this.createOtherMenu(player, ConstNpc.BASE_MENU, "learn", "Cửa hàng");
+                    } else {
+                        this.createOtherMenu(player, ConstNpc.IGNORE_MENU,
+                                "Bạn phải xong nhiệm vụ Sên 5", "Đóng");
+                    }
                 }
             }
         }
@@ -49,15 +55,22 @@ public class BulmaTuongLai extends Npc {
                 }
             } else if (this.mapId == 102) {
                 if (player.idMark.isBaseMenu()) {
-                    switch (select) {
-                        case 0 ->
-                            ShopService.gI().opendShop(player, "BUNMA_FUTURE", true);
-                      
+                    if (!hasCompletedXenLevel5Mission(player)) {
+                        this.createOtherMenu(player, ConstNpc.IGNORE_MENU,
+                                "Bạn phải xong nhiệm vụ Sên 5", "Đóng");
+                        return;
                     }
-                            }
+                    if (select == 0) {
+                        ShopService.gI().opendShop(player, "BUNMA_FUTURE", true);
+                    }
+                }
                         
                 
             }
         }
+    }
+
+    private boolean hasCompletedXenLevel5Mission(Player player) {
+        return TaskService.gI().getIdTask(player) >= ConstTask.TASK_26_0;
     }
 }

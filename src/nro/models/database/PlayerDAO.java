@@ -1,6 +1,7 @@
 package nro.models.database;
 
 import nro.models.data.LocalManager;
+import nro.models.consts.ConstItem;
 import nro.models.item.Item;
 import nro.models.item.ItemTime;
 import nro.models.player.Friend;
@@ -699,17 +700,17 @@ public class PlayerDAO {
 
                 //data item time
                 dataArray.add((player.itemTime.isUseBoHuyet ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoHuyet)) : 0));
-                dataArray.add((player.itemTime.isUseBoHuyet2 ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoHuyet2)) : 0));
+                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.BO_HUYET_2));
                 dataArray.add((player.itemTime.isUseBoKhi ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoKhi)) : 0));
-                dataArray.add((player.itemTime.isUseBoKhi2 ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoKhi2)) : 0));
+                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.BO_KHI_2));
                 dataArray.add((player.itemTime.isUseGiapXen ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeGiapXen)) : 0));
-                dataArray.add((player.itemTime.isUseGiapXen2 ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeGiapXen2)) : 0));
+                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.GIAP_XEN_BO_HUNG_2));
                 dataArray.add((player.itemTime.isUseCuongNo ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeCuongNo)) : 0));
-                dataArray.add((player.itemTime.isUseCuongNo2 ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeCuongNo2)) : 0));
+                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.CUONG_NO_2));
                 dataArray.add((player.itemTime.isUseAnDanh ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeAnDanh)) : 0));
-                dataArray.add((player.itemTime.isUseAnDanh2 ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeAnDanh2)) : 0));
+                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.AN_DANH_2));
                 dataArray.add((player.itemTime.isOpenPower ? (ItemTime.TIME_OPEN_POWER - (System.currentTimeMillis() - player.itemTime.lastTimeOpenPower)) : 0));
-                dataArray.add((player.itemTime.isUseMayDo ? (ItemTime.TIME_MAY_DO - (System.currentTimeMillis() - player.itemTime.lastTimeUseMayDo)) : 0));
+                dataArray.add(player.itemTime.getRemainingMayDoTime());
                 dataArray.add((player.itemTime.isUseCoBonLa ? (ItemTime.TIME_CO_BON_LA - (System.currentTimeMillis() - player.itemTime.lastTimeUseCoBonLa)) : 0));
                 dataArray.add((player.itemTime.isUseKhoBauX2 ? (ItemTime.TIME_MAY_DO2 - (System.currentTimeMillis() - player.itemTime.lastTimeUseKhoBauX2)) : 0));
                 dataArray.add((player.itemTime.isUseBuaSanta ? (ItemTime.TIME_BUA_SANTA - (System.currentTimeMillis() - player.itemTime.lastTimeBuaSanta)) : 0));
