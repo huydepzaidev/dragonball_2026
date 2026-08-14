@@ -21,6 +21,9 @@ public class Inventory {
     public static final long GOLD_BAR_SELL_PRICE = 500_000_000L;
     public static final int MAX_ITEMS_BAG = 120;
     public static final int MAX_ITEMS_BOX = 120;
+    public static final int BABY_DRAGON_MIN_ID = 1765;
+    public static final int BABY_DRAGON_MAX_ID = 1771;
+    public static final int BABY_DRAGON_SET_SIZE = 7;
     public Item trainArmor;
     public List<String> giftCode;
     public List<Item> itemsBody;
@@ -134,10 +137,13 @@ public class Inventory {
         );
 
         for (List<Item> inventory : inventories) {
+            if (inventory == null) {
+                continue;
+            }
             for (Item item : inventory) {
-                if (item != null && isPermanent(item)) {
+                if (item != null && item.template != null && isPermanent(item)) {
                     int itemId = item.template.id;
-                    if (itemId >= 1765 && itemId <= 1771 && !checkedItemIds.contains(itemId)) {
+                    if (isBabyDragon(itemId) && !checkedItemIds.contains(itemId)) {
                         BadgesTaskService.updateCountBagesTask(player, ConstTaskBadges.ME_RONG, 1);
                         checkedItemIds.add(itemId);
                     }
@@ -146,7 +152,54 @@ public class Inventory {
         }
     }
 
+    public boolean hasFullPermanentBabyDragonSet() {
+        Set<Integer> itemIds = new HashSet<>();
+        collectPermanentBabyDragons(itemsBag, itemIds);
+        collectPermanentBabyDragons(itemsBox, itemIds);
+        collectPermanentBabyDragons(itemsBody, itemIds);
+        return itemIds.size() == BABY_DRAGON_SET_SIZE;
+    }
+
+    public boolean hasPermanentBabyDragon(int itemId) {
+        if (!isBabyDragon(itemId)) {
+            return false;
+        }
+        return containsPermanentBabyDragon(itemsBag, itemId)
+                || containsPermanentBabyDragon(itemsBox, itemId)
+                || containsPermanentBabyDragon(itemsBody, itemId);
+    }
+
+    public static boolean isBabyDragon(int itemId) {
+        return itemId >= BABY_DRAGON_MIN_ID && itemId <= BABY_DRAGON_MAX_ID;
+    }
+
+    private void collectPermanentBabyDragons(List<Item> items, Set<Integer> itemIds) {
+        if (items == null) {
+            return;
+        }
+        for (Item item : items) {
+            if (item != null && item.template != null
+                    && isBabyDragon(item.template.id) && isPermanent(item)) {
+                itemIds.add((int) item.template.id);
+            }
+        }
+    }
+
+    private boolean containsPermanentBabyDragon(List<Item> items, int itemId) {
+        if (items == null) {
+            return false;
+        }
+        for (Item item : items) {
+            if (item != null && item.template != null
+                    && item.template.id == itemId && isPermanent(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isPermanent(Item item) {
-        return item != null && item.getOptionById(93) == null;
+        ItemOption expiration = item == null ? null : item.getOptionById(93);
+        return item != null && (expiration == null || expiration.param <= 0);
     }
 }

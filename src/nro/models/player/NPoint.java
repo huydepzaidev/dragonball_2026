@@ -38,6 +38,7 @@ public class NPoint {
     public static final byte MAX_LIMIT = 9;
     static final int PICOLO_SET_REQUIRED_PIECES = 5;
     static final int PICOLO_SET_KI_BONUS_PERCENT = 50;
+    static final int BABY_DRAGON_SET_BONUS_PERCENT = 1;
 
     @Setter
     private Player player;
@@ -243,6 +244,7 @@ public class NPoint {
 
     private void setPointWhenWearClothes() {
         resetPoint();
+        applyPermanentBabyDragonSetBonus();
         if (this.player.rewardBlackBall.timeOutOfDateReward[2] > System.currentTimeMillis()) {
             tlHutHp += RewardBlackBall.R3S_1;
         }
@@ -483,6 +485,17 @@ public class NPoint {
         setBasePoint();
         setOutfitFusion();
         setSpeed();
+    }
+
+    void applyPermanentBabyDragonSetBonus() {
+        if (player == null || player.inventory == null
+                || !player.inventory.hasFullPermanentBabyDragonSet()) {
+            return;
+        }
+        tlHp.add(BABY_DRAGON_SET_BONUS_PERCENT);
+        tlMp.add(BABY_DRAGON_SET_BONUS_PERCENT);
+        tlDame.add(BABY_DRAGON_SET_BONUS_PERCENT);
+        tlNeDon += BABY_DRAGON_SET_BONUS_PERCENT;
     }
 
     private void addOption(ItemOption io) {

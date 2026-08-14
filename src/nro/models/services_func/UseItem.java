@@ -76,6 +76,12 @@ public class UseItem {
     private static final byte ACCEPT_THROW_ITEM = 2;
     private static final byte ACCEPT_USE_ITEM = 3;
 
+    static final int[] BABY_DRAGON_ITEM_IDS = {1765, 1766, 1767, 1768, 1769, 1770, 1771};
+    static final int[] BABY_DRAGON_ITEM_WEIGHTS = {18, 18, 18, 18, 18, 5, 5};
+    static final int BABY_DRAGON_WEIGHT_TOTAL = 100;
+    static final int BABY_DRAGON_PERMANENT_RATE_PERCENT = 1;
+    static final int BABY_DRAGON_MAX_EXPIRATION_DAYS = 30;
+
     private static UseItem instance;
     private static final Random rand = new Random();
 
@@ -2184,7 +2190,10 @@ public class UseItem {
     }
 
     public void OpenTrungRongNhi(Player player, int itemUseiD) {
-        if (InventoryService.gI().getCountEmptyBag(player) > 4) {
+        if (player == null || player.inventory == null) {
+            return;
+        }
+        if (InventoryService.gI().getCountEmptyBag(player) > 0) {
             Item itemused = InventoryService.gI().findItemBag(player, itemUseiD);
 
             if (itemused == null || itemused.quantity < 1) {
@@ -2192,38 +2201,87 @@ public class UseItem {
                 return;
             }
 
-            int[] itemIds = {1765, 1766, 1767, 1768, 1769, 1770, 1771};
-            int randomIndex = (int) (Math.random() * itemIds.length);
-            short randomItemId = (short) itemIds[randomIndex];
+            short randomItemId = (short) randomBabyDragonItemId(
+                    rand.nextInt(BABY_DRAGON_WEIGHT_TOTAL));
 
             Item newItem = ItemService.gI().createNewItem(randomItemId);
-            RewardService.gI().initChiSoItem(newItem);
 
-            int hp = randomInRange(10, 18);
-            int ki = randomInRange(5, 10);
-            int damage = randomInRange(5, 10);
-            int hsd = randomInRange(0, 1);
+            int permanentRoll = rand.nextInt(100);
+            int limitedDayRoll = rand.nextInt(BABY_DRAGON_MAX_EXPIRATION_DAYS);
+            applyBabyDragonOptions(newItem, permanentRoll, limitedDayRoll);
 
-            newItem.itemOptions.add(new ItemOption(50, hp));
-            newItem.itemOptions.add(new ItemOption(5, ki));
-            newItem.itemOptions.add(new ItemOption(14, damage));
-            newItem.itemOptions.add(new ItemOption(30, hsd));
-
-            int randomOption = (int) (Math.random() * 100);
-            newItem.itemOptions.add(new ItemOption(93, randomOption < 0.5 ? 0 : 15));
-
-            InventoryService.gI().addItemBag(player, newItem);
+            if (InventoryService.gI().addItemBag(player, newItem) == false) {
+                Service.gI().sendThongBao(player,
+                        "Không thể thêm pet vào hành trang, Trứng vàng chưa bị sử dụng.");
+                return;
+            }
             InventoryService.gI().subQuantityItemsBag(player, itemused, 1);
 
             InventoryService.gI().sendItemBags(player);
-            Service.gI().sendThongBao(player, "Bạn đã nhận được vật phẩm ngẫu nhiên!");
+            Service.gI().point(player);
+            int expirationDays = babyDragonExpirationDays(permanentRoll, limitedDayRoll);
+            String duration = expirationDays == 0 ? "vĩnh viễn" : expirationDays + " ngày";
+            Service.gI().sendThongBao(player,
+                    "Bạn đã nhận được " + newItem.template.name + " (" + duration + ")!");
         } else {
-            Service.gI().sendThongBao(player, "Yêu cầu có ít nhất 5 ô trống trong hành trang.");
+            Service.gI().sendThongBao(player, "Yêu cầu có ít nhất 1 ô trống trong hành trang.");
         }
     }
 
     private int randomInRange(int min, int max) {
         return min + (int) (Math.random() * (max - min + 1));
+    }
+
+    static void applyBabyDragonOptions(Item item, int permanentRoll, int limitedDayRoll) {
+        if (item == null || item.template == null || item.itemOptions == null) {
+            throw new IllegalStateException("Missing baby dragon item template");
+        }
+        item.itemOptions.clear();
+        for (int[] option : babyDragonBaseOptions(item.template.id)) {
+            item.itemOptions.add(new ItemOption(option[0], option[1]));
+        }
+        item.itemOptions.add(new ItemOption(30, 0));
+        int expirationDays = babyDragonExpirationDays(permanentRoll, limitedDayRoll);
+        if (expirationDays > 0) {
+            item.itemOptions.add(new ItemOption(93, expirationDays));
+        }
+    }
+
+    static int[][] babyDragonBaseOptions(int itemId) {
+        return switch (itemId) {
+            case 1765 -> new int[][]{{77, 16}, {50, 16}, {103, 16}, {236, 20}};
+            case 1766 -> new int[][]{{50, 18}, {5, 7}, {14, 5}};
+            case 1767 -> new int[][]{{50, 18}, {94, 5}, {108, 7}};
+            case 1768 -> new int[][]{{77, 18}, {5, 7}, {14, 5}};
+            case 1769 -> new int[][]{{77, 18}, {94, 5}, {108, 7}};
+            case 1770 -> new int[][]{{77, 22}, {50, 22}, {94, 8}, {5, 11}, {14, 8}};
+            case 1771 -> new int[][]{{77, 22}, {50, 22}, {94, 8}, {5, 11}, {14, 8}, {106, 0}};
+            default -> throw new IllegalArgumentException("Unknown baby dragon item " + itemId);
+        };
+    }
+
+    static int randomBabyDragonItemId(int roll) {
+        if (roll < 0 || roll >= BABY_DRAGON_WEIGHT_TOTAL) {
+            throw new IllegalArgumentException("Baby dragon roll must be from 0 to 99");
+        }
+        int cumulativeWeight = 0;
+        for (int i = 0; i < BABY_DRAGON_ITEM_IDS.length; i++) {
+            cumulativeWeight += BABY_DRAGON_ITEM_WEIGHTS[i];
+            if (roll < cumulativeWeight) {
+                return BABY_DRAGON_ITEM_IDS[i];
+            }
+        }
+        throw new IllegalStateException("Invalid baby dragon weight configuration");
+    }
+
+    static int babyDragonExpirationDays(int permanentRoll, int limitedDayRoll) {
+        if (permanentRoll < 0 || permanentRoll >= 100) {
+            throw new IllegalArgumentException("Permanent roll must be from 0 to 99");
+        }
+        if (limitedDayRoll < 0 || limitedDayRoll >= BABY_DRAGON_MAX_EXPIRATION_DAYS) {
+            throw new IllegalArgumentException("Limited day roll must be from 0 to 29");
+        }
+        return permanentRoll < BABY_DRAGON_PERMANENT_RATE_PERCENT ? 0 : limitedDayRoll + 1;
     }
 
     public void OpenHopQuaVip(Player player, int itemUseiD) {

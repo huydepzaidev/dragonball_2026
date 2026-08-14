@@ -833,20 +833,15 @@ public class InventoryService {
                 return false;
             }
         }
-        // Check item rồng nhí vĩnh viễn
-        if (item.template.id >= 1765 && item.template.id <= 1771) {
-            boolean check_options = false;
-            for (Item.ItemOption op : item.itemOptions) {
-                if (op.optionTemplate != null && op.optionTemplate.id == 93) {
-                    check_options = true;
-                    break;
-                }
-            }
-            if (!check_options) {
-                BadgesTaskService.updateCountBagesTask(player, ConstTaskBadges.ME_RONG, 1);
-            }
+        ItemService.gI().normalizePermanentExpiration(item);
+        boolean countNewPermanentBabyDragon = Inventory.isBabyDragon(item.template.id)
+                && item.getOptionById(93) == null
+                && !player.inventory.hasPermanentBabyDragon(item.template.id);
+        boolean added = addItemList(player.inventory.itemsBag, item);
+        if (added && countNewPermanentBabyDragon) {
+            BadgesTaskService.updateCountBagesTask(player, ConstTaskBadges.ME_RONG, 1);
         }
-        return addItemList(player.inventory.itemsBag, item);
+        return added;
     }
 
     public boolean addItemBox(Player player, Item item) {
