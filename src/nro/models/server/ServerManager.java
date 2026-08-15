@@ -11,6 +11,7 @@ import nro.models.boss.Boss_Manager.BossManager;
 import nro.models.boss.Boss_Manager.OtherBossManager;
 import nro.models.boss.Boss_Manager.TreasureUnderSeaManager;
 import nro.models.boss.Boss_Manager.SnakeWayManager;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.boss.Boss_Manager.RedRibbonHQManager;
 import nro.models.boss.Boss_Manager.GasDestroyManager;
 import nro.models.boss.Boss_Manager.YardartManager;
@@ -136,7 +137,9 @@ public class ServerManager {
             new Thread(OtherBossManager.gI(), "Update other boss").start();
             new Thread(RedRibbonHQManager.gI(), "Update red ribbon hq boss").start();
             new Thread(TreasureUnderSeaManager.gI(), "Update treasure under sea boss").start();
-            new Thread(SnakeWayManager.gI(), "Update snake way boss").start();
+            if (SnakeWayAvailability.isEnabled()) {
+                new Thread(SnakeWayManager.gI(), "Update snake way boss").start();
+            }
             new Thread(GasDestroyManager.gI(), "Update gas destroy boss").start();
 
             new Thread(BotManager.gI(), "Thread Bot Game").start();

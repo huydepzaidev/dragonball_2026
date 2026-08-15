@@ -34,8 +34,8 @@ import nro.models.mob_bigboss.VuaBachTuoc;
 import nro.models.map.phoban.BanDoKhoBau;
 import nro.models.services_dungeon.TreasureUnderSeaService;
 import nro.models.services_dungeon.BlackBallWarService;
-import nro.models.map.phoban.SnakeWay;
 import nro.models.services_dungeon.SnakeWayService;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.map.phoban.DestronGas;
 import nro.models.services_dungeon.DestronGasService;
 import nro.models.map.phoban.MajinBuu14H;
@@ -140,7 +140,7 @@ public class Map implements Runnable {
             case ConstMap.MAP_BAN_DO_KHO_BAU ->
                 nZone = BanDoKhoBau.AVAILABLE;
             case ConstMap.MAP_CON_DUONG_RAN_DOC ->
-                nZone = SnakeWay.AVAILABLE;
+                nZone = SnakeWayAvailability.availableZoneCount();
             case ConstMap.MAP_KHI_GAS_HUY_DIET ->
                 nZone = DestronGas.AVAILABLE;
         }

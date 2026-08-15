@@ -119,16 +119,25 @@ public class BanDoKhoBau implements Runnable {
     }
 
     public void openBanDoKhoBau(Player plOpen, Clan clan, byte level) {
+        if (clan == null) {
+            return;
+        }
         try {
-            this.level = level;
-            this.lastTimeOpen = System.currentTimeMillis();
-            this.clan = clan;
-            this.clan.lastTimeOpenBanDoKhoBau = this.lastTimeOpen;
-            this.clan.playerOpenBanDoKhoBau = plOpen;
-            this.clan.BanDoKhoBau = this;
-            this.kickoutbdkb = false;
-            this.isOpened = true;
-            this.allCharactersDead = false;
+            synchronized (clan) {
+                if (plOpen.clan != clan || clan.BanDoKhoBau != null) {
+                    Service.gI().sendThongBao(plOpen, "Không thể mở Bản đồ kho báu lúc này.");
+                    return;
+                }
+                this.level = level;
+                this.lastTimeOpen = System.currentTimeMillis();
+                this.clan = clan;
+                clan.lastTimeOpenBanDoKhoBau = this.lastTimeOpen;
+                clan.playerOpenBanDoKhoBau = plOpen;
+                clan.BanDoKhoBau = this;
+                this.kickoutbdkb = false;
+                this.isOpened = true;
+                this.allCharactersDead = false;
+            }
             this.init();
             ChangeMapService.gI().goToDBKB(plOpen);
             sendTextBanDoKhoBau();
@@ -302,8 +311,12 @@ public class BanDoKhoBau implements Runnable {
         }
         this.allCharactersDead = false;
         this.boss = null;
-        if (dungeonClan != null && dungeonClan.BanDoKhoBau == this) {
-            dungeonClan.BanDoKhoBau = null;
+        if (dungeonClan != null) {
+            synchronized (dungeonClan) {
+                if (dungeonClan.BanDoKhoBau == this) {
+                    dungeonClan.BanDoKhoBau = null;
+                }
+            }
         }
         this.clan = null;
         this.kickoutbdkb = false;

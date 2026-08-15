@@ -41,6 +41,16 @@ public class TreasureUnderSeaService {
     }
 
     public void openBanDoKhoBau(Player player, byte level) {
+        nro.models.clan.Clan dungeonClan = player.clan;
+        if (dungeonClan == null) {
+            Service.gI().sendThongBao(player, "Không thể thực hiện");
+            return;
+        }
+        synchronized (dungeonClan) {
+            if (player.clan != dungeonClan) {
+                Service.gI().sendThongBao(player, "Không thể thực hiện");
+                return;
+            }
         if (level >= 1 && level <= 110) {
             if (player.clan != null && player.clan.BanDoKhoBau == null) {
                 Item item = InventoryService.gI().findItemBag(player, 611);
@@ -74,6 +84,7 @@ public class TreasureUnderSeaService {
             } else {
                 Service.gI().sendThongBao(player, "Không thể thực hiện");
             }
+        }
         }
     }
 }

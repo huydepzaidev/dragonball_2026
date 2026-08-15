@@ -9,6 +9,7 @@ import nro.models.item.Item;
 import nro.models.consts.ConstNpc;
 import nro.models.player_system.Template.FlagBag;
 import nro.models.clan.Clan;
+import nro.models.clan.ClanDungeonMembershipPolicy;
 import nro.models.clan.ClanMember;
 import nro.models.clan.ClanMessage;
 import nro.models.consts.ConstAchievement;
@@ -724,6 +725,15 @@ public class ClanService {
     }
 
     public void showMenuLeaveClan(Player player) {
+        Clan clan = player.clan;
+        if (clan == null) {
+            return;
+        }
+        synchronized (clan) {
+            if (rejectMembershipRemoval(player, clan)) {
+                return;
+            }
+        }
         NpcService.gI().createMenuConMeo(player, ConstNpc.CONFIRM_LEAVE_CLAN,
                 -1, "Bạn có chắc chắn rời bang hội không?", "OK", "Từ chối");
 
@@ -788,6 +798,10 @@ public class ClanService {
     public void leaveClan(Player player) {
         Clan clan = player.clan;
         if (clan != null) {
+            synchronized (clan) {
+                if (player.clan != clan || rejectMembershipRemoval(player, clan)) {
+                    return;
+                }
             ClanMember cm = clan.getClanMember((int) player.id);
             if (cm != null) {
                 if (clan.isLeader(player)) {
@@ -818,6 +832,26 @@ public class ClanService {
                 clan.sendMessageClan(cmg);
                 clan.update();
             }
+            }
+        }
+    }
+
+    public void dissolveClan(Player player) {
+        Clan clan = player == null ? null : player.clan;
+        if (clan == null) {
+            return;
+        }
+        synchronized (clan) {
+            if (player.clan != clan || !clan.isLeader(player) || rejectMembershipRemoval(player, clan)) {
+                return;
+            }
+            clan.deleteDB(clan.id);
+            Manager.CLANS.remove(clan);
+            player.clan = null;
+            player.clanMember = null;
+            sendMyClan(player);
+            sendClanId(player);
+            Service.gI().sendThongBao(player, "Bang hội đã giải tán thành công.");
         }
     }
 
@@ -850,6 +884,13 @@ public class ClanService {
     //Đuổi khỏi bang
     public void kickOut(Player player, int memberId) {
         Clan clan = player.clan;
+        if (clan == null) {
+            return;
+        }
+        synchronized (clan) {
+            if (player.clan != clan || rejectMembershipRemoval(player, clan)) {
+                return;
+            }
         ClanMember cm = clan.getClanMember(memberId);
         if (clan != null && cm != null
                 && (clan.isLeader(player) || clan.isDeputy(player) && cm.role == MEMBER)) {
@@ -882,6 +923,17 @@ public class ClanService {
             clan.sendMessageClan(cmg);
             clan.update();
         }
+        }
+    }
+
+    private boolean rejectMembershipRemoval(Player player, Clan clan) {
+        if (!ClanDungeonMembershipPolicy.isRemovalLocked(clan)) {
+            return false;
+        }
+        Service.gI().sendThongBao(player,
+                "Bang hội đang tham gia " + ClanDungeonMembershipPolicy.getActiveDungeonName(clan)
+                + ", phải chờ phó bản kết thúc mới có thể rời, kích hoặc giải tán bang.");
+        return true;
     }
 
     private void removeClanPlayer(int plId) {

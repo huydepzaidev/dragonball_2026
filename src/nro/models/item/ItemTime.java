@@ -34,6 +34,8 @@ public class ItemTime {
     public static final long TIME_TRAI_DUA_PER_USE = 30 * 60 * 1000L;
     public static final long MAX_TIME_TRAI_DUA = 500 * 60 * 1000L;
     public static final int TIME_EAT_MEAL = 600000;
+    public static final long TIME_MEAL2_PER_USE = TIME_EAT_MEAL;
+    public static final long MAX_TIME_MEAL2 = 120 * 60 * 1000L;
     public static final int TIME_CMS = 3600000;
     public static final int TIME_DK = 1800000;
     public static final int TIME_NCD = 1800000;
@@ -134,8 +136,10 @@ public class ItemTime {
             }
         }
         if (isEatMeal2) {
-            if (Util.canDoWithTime(lastTimeEatMeal2, TIME_EAT_MEAL)) {
+            if (getRemainingMeal2Time() <= 0) {
                 isEatMeal2 = false;
+                iconMeal2 = 0;
+                lastTimeEatMeal2 = 0;
                 Service.gI().point(player);
             }
         }
@@ -376,6 +380,47 @@ public class ItemTime {
             default -> {
             }
         }
+    }
+
+    public long getRemainingMeal2Time() {
+        return getRemainingMeal2Time(System.currentTimeMillis());
+    }
+
+    public long getRemainingMeal2Time(long now) {
+        if (!isEatMeal2) {
+            return 0;
+        }
+        return Math.max(0, MAX_TIME_MEAL2 - (now - lastTimeEatMeal2));
+    }
+
+    /**
+     * Adds one 10-minute serving to the active collaboration food.
+     *
+     * @return time added; zero at the 120-minute cap; -1 when another food is active
+     */
+    public long addMeal2Time(int iconId, long now) {
+        long remaining = getRemainingMeal2Time(now);
+        if (remaining > 0 && iconMeal2 != iconId) {
+            return -1;
+        }
+        if (remaining > MAX_TIME_MEAL2 - TIME_MEAL2_PER_USE) {
+            return 0;
+        }
+        setMeal2RemainingTime(iconId, remaining + TIME_MEAL2_PER_USE, now);
+        return TIME_MEAL2_PER_USE;
+    }
+
+    public void restoreMeal2Time(int iconId, long remaining, long now) {
+        setMeal2RemainingTime(iconId,
+                Math.max(0, Math.min(MAX_TIME_MEAL2, remaining)), now);
+    }
+
+    private void setMeal2RemainingTime(int iconId, long remaining, long now) {
+        isEatMeal2 = remaining > 0;
+        iconMeal2 = isEatMeal2 ? iconId : 0;
+        lastTimeEatMeal2 = isEatMeal2
+                ? now - (MAX_TIME_MEAL2 - remaining)
+                : 0;
     }
 
     public long getRemainingMayDoTime() {

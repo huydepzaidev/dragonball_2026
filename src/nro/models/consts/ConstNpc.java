@@ -212,6 +212,7 @@ public class ConstNpc {
     public static final int CONFIRM_REMOVE_ALL_ITEM_LUCKY_ROUND = 515;
     public static final int MENU_FIND_PLAYER = 516;
     public static final int CONFIRM_DISSOLUTION_CLAN = 517;
+    public static final int CONFIRM_OPEN_INTRINSIC_MAX = 518;
     public static final int CONFIRM_TELE_NAMEC = 522;
     public static final int UP_TOP_ITEM = 527;
     public static final int MA_BAO_VE = 528;

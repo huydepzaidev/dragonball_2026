@@ -157,7 +157,7 @@ public class CombineService {
                 PhanRaSach.showInfoCombine(player);
                 break;
             case CHE_TAO_TRANG_BI_THIEN_SU:
-                CheTaoTrangBiThienSu.showInfoCombine(player);
+                AngelEquipmentCrafting.showInfoCombine(player);
                 break;
             case DUI_DUC:
                 CheTaoDuiDuc.showInfoCombine(player);
@@ -244,7 +244,7 @@ public class CombineService {
                 PhanRaSach.phanRaSach(player);
                 break;
             case CHE_TAO_TRANG_BI_THIEN_SU:
-                CheTaoTrangBiThienSu.CheTaoTS(player);
+                AngelEquipmentCrafting.craft(player);
                 break;
             case DUI_DUC:
                 CheTaoDuiDuc.CheTaoDuiDuc(player);
@@ -706,9 +706,12 @@ public class CombineService {
                 return "vào hành trang\nChọn trang bị\n(Áo, quần, găng, giày hoặc rađa)\nChọn loại đá để phân rã\n"
                         + "Sau đó chọn 'Phân Rã'";
             case CHE_TAO_TRANG_BI_THIEN_SU:
-                return "vào hành trang\nChọn 1 công thức và công thức Vip\nkèm 1 đá nâng, 1 đá may mắn\n và 999 mảnh thiên sứ\n "
-                        + "Ta sẽ cho ra đồ thiên sứ từ 0-15% chỉ số\n"
-                        + "Sau đó chọn 'Nâng Cấp'";
+                return "Vào hành trang\nChọn 1 Công thức VIP, 1 đá nâng, 1 đá may mắn"
+                        + "\nvà 999 Mảnh Thiên Sứ\n"
+                        + "Có thể hiến tế: 1 Hủy Diệt = 5%; 1 Hủy Diệt + 1 Thần Linh = 10%;"
+                        + "\n2 Hủy Diệt + 1 Thần Linh = 15% chỉ số\n"
+                        + "Phẩm chất càng cao càng dễ thất bại và xịt sẽ mất toàn bộ nguyên liệu\n"
+                        + "Sau đó chọn 'Chế tạo'";
             case NANG_CAP_BONG_TAI:
                 return "Vào hành trang\nChọn bông tai Porata\nChọn mảnh bông tai để nâng cấp, Số lượng 9999 cái"
                         + "\nSau đó chọn 'Nâng cấp'";

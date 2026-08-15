@@ -2,6 +2,7 @@ package nro.models.services;
 
 import nro.models.consts.ConstNpc;
 import nro.models.intrinsic.Intrinsic;
+import nro.models.intrinsic.IntrinsicMaxPolicy;
 import nro.models.player.Player;
 import nro.models.server.Manager;
 import nro.models.network.Message;
@@ -84,7 +85,7 @@ public class IntrinsicService {
     public void showMenu(Player player) {
         NpcService.gI().createMenuConMeo(player, ConstNpc.INTRINSIC, -1,
                 "Nội tại là một kỹ năng bị động hỗ trợ đặc biệt\nBạn có muốn mở hoặc thay đổi nội tại không?",
-                "Xem\ntất cả\nNội Tại", "Mở\nNội Tại", "Mở VIP", "Từ chối");
+                "Xem\ntất cả\nNội Tại", "Mở\nNội Tại", "Mở VIP", "Mở\nMAX", "Từ chối");
     }
 
     public void showConfirmOpen(Player player) {
@@ -95,6 +96,12 @@ public class IntrinsicService {
     public void showConfirmOpenVip(Player player) {
         NpcService.gI().createMenuConMeo(player, ConstNpc.CONFIRM_OPEN_INTRINSIC_VIP, -1,
                 "Bạn có muốn mở Nội Tại\nvới giá là 100 ngọc và\ntái lập giá vàng quay lại ban đầu không?", "Mở\nNội VIP", "Từ chối");
+    }
+
+    public void showConfirmOpenMax(Player player) {
+        NpcService.gI().createMenuConMeo(player, ConstNpc.CONFIRM_OPEN_INTRINSIC_MAX, -1,
+                "Bạn có muốn mở Nội Tại MAX ngẫu nhiên\nvới giá 500 Hồng ngọc không?",
+                "Mở\nMAX", "Từ chối");
     }
 
     private void changeIntrinsic(Player player) {
@@ -156,6 +163,45 @@ public class IntrinsicService {
             }
         } else {
             Service.gI().sendThongBao(player, "Yêu cầu sức mạnh tối thiểu 10 tỷ");
+        }
+    }
+
+    public void openMax(Player player) {
+        if (player == null) {
+            return;
+        }
+        synchronized (player) {
+            if (player.nPoint.power < IntrinsicMaxPolicy.MIN_POWER) {
+                Service.gI().sendThongBao(player, "Yêu cầu sức mạnh tối thiểu 10 tỷ");
+                return;
+            }
+            if (player.inventory.ruby < IntrinsicMaxPolicy.RUBY_COST) {
+                Service.gI().sendThongBao(player, "Bạn không đủ hồng ngọc, còn thiếu "
+                        + (IntrinsicMaxPolicy.RUBY_COST - player.inventory.ruby) + " hồng ngọc nữa");
+                return;
+            }
+
+            List<Intrinsic> eligible = IntrinsicMaxPolicy.getEligibleIntrinsics(getIntrinsics(player.gender));
+            if (eligible.isEmpty()) {
+                Service.gI().sendThongBao(player, "Không tìm thấy Nội tại phù hợp");
+                return;
+            }
+            Intrinsic intrinsic = IntrinsicMaxPolicy.maximize(
+                    eligible.get(Util.nextInt(0, eligible.size() - 1)));
+            if (intrinsic == null) {
+                Service.gI().sendThongBao(player, "Không thể mở Nội tại lúc này");
+                return;
+            }
+
+            player.playerIntrinsic.intrinsic = intrinsic;
+            player.inventory.ruby -= IntrinsicMaxPolicy.RUBY_COST;
+            PlayerService.gI().sendInfoHpMpMoney(player);
+
+            String name = intrinsic.getName();
+            int index = name.indexOf(" [");
+            Service.gI().sendThongBao(player, "Bạn nhận được Nội tại MAX:\n"
+                    + (index == -1 ? name : name.substring(0, index)));
+            sendInfoIntrinsic(player);
         }
     }
 

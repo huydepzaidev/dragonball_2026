@@ -7,29 +7,15 @@ public final class ActivationRewardServiceTest {
     }
 
     public static void main(String[] args) {
-        assertDefault(0, new int[]{127, 128, 129, 233, 245}, new int[]{20, 120, 20, 120, 20});
-        assertDefault(1, new int[]{130, 131, 132, 233, 237}, new int[]{120, 20, 20, 120, 20});
-        assertDefault(2, new int[]{133, 135, 134, 233, 241}, new int[]{20, 20, 120, 120, 20});
+        assertDefault(0, new int[]{127, 128, 129, 233, 245}, new int[]{25, 25, 25, 900, 25});
+        assertDefault(1, new int[]{130, 131, 132, 233, 237}, new int[]{25, 25, 25, 900, 25});
+        assertDefault(2, new int[]{133, 135, 134, 233, 241}, new int[]{25, 25, 25, 900, 25});
+
+        assertSharedDistribution(0);
+        assertSharedDistribution(1);
+        assertSharedDistribution(2);
 
         ActivationRewardService.ActivationConfig earth = ActivationRewardService.defaultConfig(0);
-        require(ActivationRewardService.pickWeightedOption(earth.optionIds, earth.weights, 0) == 127,
-                "Roll đầu phải ra option đầu.");
-        require(ActivationRewardService.pickWeightedOption(earth.optionIds, earth.weights, 19) == 127,
-                "Biên trên option đầu sai.");
-        require(ActivationRewardService.pickWeightedOption(earth.optionIds, earth.weights, 20) == 128,
-                "Biên dưới option thứ hai sai.");
-        require(ActivationRewardService.pickWeightedOption(earth.optionIds, earth.weights, 299) == 245,
-                "Roll cuối phải ra option cuối.");
-        for (int roll = 0; roll < 300; roll++) {
-            int boxOption = ActivationRewardService.pickWeightedOptionForContainer(
-                    ActivationRewardService.SET_BOX_ID,
-                    earth.optionIds, earth.weights, roll);
-            int capsuleOption = ActivationRewardService.pickWeightedOptionForContainer(
-                    ActivationRewardService.SINGLE_CAPSULE_ID,
-                    earth.optionIds, earth.weights, roll);
-            require(boxOption == capsuleOption,
-                    "Hộp Set và Capsule lệch tỉ lệ tại roll " + roll + ".");
-        }
         try {
             ActivationRewardService.pickWeightedOptionForContainer(
                     1, earth.optionIds, earth.weights, 0);
@@ -53,8 +39,47 @@ public final class ActivationRewardServiceTest {
         assertSubOptions(241, new int[]{242, 243, 244});
         assertSubOptions(245, new int[]{246, 247, 248});
 
-        System.out.println("ACTIVATION_REWARD_CONFIG_OK containers=1538,1559 shared_weight_rolls=300"
-                + " crystal_star_options_blocked=102,107 set_mappings=13");
+        System.out.println("ACTIVATION_REWARD_CONFIG_OK containers=1538,1559 shared_weight_rolls=3000"
+                + " gohan_rate=90 other_rates=2.5 crystal_star_options_blocked=102,107 set_mappings=13");
+    }
+
+    private static void assertSharedDistribution(int planet) {
+        ActivationRewardService.ActivationConfig config = ActivationRewardService.defaultConfig(planet);
+        int total = 0;
+        for (int weight : config.weights) {
+            total += weight;
+        }
+        require(total == 1_000, "Tổng trọng số phải bằng 1.000 tại hành tinh " + planet);
+        int[] counts = new int[config.optionIds.length];
+        for (int roll = 0; roll < total; roll++) {
+            int expectedOption = ActivationRewardService.pickWeightedOption(
+                    config.optionIds, config.weights, roll);
+            int boxOption = ActivationRewardService.pickWeightedOptionForContainer(
+                    ActivationRewardService.SET_BOX_ID,
+                    config.optionIds, config.weights, roll);
+            int capsuleOption = ActivationRewardService.pickWeightedOptionForContainer(
+                    ActivationRewardService.SINGLE_CAPSULE_ID,
+                    config.optionIds, config.weights, roll);
+            require(boxOption == expectedOption,
+                    "Hộp Set lệch tỉ lệ tại hành tinh " + planet + ", roll " + roll);
+            require(capsuleOption == expectedOption,
+                    "Capsule lệch tỉ lệ tại hành tinh " + planet + ", roll " + roll);
+            counts[indexOf(config.optionIds, expectedOption)]++;
+        }
+        for (int i = 0; i < config.optionIds.length; i++) {
+            int expectedCount = config.optionIds[i] == 233 ? 900 : 25;
+            require(counts[i] == expectedCount,
+                    "Sai số mốc option #" + config.optionIds[i] + " tại hành tinh " + planet);
+        }
+    }
+
+    private static int indexOf(int[] values, int target) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == target) {
+                return i;
+            }
+        }
+        throw new AssertionError("Không tìm thấy option #" + target);
     }
 
     private static void assertDefault(int planet, int[] expectedOptions, int[] expectedWeights) {

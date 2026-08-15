@@ -77,21 +77,31 @@ public class RedRibbonHQ implements Runnable {
     }
 
     public void openDoanhTrai(Player player) {
+        Clan dungeonClan = player.clan;
+        if (dungeonClan == null) {
+            return;
+        }
         try {
-            this.lastTimeOpen = System.currentTimeMillis();
-            this.clan = player.clan;
-            player.clan.doanhTrai = this;
-            player.clan.playerOpenDoanhTrai = player;
-            player.clan.lastTimeOpenDoanhTrai = this.lastTimeOpen;
-            player.clan.haveGoneDoanhTrai = false;
+            synchronized (dungeonClan) {
+                if (player.clan != dungeonClan || dungeonClan.doanhTrai != null) {
+                    Service.gI().sendThongBao(player, "Không thể mở Doanh trại lúc này.");
+                    return;
+                }
+                this.lastTimeOpen = System.currentTimeMillis();
+                this.clan = dungeonClan;
+                dungeonClan.doanhTrai = this;
+                dungeonClan.playerOpenDoanhTrai = player;
+                dungeonClan.lastTimeOpenDoanhTrai = this.lastTimeOpen;
+                dungeonClan.haveGoneDoanhTrai = false;
+                this.isOpened = true;
+            }
             sendTextDoanhTrai();
             //Khởi tạo quái, boss
-            this.isOpened = true;
             this.init();
         } catch (Exception e) {
             e.printStackTrace();
-            player.clan.lastTimeOpenDoanhTrai = 0;
-            player.clan.haveGoneDoanhTrai = false;
+            dungeonClan.lastTimeOpenDoanhTrai = 0;
+            dungeonClan.haveGoneDoanhTrai = false;
             this.dispose();
             return;
         }
@@ -410,6 +420,11 @@ public class RedRibbonHQ implements Runnable {
     }
 
     private void dispose() {
+        Clan dungeonClan = this.clan;
+        if (dungeonClan == null) {
+            this.isOpened = false;
+            return;
+        }
         this.removeTextDoanhTrai();
         // remove bosses
         for (Boss boss : bosses) {
@@ -428,8 +443,12 @@ public class RedRibbonHQ implements Runnable {
         this.bosses.clear();
         this.winDT = false;
         this.isOpened = false;
-        this.clan.haveGoneDoanhTrai = true;
-        this.clan.doanhTrai = null;
+        synchronized (dungeonClan) {
+            dungeonClan.haveGoneDoanhTrai = true;
+            if (dungeonClan.doanhTrai == this) {
+                dungeonClan.doanhTrai = null;
+            }
+        }
         this.clan = null;
         this.isTimePicking = false;
     }

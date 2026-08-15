@@ -35,6 +35,7 @@ import nro.models.server.Manager;
 import nro.models.services.ClanService;
 import nro.models.map.service.ChangeMapService;
 import nro.models.services.PlayerService;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.server.ServerLog;
 import nro.models.task.BadgesTaskService;
 import nro.models.utils.Util;
@@ -478,6 +479,10 @@ public class Input {
                     }
                 }
                 case CHOOSE_LEVEL_CDRD -> {
+                    if (!SnakeWayAvailability.isEnabled()) {
+                        Service.gI().sendThongBao(player, SnakeWayAvailability.CLOSED_MESSAGE);
+                        return;
+                    }
                     int level = Integer.parseInt(text[0]);
                     if (level >= 1 && level <= 110) {
                         Npc npc = NpcManager.getByIdAndMap(ConstNpc.THAN_VU_TRU, player.zone.map.mapId);
@@ -574,18 +579,8 @@ public class Input {
                 }
                 case DISSOLUTION_CLAN -> {
                     String xacNhan = text[0];
-                    Clan clan;
                     if (xacNhan.equalsIgnoreCase("OK")) {
-                        clan = player.clan;
-                        if (clan.isLeader(player)) {
-                            clan.deleteDB(clan.id);
-                            Manager.CLANS.remove(clan);
-                            player.clan = null;
-                            player.clanMember = null;
-                            ClanService.gI().sendMyClan(player);
-                            ClanService.gI().sendClanId(player);
-                            Service.gI().sendThongBao(player, "Bang hội đã giải tán thành công.");
-                        }
+                        ClanService.gI().dissolveClan(player);
                     }
                 }
             }

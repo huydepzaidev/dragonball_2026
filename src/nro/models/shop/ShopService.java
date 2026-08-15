@@ -1058,6 +1058,16 @@ public class ShopService {
                     isBuy = false;
                 }
                 break;
+            case ConstItem.HONG_NGOC:
+                if (pl.inventory.ruby >= buySpec) {
+                    pl.inventory.ruby -= buySpec;
+                    isBuy = true;
+                } else {
+                    Service.gI().sendThongBao(pl,
+                            "B\u1ea1n kh\u00f4ng \u0111\u1ee7 H\u1ed3ng Ng\u1ecdc \u0111\u1ec3 mua v\u1eadt ph\u1ea9m");
+                    isBuy = false;
+                }
+                break;
             default:
                 if (InventoryService.gI().findItemBag(pl, itSpec) == null || !InventoryService.gI().findItemBag(pl, itSpec).isNotNullItem()) {
                     Service.gI().sendThongBao(pl, "Không tìm thấy " + itS.template.name);

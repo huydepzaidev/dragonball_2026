@@ -825,13 +825,9 @@ public class UseItem {
 
                                 useItemTime(pl, item);
                                 break;
-                            case 880:
-                            case 881:
-                            case 882:
-                                if (pl.itemTime.isEatMeal2) {
-                                    Service.gI().sendThongBao(pl, "Chỉ được sử dụng 1 cái");
-                                    break;
-                                }
+                            case ConstItem.CUA_RANG_ME:
+                            case ConstItem.BACH_TUOC_NUONG:
+                            case ConstItem.TOM_TAM_BOT_CHIEN_XU:
                                 useItemTime(pl, item);
                                 break;
                             case 521: //tdlt
@@ -1768,13 +1764,25 @@ public class UseItem {
                 ItemTimeService.gI().removeItemTime(pl, pl.itemTime.iconMeal);
                 pl.itemTime.iconMeal = item.template.iconID;
                 break;
-            case 880:
-            case 881:
-            case 882:
-                pl.itemTime.lastTimeEatMeal2 = System.currentTimeMillis();
-                pl.itemTime.isEatMeal2 = true;
-                ItemTimeService.gI().removeItemTime(pl, pl.itemTime.iconMeal2);
-                pl.itemTime.iconMeal2 = item.template.iconID;
+            case ConstItem.CUA_RANG_ME:
+            case ConstItem.BACH_TUOC_NUONG:
+            case ConstItem.TOM_TAM_BOT_CHIEN_XU:
+                long addedMeal2Time = pl.itemTime.addMeal2Time(
+                        item.template.iconID, System.currentTimeMillis());
+                if (addedMeal2Time < 0) {
+                    Service.gI().sendThongBao(pl,
+                            "Chỉ có thể sử dụng cùng lúc 1 loại thức ăn hỗ trợ");
+                    return;
+                }
+                if (addedMeal2Time == 0) {
+                    Service.gI().sendThongBao(pl,
+                            "Thời gian " + item.template.name + " đã đạt tối đa 120 phút");
+                    return;
+                }
+                long remainingMeal2Minutes = Math.max(1,
+                        pl.itemTime.getRemainingMeal2Time() / 60_000);
+                Service.gI().sendThongBao(pl,
+                        item.template.name + " còn " + remainingMeal2Minutes + " phút");
                 break;
 
             case 1532: //máy dò đồ

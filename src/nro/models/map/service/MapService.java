@@ -10,6 +10,7 @@ import nro.models.player.Player;
 import nro.models.server.Manager;
 import nro.models.network.Message;
 import nro.models.services.Service;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.utils.Logger;
 import nro.models.utils.Util;
 import java.io.DataInputStream;
@@ -539,7 +540,7 @@ public class MapService {
     }
 
     public boolean isMapConDuongRanDoc(int mapId) {
-        return mapId >= 141 && mapId <= 144;
+        return SnakeWayAvailability.isMap(mapId);
     }
 
     public boolean isMapKhiGasHuyDiet(int mapId) {

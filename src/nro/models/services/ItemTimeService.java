@@ -123,7 +123,8 @@ public class ItemTimeService {
             sendItemTime(player, player.itemTime.iconMeal, (int) ((TIME_EAT_MEAL - (System.currentTimeMillis() - player.itemTime.lastTimeEatMeal)) / 1000));
         }
         if (player.itemTime.isEatMeal2) {
-            sendItemTime(player, player.itemTime.iconMeal2, (int) ((TIME_EAT_MEAL - (System.currentTimeMillis() - player.itemTime.lastTimeEatMeal2)) / 1000));
+            sendItemTime(player, player.itemTime.iconMeal2,
+                    (int) (player.itemTime.getRemainingMeal2Time() / 1000));
         }
         if (player.itemTime.isUseTDLT) {
             sendItemTime(player, 4387, player.itemTime.timeTDLT / 1000);

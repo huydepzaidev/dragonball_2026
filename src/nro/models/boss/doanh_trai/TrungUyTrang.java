@@ -9,6 +9,7 @@ import nro.models.boss.Boss_Manager.RedRibbonHQManager;
 import static nro.models.consts.BossType.PHOBANDT;
 import nro.models.consts.ConstRatio;
 import nro.models.map.ItemMap;
+import nro.models.services_dungeon.RedRibbonHQRewardPolicy;
 import nro.models.map.Zone;
 import nro.models.player.Player;
 import nro.models.skill.Skill;
@@ -59,16 +60,8 @@ public class TrungUyTrang extends Boss {
             Service.gI().dropItemMap(this.zone, it);
         }
         TaskService.gI().checkDoneTaskKillBoss(plKill, this);
-        // 100% rơi item 1824
-        ItemMap it = new ItemMap(
-                this.zone,
-                1824,
-                1,
-                this.location.x,
-                this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24),
-                plKill.id
-        );
-        Service.gI().dropItemMap(this.zone, it);
+        RedRibbonHQRewardPolicy.dropCauVang(this.zone, plKill, this.location.x,
+                this.zone.map.yPhysicInTop(this.location.x, this.location.y - 24));
     }
 
     @Override

@@ -16,9 +16,9 @@ public final class ActivationRewardDatabaseSmokeTest {
         {133, 135, 134, 233, 241}
     };
     private static final int[][] EXPECTED_WEIGHTS = {
-        {20, 120, 20, 120, 20},
-        {120, 20, 20, 120, 20},
-        {20, 20, 120, 120, 20}
+        {25, 25, 25, 900, 25},
+        {25, 25, 25, 900, 25},
+        {25, 25, 25, 900, 25}
     };
 
     private ActivationRewardDatabaseSmokeTest() {

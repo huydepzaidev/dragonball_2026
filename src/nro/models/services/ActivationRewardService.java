@@ -54,9 +54,9 @@ public final class ActivationRewardService {
     };
 
     private static final int[][] DEFAULT_WEIGHTS = {
-        {20, 120, 20, 120, 20},
-        {120, 20, 20, 120, 20},
-        {20, 20, 120, 120, 20}
+        {25, 25, 25, 900, 25},
+        {25, 25, 25, 900, 25},
+        {25, 25, 25, 900, 25}
     };
 
     private static ActivationRewardService instance;

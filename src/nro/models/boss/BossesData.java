@@ -472,7 +472,7 @@ public class BossesData {
             ConstPlayer.TRAI_DAT, //gender
             new short[]{252, 253, 254, -1, -1, -1}, //outfit {head, body, leg, bag, aura, eff}
             12055, //dame
-            new int[]{3000000}, //hp
+            new int[]{Util.nextInt(100_000_000, 250_000_000)}, //hp
             new int[]{104}, //map join
             new int[][]{
                 {Skill.KAMEJOKO, 7, 10000},
@@ -501,7 +501,7 @@ public class BossesData {
             ConstPlayer.TRAI_DAT, //gender
             new short[]{246, 247, 248, -1, -1, -1}, //outfit {head, body, leg, bag, aura, eff}
             12000, //dame
-            new int[]{4000000}, //hp
+            new int[]{Util.nextInt(100_000_000, 250_000_000)}, //hp
             new int[]{104}, //map join
             new int[][]{
                 {Skill.KAMEJOKO, 7, 10000},
@@ -521,7 +521,7 @@ public class BossesData {
             ConstPlayer.TRAI_DAT, //gender
             new short[]{261, 262, 263, -1, -1, -1}, //outfit {head, body, leg, bag, aura, eff}
             12200, //dame
-            new int[]{5000000}, //hp
+            new int[]{Util.nextInt(100_000_000, 250_000_000)}, //hp
             new int[]{104}, //map join
             new int[][]{
                 {Skill.KAMEJOKO, 7, 10000},

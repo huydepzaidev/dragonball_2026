@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import nro.models.consts.ConstNpc;
 import nro.models.consts.ConstTask;
 import nro.models.item.Item;
-import nro.models.services.AchievementService;
 import nro.models.npc.Npc;
 import nro.models.player.Player;
 import nro.models.services.InventoryService;
@@ -32,7 +31,7 @@ public class BoMong extends Npc {
             if (canOpenNpc(player)) {
                 if (this.mapId == 47 || this.mapId == 84) {
                     this.createOtherMenu(player, ConstNpc.BASE_MENU,
-                            "Ngươi muốn có thêm ngọc thì chịu khó làm vài nhiệm vụ sẽ được ngọc thưởng", "Nhiệm vụ\nhàng ngày", "Nhiệm vụ\nthành tích", "Nạp Ngọc", "Điểm danh", "Từ chối");
+                            "Ngươi muốn có thêm ngọc thì chịu khó làm vài nhiệm vụ sẽ được ngọc thưởng", "Nhiệm vụ\nhàng ngày", "Nạp Ngọc", "Điểm danh", "Từ chối");
                 }
             }
         }
@@ -62,12 +61,9 @@ public class BoMong extends Npc {
                             }
                         }
                         case 1 -> {
-                            AchievementService.gI().openAchievementUI(player);
-                        }
-                        case 2 -> {
                             Input.gI().createFormTradeGem(player);
                         }
-                        case 3 -> {
+                        case 2 -> {
                             if (player.lastCheckIn != null) {
                                 LocalDate last = player.lastCheckIn.toLocalDate();
                                 LocalDate today = LocalDate.now();

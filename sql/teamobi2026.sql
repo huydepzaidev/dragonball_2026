@@ -15036,4 +15036,164 @@ WHERE `id`=180;
 COMMIT;
 -- END MIGRATION: 2026_08_14_2041_naruto_stats_display_fix.sql
 
+-- BEGIN MIGRATION: 2026_08_14_2224_gohan_activation_reward_rates.sql
+-- Give Set Gohan a 90% rate for both the five-item Set box and single-item Capsule.
+-- Re-runnable: existing rows only replace weights; missing rows receive the canonical pool.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `activation_reward_config`
+  (`planet`,`planet_name`,`activation_options_json`,`activation_weights_json`,
+   `bonus_options_json`,`enabled`)
+VALUES
+  (0,'Trái Đất','[127,128,129,233,245]',
+   '{"127":25,"128":25,"129":25,"233":900,"245":25}','[]',1),
+  (1,'Namek','[130,131,132,233,237]',
+   '{"130":25,"131":25,"132":25,"233":900,"237":25}','[]',1),
+  (2,'Xayda','[133,135,134,233,241]',
+   '{"133":25,"135":25,"134":25,"233":900,"241":25}','[]',1)
+ON DUPLICATE KEY UPDATE
+  `activation_weights_json`=VALUES(`activation_weights_json`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_14_2224_gohan_activation_reward_rates.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1028_whis_angel_shop_ruby.sql
+-- Price every item in Whis's Angel shop at 100 ruby instead of gold bars.
+-- Re-runnable: the same 16 Angel materials and recipes are reset to the canonical price.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_shop` AS `item`
+JOIN `tab_shop` AS `tab` ON `tab`.`id`=`item`.`tab_id`
+JOIN `shop` AS `shop` ON `shop`.`id`=`tab`.`shop_id`
+JOIN `item_template` AS `ruby` ON `ruby`.`id`=861
+SET `item`.`type_sell`=3,
+    `item`.`cost`=100,
+    `item`.`icon_spec`=`ruby`.`icon_id`
+WHERE `shop`.`npc_id`=56
+  AND `shop`.`tag_name`='THIEN_SU'
+  AND `item`.`temp_id` BETWEEN 1071 AND 1086;
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1028_whis_angel_shop_ruby.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1054_santa_ruby_foods.sql
+-- Add the three collaboration foods to Santa's Ruby shop for 10 ruby each.
+-- Safe to run more than once: missing rows are inserted and existing rows are normalized.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_shop`
+(`tab_id`,`temp_id`,`is_new`,`is_sell`,`type_sell`,`cost`,`icon_spec`,`create_time`)
+SELECT 64, desired.temp_id, 1, 1, 3, 10, 0, CURRENT_TIMESTAMP
+FROM (
+    SELECT 880 AS temp_id
+    UNION ALL SELECT 881
+    UNION ALL SELECT 882
+) AS desired
+INNER JOIN `item_template` template ON template.id=desired.temp_id
+WHERE EXISTS (
+    SELECT 1
+    FROM `tab_shop` tab
+    INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+    WHERE tab.id=64
+      AND ruby_shop.npc_id=39
+      AND ruby_shop.tag_name='SATAN_RUBY'
+)
+AND NOT EXISTS (
+    SELECT 1
+    FROM `item_shop` existing
+    WHERE existing.tab_id=64
+      AND existing.temp_id=desired.temp_id
+);
+
+UPDATE `item_shop` item
+INNER JOIN `tab_shop` tab ON tab.id=item.tab_id
+INNER JOIN `shop` ruby_shop ON ruby_shop.id=tab.shop_id
+SET item.is_new=1,
+    item.is_sell=1,
+    item.type_sell=3,
+    item.cost=10,
+    item.icon_spec=0
+WHERE tab.id=64
+  AND ruby_shop.npc_id=39
+  AND ruby_shop.tag_name='SATAN_RUBY'
+  AND item.temp_id IN (880,881,882);
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1054_santa_ruby_foods.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1123_disable_future_collection_chest.sql
+-- Remove the Collection Chest NPC from Future Bulma's house (map 102).
+-- Safe to run more than once and preserves every other NPC in the map.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `map_template`
+SET `npcs`=CASE
+        WHEN JSON_COMPACT(`npcs`)='[[82,218,360]]' THEN '[]'
+        ELSE REPLACE(
+            REPLACE(JSON_COMPACT(`npcs`), ',[82,218,360]', ''),
+            '[82,218,360],', '')
+    END
+WHERE `id`=102
+  AND JSON_COMPACT(`npcs`) LIKE '%[82,218,360]%';
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1123_disable_future_collection_chest.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1141_angel_crafting_quality_option.sql
+-- Display the deterministic 0/5/10/15% quality granted by Angel crafting.
+-- Safe to run more than once.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `item_option_template` (`id`,`NAME`) VALUES
+(255,'Chế tạo Thiên Sứ (+#% chỉ số)')
+ON DUPLICATE KEY UPDATE `NAME`=VALUES(`NAME`);
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1141_angel_crafting_quality_option.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1245_rollback_angel_crafting_option.sql
+-- Roll back the Angel crafting quality option because the legacy client protocol
+-- serializes the option-template count in one byte. A 256th template wraps the
+-- count to zero and desynchronizes the client data packet.
+-- Re-runnable: deleting a missing row is a no-op.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+DELETE FROM `item_option_template`
+WHERE `id`=255;
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1245_rollback_angel_crafting_option.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1255_stack_vip_angel_recipes.sql
+-- Make all three VIP Angel-equipment recipes stackable in client and server data.
+-- Re-runnable: the canonical flag is always reset to one.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `is_up_to_up`=1
+WHERE `id` BETWEEN 1084 AND 1086;
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1255_stack_vip_angel_recipes.sql
+
+-- BEGIN MIGRATION: 2026_08_15_1310_stack_normal_angel_recipes.sql
+-- Complete recipe stacking by enabling the three normal Angel recipes.
+-- Re-runnable: the canonical flag is always reset to one.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `is_up_to_up`=1
+WHERE `id` BETWEEN 1071 AND 1073;
+
+COMMIT;
+-- END MIGRATION: 2026_08_15_1310_stack_normal_angel_recipes.sql
+
 -- END CONSOLIDATED PROJECT MIGRATIONS

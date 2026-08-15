@@ -34,6 +34,7 @@ import nro.models.services.ItemService;
 import nro.models.map.service.MapService;
 import nro.models.services.Service;
 import nro.models.services.TaskService;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.utils.Logger;
 import nro.models.utils.SkillUtil;
 import nro.models.utils.TimeUtil;
@@ -286,6 +287,11 @@ public class MrBlue {
                 player.location.y = Integer.parseInt(String.valueOf(dataArray.get(2)));
                 player.location.lastTimeplayerMove = System.currentTimeMillis();
                 if (mapId == 51 || MapService.gI().isMapDoanhTrai(mapId) || MapService.gI().isMapBlackBallWar(mapId) || MapService.gI().isMapSieuThanhThuy(mapId) || MapService.gI().isMapMabu2H(mapId)) {
+                    mapId = player.gender + 21;
+                    player.location.x = 300;
+                    player.location.y = 336;
+                }
+                if (!SnakeWayAvailability.isEnabled() && SnakeWayAvailability.isMap(mapId)) {
                     mapId = player.gender + 21;
                     player.location.x = 300;
                     player.location.y = 336;
@@ -576,7 +582,7 @@ public class MrBlue {
             int timeUseGTPT = 0;
             int timeUseDK = 0;
             int timeUseRX = 0;
-            int timeMeal2 = 0;
+            long timeMeal2 = 0;
             int iconMeal2 = 0;
             int timeUseNCD = 0;
             long timeKilis = 0;
@@ -628,7 +634,7 @@ public class MrBlue {
                 timeUseRX = Integer.parseInt(String.valueOf(dataArray.get(20)));
             }
             if (dataArray.size() > 21) {
-                timeMeal2 = Integer.parseInt(String.valueOf(dataArray.get(21)));
+                timeMeal2 = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(21))));
             }
             if (dataArray.size() > 22) {
                 iconMeal2 = Integer.parseInt(String.valueOf(dataArray.get(22)));
@@ -683,7 +689,6 @@ public class MrBlue {
             player.itemTime.lastTimeUseDK = System.currentTimeMillis() - (ItemTime.TIME_DK - timeUseDK);
             player.itemTime.timeRX = timeUseRX * 60 * 1000;
             player.itemTime.lastTimeUseRX = System.currentTimeMillis();
-            player.itemTime.lastTimeEatMeal2 = System.currentTimeMillis() - (ItemTime.TIME_EAT_MEAL - timeMeal2);
             player.itemTime.lastTimeUseNCD = System.currentTimeMillis() - (ItemTime.TIME_NCD - timeUseNCD);
             player.itemTime.lastTimeUseTraiDua = System.currentTimeMillis();
             player.itemTime.timeLengthTraiDua = Math.min(ItemTime.MAX_TIME_TRAI_DUA, timeTraiDua);
@@ -704,8 +709,7 @@ public class MrBlue {
             player.itemTime.isUseGTPT = timeUseGTPT != 0;
             player.itemTime.isUseDK = timeUseDK != 0;
             player.itemTime.isUseRX = timeUseRX != 0;
-            player.itemTime.iconMeal2 = iconMeal2;
-            player.itemTime.isEatMeal2 = timeMeal2 != 0;
+            player.itemTime.restoreMeal2Time(iconMeal2, timeMeal2, System.currentTimeMillis());
             player.itemTime.isUseNCD = timeUseNCD != 0;
             player.itemTime.isUseKilis = timeKilis != 0;
             player.itemTime.isUseNuocMia1 = timeNuocMia1 != 0;

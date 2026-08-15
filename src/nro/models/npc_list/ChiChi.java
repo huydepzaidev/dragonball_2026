@@ -1,5 +1,6 @@
 package nro.models.npc_list;
 
+import nro.models.consts.ConstItem;
 import nro.models.consts.ConstNpc;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,11 +32,18 @@ public class ChiChi extends Npc {
     private static final int SO_LUONG_NGUYEN_LIEU = 99;
     private static final int[] NGUYEN_LIEU_MUA_HE = {695, 696, 697, 698};
     private static final String[] TEN_NGUYEN_LIEU_MUA_HE = {"Vỏ ốc", "Vỏ sò", "Con cua", "Sao biển"};
-    private static final int SO_LUONG_THE_NHAN_DUOC = 10;
+    private static final int DIEM_SU_KIEN_MOI_LAN_DOI = 10;
     private static final int SO_LAN_DOI_TOI_DA_MOI_LAN = 1000;
-    private static final int[] THE_SUU_TAP_MUA_HE = {1204, 1791, 1792, 1793};
-    private static final String[] TEN_THE_SUU_TAP_MUA_HE = {"Rồng Thần Namek", "Oozaru", "Oozarun 1", "Oozarun 2"};
-    private static final int[] TY_LE_THE_SUU_TAP = {35, 35, 15, 15};
+    private static final int TONG_MOC_TY_LE_PHAN_THUONG_MUA_HE = 10_000;
+    private static final int[] PHAN_THUONG_MUA_HE = {
+        1204, 1791, 1792, 1793, ConstItem.RUONG_HOP_TAC_NARUTO
+    };
+    private static final String[] TEN_PHAN_THUONG_MUA_HE = {
+        "Rồng Thần Namek", "Oozaru", "Oozarun 1", "Oozarun 2", "Rương hợp tác Naruto"
+    };
+    private static final int[] SO_LUONG_PHAN_THUONG_MUA_HE = {10, 10, 10, 10, 1};
+    // Rương Naruto chiếm đúng 100/10.000 mốc (1%), thấp nhất trong danh sách.
+    private static final int[] TY_LE_PHAN_THUONG_MUA_HE = {3465, 3465, 1485, 1485, 100};
 
     public ChiChi(int mapId, int status, int cx, int cy, int tempId, int avartar) {
         super(mapId, status, cx, cy, tempId, avartar);
@@ -210,19 +218,7 @@ public class ChiChi extends Npc {
     }
 
     private void openMenuDoiQuaMuaHe(Player player) {
-        StringBuilder thongTin = new StringBuilder("Mỗi loại đủ x99 có thể đổi x10 mảnh thẻ ngẫu nhiên:\n"
-                + "Rồng Thần Namek: 35% | Oozaru: 35%\n"
-                + "Oozarun 1: 15% | Oozarun 2: 15%\n");
-        for (int i = 0; i < NGUYEN_LIEU_MUA_HE.length; i++) {
-            thongTin.append(TEN_NGUYEN_LIEU_MUA_HE[i])
-                    .append(": ")
-                    .append(getItemQuantity(player, NGUYEN_LIEU_MUA_HE[i]))
-                    .append(" (đổi tối đa ")
-                    .append(getSoLanDoiToiDa(player, NGUYEN_LIEU_MUA_HE[i]))
-                    .append(" lần)")
-                    .append("\n");
-        }
-        createOtherMenu(player, MENU_DOI_QUA_MUA_HE, thongTin.toString(),
+        createOtherMenu(player, MENU_DOI_QUA_MUA_HE, formatSummerRewardList(),
                 "Đổi x99\nVỏ ốc",
                 "Đổi x99\nVỏ sò",
                 "Đổi x99\nCon cua",
@@ -261,71 +257,96 @@ public class ChiChi extends Npc {
                 return;
             }
 
-            int[] soLuongThe = new int[THE_SUU_TAP_MUA_HE.length];
+            int[] soLuongPhanThuong = new int[PHAN_THUONG_MUA_HE.length];
             for (int i = 0; i < soLanDoi; i++) {
-                soLuongThe[randomChiSoTheSuuTapMuaHe()] += SO_LUONG_THE_NHAN_DUOC;
+                int chiSoPhanThuong = randomChiSoPhanThuongMuaHe();
+                soLuongPhanThuong[chiSoPhanThuong] += SO_LUONG_PHAN_THUONG_MUA_HE[chiSoPhanThuong];
             }
 
             int soNguyenLieuCan = soLanDoi * SO_LUONG_NGUYEN_LIEU;
             int soOTrongSauKhiTru = demSoOTrongSauKhiTruNguyenLieu(player, itemId, soNguyenLieuCan);
-            int soOCanChoThe = demSoOCanChoThe(player, soLuongThe);
-            if (soOTrongSauKhiTru < soOCanChoThe) {
+            int soOCanChoPhanThuong = demSoOCanChoPhanThuong(player, soLuongPhanThuong);
+            if (soOTrongSauKhiTru < soOCanChoPhanThuong) {
                 Service.gI().sendThongBao(player,
-                        "Hành trang không đủ chỗ cho " + soOCanChoThe
-                        + " loại thẻ có thể nhận. Hãy chừa thêm ô trống rồi thử lại.");
+                        "Hành trang không đủ chỗ cho " + soOCanChoPhanThuong
+                        + " loại phần thưởng có thể nhận. Hãy chừa thêm ô trống rồi thử lại.");
                 return;
             }
 
             truItemTrongHanhTrang(player, itemId, soNguyenLieuCan);
-            int[] soLuongDaThem = new int[THE_SUU_TAP_MUA_HE.length];
-            for (int i = 0; i < THE_SUU_TAP_MUA_HE.length; i++) {
-                if (soLuongThe[i] <= 0) {
+            int[] soLuongDaThem = new int[PHAN_THUONG_MUA_HE.length];
+            for (int i = 0; i < PHAN_THUONG_MUA_HE.length; i++) {
+                if (soLuongPhanThuong[i] <= 0) {
                     continue;
                 }
-                Item qua = ItemService.gI().createNewItem((short) THE_SUU_TAP_MUA_HE[i], soLuongThe[i]);
+                Item qua = ItemService.gI().createNewItem((short) PHAN_THUONG_MUA_HE[i], soLuongPhanThuong[i]);
                 if (qua == null || qua.template == null || !InventoryService.gI().addItemBag(player, qua)) {
                     for (int j = 0; j < soLuongDaThem.length; j++) {
                         if (soLuongDaThem[j] > 0) {
-                            truItemTrongHanhTrang(player, THE_SUU_TAP_MUA_HE[j], soLuongDaThem[j]);
+                            truItemTrongHanhTrang(player, PHAN_THUONG_MUA_HE[j], soLuongDaThem[j]);
                         }
                     }
                     Item hoanTra = ItemService.gI().createNewItem((short) itemId, soNguyenLieuCan);
                     InventoryService.gI().addItemBag(player, hoanTra);
                     InventoryService.gI().sendItemBags(player);
                     Service.gI().sendThongBao(player,
-                            "Không thể thêm đủ thẻ vào hành trang, nguyên liệu đã được hoàn trả.");
+                            "Không thể thêm đủ phần thưởng vào hành trang, nguyên liệu đã được hoàn trả.");
                     return;
                 }
-                soLuongDaThem[i] = soLuongThe[i];
+                soLuongDaThem[i] = soLuongPhanThuong[i];
             }
 
-            long diemSuKien = (long) soLanDoi * SO_LUONG_THE_NHAN_DUOC;
+            long diemSuKien = (long) soLanDoi * DIEM_SU_KIEN_MOI_LAN_DOI;
             player.point_summer_cards += diemSuKien;
             DailyRankingService.recordSummerEventPoints(player, diemSuKien);
             InventoryService.gI().sendItemBags(player);
             StringBuilder ketQua = new StringBuilder("Đổi thành công ")
                     .append(soLanDoi).append(" lần, đã dùng x")
                     .append(soNguyenLieuCan).append(" ").append(itemName).append(".\nNhận được:");
-            for (int i = 0; i < soLuongThe.length; i++) {
-                if (soLuongThe[i] > 0) {
-                    ketQua.append("\n- x").append(soLuongThe[i]).append(" ")
-                            .append(TEN_THE_SUU_TAP_MUA_HE[i]);
+            for (int i = 0; i < soLuongPhanThuong.length; i++) {
+                if (soLuongPhanThuong[i] > 0) {
+                    ketQua.append("\n- x").append(soLuongPhanThuong[i]).append(" ")
+                            .append(TEN_PHAN_THUONG_MUA_HE[i]);
                 }
             }
             Service.gI().sendThongBao(player, ketQua.toString());
         }
     }
 
-    private static int randomChiSoTheSuuTapMuaHe() {
-        int random = Util.nextInt(1, 100);
+    private static int randomChiSoPhanThuongMuaHe() {
+        return summerRewardIndexForRoll(Util.nextInt(1, TONG_MOC_TY_LE_PHAN_THUONG_MUA_HE));
+    }
+
+    static int summerRewardIndexForRoll(int random) {
+        if (random < 1 || random > TONG_MOC_TY_LE_PHAN_THUONG_MUA_HE) {
+            throw new IllegalArgumentException("Summer reward roll must be from 1 to "
+                    + TONG_MOC_TY_LE_PHAN_THUONG_MUA_HE);
+        }
         int tongTyLe = 0;
-        for (int i = 0; i < THE_SUU_TAP_MUA_HE.length; i++) {
-            tongTyLe += TY_LE_THE_SUU_TAP[i];
+        for (int i = 0; i < PHAN_THUONG_MUA_HE.length; i++) {
+            tongTyLe += TY_LE_PHAN_THUONG_MUA_HE[i];
             if (random <= tongTyLe) {
                 return i;
             }
         }
-        return THE_SUU_TAP_MUA_HE.length - 1;
+        throw new IllegalStateException("Summer reward rates must total "
+                + TONG_MOC_TY_LE_PHAN_THUONG_MUA_HE);
+    }
+
+    static int summerRewardItemIdForIndex(int index) {
+        return PHAN_THUONG_MUA_HE[index];
+    }
+
+    static int summerRewardQuantityForIndex(int index) {
+        return SO_LUONG_PHAN_THUONG_MUA_HE[index];
+    }
+
+    static String formatSummerRewardList() {
+        StringBuilder thongTin = new StringBuilder("Các phần quà ngẫu nhiên:");
+        for (String tenPhanThuong : TEN_PHAN_THUONG_MUA_HE) {
+            thongTin.append("\n- ").append(tenPhanThuong);
+        }
+        return thongTin.toString();
     }
 
     private static int getSoLanDoiToiDa(Player player, int itemId) {
@@ -365,14 +386,14 @@ public class ChiChi extends Npc {
         return soOTrong;
     }
 
-    private static int demSoOCanChoThe(Player player, int[] soLuongThe) {
+    private static int demSoOCanChoPhanThuong(Player player, int[] soLuongPhanThuong) {
         int soOCan = 0;
-        for (int i = 0; i < THE_SUU_TAP_MUA_HE.length; i++) {
-            if (soLuongThe[i] <= 0) {
+        for (int i = 0; i < PHAN_THUONG_MUA_HE.length; i++) {
+            if (soLuongPhanThuong[i] <= 0) {
                 continue;
             }
-            Item dangCo = InventoryService.gI().findItemBag(player, THE_SUU_TAP_MUA_HE[i]);
-            if (dangCo == null || dangCo.quantity > 99999 - soLuongThe[i]) {
+            Item dangCo = InventoryService.gI().findItemBag(player, PHAN_THUONG_MUA_HE[i]);
+            if (dangCo == null || dangCo.quantity > 99999 - soLuongPhanThuong[i]) {
                 soOCan++;
             }
         }

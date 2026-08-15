@@ -435,6 +435,8 @@ public class NpcFactory {
                                 IntrinsicService.gI().showConfirmOpen(player);
                             case 2 ->
                                 IntrinsicService.gI().showConfirmOpenVip(player);
+                            case 3 ->
+                                IntrinsicService.gI().showConfirmOpenMax(player);
                             default -> {
                             }
                         }
@@ -447,6 +449,11 @@ public class NpcFactory {
                     case ConstNpc.CONFIRM_OPEN_INTRINSIC_VIP -> {
                         if (select == 0) {
                             IntrinsicService.gI().openVip(player);
+                        }
+                    }
+                    case ConstNpc.CONFIRM_OPEN_INTRINSIC_MAX -> {
+                        if (select == 0) {
+                            IntrinsicService.gI().openMax(player);
                         }
                     }
                     case ConstNpc.CONFIRM_LEAVE_CLAN -> {
@@ -518,16 +525,7 @@ public class NpcFactory {
                     }
                     case ConstNpc.CONFIRM_DISSOLUTION_CLAN -> {
                         switch (select) {
-                            case 0 -> {
-                                Clan clan = player.clan;
-                                clan.deleteDB(clan.id);
-                                Manager.CLANS.remove(clan);
-                                player.clan = null;
-                                player.clanMember = null;
-                                ClanService.gI().sendMyClan(player);
-                                ClanService.gI().sendClanId(player);
-                                Service.gI().sendThongBao(player, "Đã giải tán bang hội.");
-                            }
+                            case 0 -> ClanService.gI().dissolveClan(player);
 
                         }
                     }

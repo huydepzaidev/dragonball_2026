@@ -2,6 +2,7 @@ package nro.models.npc_list;
 import nro.models.boss.BossID;
 import nro.models.consts.ConstNpc;
 import nro.models.services_dungeon.SnakeWayService;
+import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.services_dungeon.TrainingService;
 import nro.models.npc.Npc;
 import static nro.models.npc.NpcFactory.PLAYERID_OBJECT;
@@ -78,10 +79,17 @@ public class ThanVuTru extends Npc {
                                             "Đồng ý\nluyện tập", "Không\nđồng ý");
                             }
                         }
-                        case 3 ->
-                            this.createOtherMenu(player, ConstNpc.MENU_DI_CHUYEN,
-                                    "Ta sẽ đưa con đi",
-                                    "Về\nthần điện", "Thánh địa\nKaio", "Con\nđường\nrắn độc", "Từ chối");
+                        case 3 -> {
+                            if (SnakeWayAvailability.isEnabled()) {
+                                this.createOtherMenu(player, ConstNpc.MENU_DI_CHUYEN,
+                                        "Ta sẽ đưa con đi",
+                                        "Về\nthần điện", "Thánh địa\nKaio", "Con\nđường\nrắn độc", "Từ chối");
+                            } else {
+                                this.createOtherMenu(player, ConstNpc.MENU_DI_CHUYEN,
+                                        "Ta sẽ đưa con đi",
+                                        "Về\nthần điện", "Thánh địa\nKaio", "Từ chối");
+                            }
+                        }
                     }
                 } else if (player.idMark.getIndexMenu() == 2001) {
                     switch (select) {
@@ -117,6 +125,9 @@ public class ThanVuTru extends Npc {
                         case 1 ->
                             ChangeMapService.gI().changeMap(player, 50, -1, 318, 336);
                         case 2 -> {
+                            if (!SnakeWayAvailability.isEnabled()) {
+                                return;
+                            }
                             if (player.clan != null) {
                                 if (!player.getSession().actived) {
                                     Service.gI().sendThongBao(player, "Vui lòng mở thành viên trước");
@@ -149,6 +160,10 @@ public class ThanVuTru extends Npc {
                             Service.gI().showTopClanCDRD(player);
                         }
                         case 2 -> {
+                            if (!SnakeWayAvailability.isEnabled()) {
+                                Service.gI().sendThongBao(player, SnakeWayAvailability.CLOSED_MESSAGE);
+                                return;
+                            }
                             if (player.clan == null) {
                                 return;
                             }
@@ -166,6 +181,10 @@ public class ThanVuTru extends Npc {
                     }
                 } else if (player.idMark.getIndexMenu() == 3) {
                     if (select == 0) {
+                        if (!SnakeWayAvailability.isEnabled()) {
+                            Service.gI().sendThongBao(player, SnakeWayAvailability.CLOSED_MESSAGE);
+                            return;
+                        }
                         if (player.clan.ConDuongRanDoc != null) {
                             SnakeWayService.gI().openConDuongRanDoc(player, (byte) 0);
                         } else {

@@ -2,6 +2,7 @@ package nro.models.services;
 
 import nro.models.item.Item;
 import nro.models.item.Item.ItemOption;
+import nro.models.item.VipRecipeStackPolicy;
 import nro.models.npc.MabuEgg;
 import nro.models.player.Inventory;
 import nro.models.player.Pet;
@@ -1014,6 +1015,7 @@ public class InventoryService {
             return false;
         }
         return item.template.isUpToUp
+                || VipRecipeStackPolicy.isRecipe(item.template.id)
                 || item.template.id == SANTA_DISCIPLE_CHARM_ID
                 || isGiftContainer(item);
     }

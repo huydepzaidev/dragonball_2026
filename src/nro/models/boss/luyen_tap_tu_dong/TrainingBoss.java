@@ -11,6 +11,7 @@ import nro.models.network.Message;
 import nro.models.consts.ConstPlayer;
 import java.io.IOException;
 import nro.models.services_dungeon.TrainingService;
+import nro.models.map.Zone;
 import nro.models.player.Player;
 import nro.models.services.EffectSkillService;
 import nro.models.map.service.MapService;
@@ -194,8 +195,10 @@ public abstract class TrainingBoss extends Boss {
 
     @Override
     public void leaveMap() {
+        Zone zoneBeforeExit = this.zone;
+        Player npc = TrainingService.gI().getNonInteractiveNPC(
+                zoneBeforeExit, (int) this.id);
         ChangeMapService.gI().exitMap(this);
-        Player npc = TrainingService.gI().getNonInteractiveNPC(zone, (int) this.id);
         if (npc != null) {
             this.nPoint.hp = this.nPoint.hpMax;
             Service.gI().Send_Info_NV(this);

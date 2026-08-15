@@ -80,6 +80,8 @@ public final class Manager {
     public static boolean LOCAL = false;
     public static boolean TEST = false;
     public static boolean DAO_AUTO_UPDATER = false;
+    public static boolean SNAKE_WAY_ENABLED = true;
+    public static boolean RED_RIBBON_CAU_VANG_ENABLED = false;
     public static MapTemplate[] MAP_TEMPLATES;
     public static final List<nro.models.map.Map> MAPS = new ArrayList<>();
     private final ScheduledExecutorService mapUpdater = Executors.newSingleThreadScheduledExecutor();
@@ -1165,6 +1167,12 @@ public final class Manager {
         }
         if ((value = properties.get("server.daoautoupdater")) != null) {
             DAO_AUTO_UPDATER = String.valueOf(value).equalsIgnoreCase("true");
+        }
+        if ((value = properties.get("server.snakeway.enabled")) != null) {
+            SNAKE_WAY_ENABLED = String.valueOf(value).equalsIgnoreCase("true");
+        }
+        if ((value = properties.get("server.redribbon.cauvang.enabled")) != null) {
+            RED_RIBBON_CAU_VANG_ENABLED = String.valueOf(value).equalsIgnoreCase("true");
         }
     }
 

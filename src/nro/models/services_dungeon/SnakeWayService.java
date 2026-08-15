@@ -43,6 +43,10 @@ public class SnakeWayService {
     }
 
     public void openConDuongRanDoc(Player player, byte level) {
+        if (!SnakeWayAvailability.isEnabled()) {
+            Service.gI().sendThongBao(player, SnakeWayAvailability.CLOSED_MESSAGE);
+            return;
+        }
         Clan clan = player.clan;
         if (clan != null) {
             ClanMember cm = clan.getClanMember((int) player.id);

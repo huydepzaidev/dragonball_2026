@@ -39,6 +39,9 @@ public class TrainingService {
     }
 
     public Player getNonInteractiveNPC(Zone zone, int id) {
+        if (zone == null) {
+            return null;
+        }
         for (Player pl : zone.getNonInteractiveNPCs()) {
             if (pl != null && pl.id == id) {
                 return pl;
