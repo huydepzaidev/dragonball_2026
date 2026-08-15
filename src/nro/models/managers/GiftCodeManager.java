@@ -38,17 +38,50 @@ public class GiftCodeManager {
                     Service.gI().sendThongBaoOK(player, "Tham lam!");
                     return null;
                 }
-                if (InventoryService.gI().getCountEmptyBag(player) < giftCode.detail.size()) {
+                if (InventoryService.gI().getCountEmptyBag(player) < getRequiredBagSlots(giftCode)) {
                     Service.gI().sendThongBaoOK(player, "Cần tối thiểu " + giftCode.detail.size() + " ô hành trang trống");
                     return null;
                 }
-                giftCode.countLeft -= 1;
-                player.giftCode.add(code);
-                updateGiftCode(giftCode);
                 return giftCode;
             }
         }
         return null;
+    }
+
+    static int getRequiredBagSlots(GiftCode giftCode) {
+        if (giftCode == null || giftCode.detail == null) {
+            return 0;
+        }
+        int requiredSlots = 0;
+        for (Integer itemId : giftCode.detail.keySet()) {
+            if (itemId != null && itemId >= 0) {
+                requiredSlots++;
+            }
+        }
+        return requiredSlots;
+    }
+
+    public synchronized boolean containsGiftCode(String code) {
+        if (code == null) {
+            return false;
+        }
+        for (GiftCode giftCode : listGiftCode) {
+            if (giftCode.code.equalsIgnoreCase(code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public synchronized boolean completeGiftCode(Player player, GiftCode giftCode) {
+        if (player == null || giftCode == null || giftCode.countLeft <= 0
+                || giftCode.isUsedGiftCode(player)) {
+            return false;
+        }
+        giftCode.countLeft -= 1;
+        player.giftCode.add(giftCode.code);
+        updateGiftCode(giftCode);
+        return true;
     }
 
     /**

@@ -28,7 +28,14 @@ public class GiftCodeService {
     }
 
     public void giftCode(Player player, String code) {
-        GiftCode giftcode = GiftCodeManager.gI().checkUseGiftCode(player, code);
+        GiftCodeManager giftCodeManager = GiftCodeManager.gI();
+        synchronized (giftCodeManager) {
+            redeemGiftCode(player, code, giftCodeManager);
+        }
+    }
+
+    private void redeemGiftCode(Player player, String code, GiftCodeManager giftCodeManager) {
+        GiftCode giftcode = giftCodeManager.checkUseGiftCode(player, code);
         if (giftcode == null) {
 //            int itemId = 190;
 //            Item item = ItemService.gI().createNewItem(((short) itemId));
@@ -38,7 +45,9 @@ public class GiftCodeService {
 //            }
 //            InventoryService.gI().addItemBag(player, item);
 //            InventoryService.gI().sendItemBags(player);
+            if (!giftCodeManager.containsGiftCode(code)) {
             Service.gI().sendThongBao(player, "Code không chính xác!");
+            }
         } else if (giftcode.timeCode()) {
             Service.gI().sendThongBao(player, "Code đã hết hạn");
         } else {
@@ -70,20 +79,31 @@ public class GiftCodeService {
                                     || itemGift.template.type == 4 || itemGift.template.type == 5) {
                                 if (itemGift.template.id == 457) {
                                     itemGift.itemOptions.add(new Item.ItemOption(30, 0));
+                                    itemGift.quantity = quantity;
+                                    if (!InventoryService.gI().addItemBag(player, itemGift)) {
+                                        return;
+                                    }
                                 } else {
                                     itemGift.itemOptions = giftcode.option.get(key);
                                     itemGift.quantity = quantity;
-                                    InventoryService.gI().addItemBag(player, itemGift);
+                                    if (!InventoryService.gI().addItemBag(player, itemGift)) {
+                                        return;
+                                    }
                                 }
                             } else {
                                 itemGift.itemOptions = giftcode.option.get(key);
                                 itemGift.quantity = quantity;
-                                InventoryService.gI().addItemBag(player, itemGift);
+                                if (!InventoryService.gI().addItemBag(player, itemGift)) {
+                                    return;
+                                }
                             }
                             textGift += "|1|x" + quantity + " " + itemGift.template.name + "\b";
                         }
                     }
                 }
+            }
+            if (!giftCodeManager.completeGiftCode(player, giftcode)) {
+                return;
             }
             InventoryService.gI().sendItemBags(player);
             NpcService.gI().createTutorial(player, 1139, textGift);
