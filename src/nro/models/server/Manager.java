@@ -82,6 +82,10 @@ public final class Manager {
     public static boolean DAO_AUTO_UPDATER = false;
     public static boolean SNAKE_WAY_ENABLED = true;
     public static boolean RED_RIBBON_CAU_VANG_ENABLED = false;
+    public static String CLIENT_ACCESS_MODE = "enforce";
+    public static String CLIENT_ACCESS_SECRET = "";
+    public static String CLIENT_ACCESS_BUILD = "NROVEGETA-2026.08.15";
+    public static int CLIENT_ACCESS_MAX_CLOCK_SKEW_SECONDS = 30;
     public static MapTemplate[] MAP_TEMPLATES;
     public static final List<nro.models.map.Map> MAPS = new ArrayList<>();
     private final ScheduledExecutorService mapUpdater = Executors.newSingleThreadScheduledExecutor();
@@ -1173,6 +1177,23 @@ public final class Manager {
         }
         if ((value = properties.get("server.redribbon.cauvang.enabled")) != null) {
             RED_RIBBON_CAU_VANG_ENABLED = String.valueOf(value).equalsIgnoreCase("true");
+        }
+        if ((value = properties.get("client.access.mode")) != null) {
+            CLIENT_ACCESS_MODE = String.valueOf(value).trim().toLowerCase();
+        }
+        if ((value = properties.get("client.access.secret")) != null) {
+            CLIENT_ACCESS_SECRET = String.valueOf(value).trim();
+        }
+        String clientAccessSecretEnv = System.getenv("CLIENT_ACCESS_SECRET");
+        if (clientAccessSecretEnv != null && !clientAccessSecretEnv.trim().isEmpty()) {
+            CLIENT_ACCESS_SECRET = clientAccessSecretEnv.trim();
+        }
+        if ((value = properties.get("client.access.build")) != null) {
+            CLIENT_ACCESS_BUILD = String.valueOf(value).trim();
+        }
+        if ((value = properties.get("client.access.max_clock_skew_seconds")) != null) {
+            CLIENT_ACCESS_MAX_CLOCK_SKEW_SECONDS = Math.max(5,
+                    Math.min(300, Integer.parseInt(String.valueOf(value).trim())));
         }
     }
 

@@ -473,7 +473,10 @@ public class SkillService {
                         }
                     }
                     for (Mob mob : mobs) {
+                        int hpBefore = mob.point.gethp();
                         mob.injured(player, player.nPoint.getDameAttack(true), true);
+                        HighDamageWorldNotifier.notifyIfNeeded(
+                                player, Math.max(0L, (long) hpBefore - mob.point.gethp()));
                     }
                     PlayerService.gI().sendInfoHpMpMoney(player);
                     affterUseSkill(player, player.playerSkill.skillSelect.template.id);
@@ -755,7 +758,10 @@ public class SkillService {
                     if (!player.isBoss) {
                         for (Mob mob : player.zone.mobs) {
                             if (Util.getDistance(player, mob) <= rangeBom) { //khoảng cách có tác dụng bom
+                                int hpBefore = mob.point.gethp();
                                 mob.injured(player, dame, true);
+                                HighDamageWorldNotifier.notifyIfNeeded(
+                                        player, Math.max(0L, (long) hpBefore - mob.point.gethp()));
                             }
                         }
                     }
@@ -769,7 +775,9 @@ public class SkillService {
                         for (Player pl : playersMap) {
                             if (!player.equals(pl) && canAttackPlayer(player, pl) && Util.getDistance(player, pl) <= rangeBom) {
                                 dame = pl.isBoss ? player.effectSkill.isMonkey ? dame / 3 : dame / 2 : dame;
-                                pl.injured(player, dame, MapService.gI().isMapYardart(player.zone.map.mapId), false);
+                                int dameHit = pl.injured(player, dame,
+                                        MapService.gI().isMapYardart(player.zone.map.mapId), false);
+                                HighDamageWorldNotifier.notifyIfNeeded(player, dameHit);
                                 PlayerService.gI().sendInfoHpMpMoney(pl);
                                 Service.gI().Send_Info_NV(pl);
                             }
@@ -914,6 +922,7 @@ public class SkillService {
             plAtt.effectSkin.isXDame = false;
         }
         int dameHit = plInjure.injured(plAtt, miss ? 0 : dameAttack, false, false);
+        HighDamageWorldNotifier.notifyIfNeeded(plAtt, dameHit);
         if (plAtt.playerSkill == null) {
             return;
         }
@@ -1001,7 +1010,10 @@ public class SkillService {
 
         hutHPMP(plAtt, dameHit, null, mob);
         sendPlayerAttackMob(plAtt, mob);
+        int hpBefore = mob.point.gethp();
         mob.injured(plAtt, dameHit, dieWhenHpFull);
+        HighDamageWorldNotifier.notifyIfNeeded(
+                plAtt, Math.max(0L, (long) hpBefore - mob.point.gethp()));
     }
 
     public void sendPlayerPrepareSkill(Player player, int affterMiliseconds) {

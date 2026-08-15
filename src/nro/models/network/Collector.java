@@ -6,6 +6,7 @@ import java.io.IOException;
 import nro.models.interfaces.IMessageHandler;
 import nro.models.interfaces.IMessageSendCollect;
 import nro.models.interfaces.ISession;
+import nro.models.utils.Logger;
 
 public final class Collector
         implements Runnable {
@@ -33,12 +34,41 @@ public final class Collector
         try {
             while (this.session != null && this.session.isConnected()) {
                 Message msg = this.collect.readMessage(this.session, this.dis);
-                if (msg.command == -27) {
-                    this.session.sendKey();
-                } else {
-                    this.messageHandler.onMessage(this.session, msg);
+                boolean closeConnection = false;
+                try {
+                    if (!(this.session instanceof MySession)) {
+                        closeConnection = true;
+                    } else {
+                        MySession mySession = (MySession) this.session;
+                        if (!this.session.sentKey()) {
+                            if (msg.command != -27) {
+                                Logger.warning("[CLIENT ACCESS] " + mySession.ipAddress
+                                        + " sent command " + msg.command + " before -27 handshake\n");
+                                closeConnection = true;
+                            } else if (!ClientAccessAuth.authenticate(mySession, msg)) {
+                                closeConnection = true;
+                            } else {
+                                this.session.sendKey();
+                                closeConnection = !this.session.sentKey();
+                            }
+                        } else if (msg.command == -27) {
+                            Logger.warning("[CLIENT ACCESS] " + mySession.ipAddress
+                                    + " sent a duplicate -27 handshake\n");
+                            closeConnection = true;
+                        } else if (!mySession.accessVerified) {
+                            Logger.warning("[CLIENT ACCESS] " + mySession.ipAddress
+                                    + " has no verified handshake state\n");
+                            closeConnection = true;
+                        } else {
+                            this.messageHandler.onMessage(this.session, msg);
+                        }
+                    }
+                } finally {
+                    msg.cleanup();
                 }
-                msg.cleanup();
+                if (closeConnection) {
+                    break;
+                }
             }
         } catch (Exception exception) {
         }

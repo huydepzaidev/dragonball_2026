@@ -65,6 +65,11 @@ public class MySession extends Session {
 
     public boolean finishUpdate;
 
+    public volatile boolean accessVerified;
+    public String accessBuild;
+    public long accessVerifiedAt;
+    public int accessFailures;
+
     public MySession(Socket socket) {
         super(socket);
         ipAddress = socket.getInetAddress().getHostAddress();
