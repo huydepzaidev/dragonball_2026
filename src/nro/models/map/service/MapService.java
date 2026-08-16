@@ -590,9 +590,7 @@ public class MapService {
     }
 
     public boolean isMapUpSKH(int mapId) {
-        return mapId == 1 || mapId == 2 || mapId == 3
-                || mapId == 8 || mapId == 9 || mapId == 11
-                || mapId == 15 || mapId == 16 || mapId == 17;
+        return false;
     }
 
     public boolean isMapMabu2H(int mapId) {

@@ -939,6 +939,7 @@ public class Controller implements IMessageHandler {
                 SuperRankDAO.insertData(player);
             }
             ServerNotify.gI().sendNotifyTab(player);
+            ServerNotify.gI().sendRecentBossHistory(player);
             ItemTimeService.gI().sendCanAutoPlay(player);
             player.start();
         } catch (Exception e) {

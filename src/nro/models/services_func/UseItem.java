@@ -864,8 +864,9 @@ public class UseItem {
                             case 728:
                                 UseItem.gI().ItemSieuThanThuy(pl, item);
                                 break;
+                            case 1537:
                             case 1775:
-                                UseItem.gI().OpenHopThanlinh(pl, item.template.id);
+                                UseItem.gI().OpenHopThanlinh(pl, item);
                                 break;
                             case 648:
                                 UseItem.gI().NoelItemBox(pl, item);
@@ -2069,10 +2070,11 @@ public class UseItem {
         }
     }
 
-    public void OpenHopThanlinh(Player player, int itemUseiD) {
+    public void OpenHopThanlinh(Player player, Item itemused) {
+        if (player == null || itemused == null) {
+            return;
+        }
         if (InventoryService.gI().getCountEmptyBag(player) > 0) {
-            Item itemused = InventoryService.gI().findItemBag(player, itemUseiD);
-
             int[][] itemsByGenderAndType = {
                 {555, 556, 562, 563, 561},
                 {557, 558, 564, 565, 561},
@@ -2090,34 +2092,34 @@ public class UseItem {
 
                 Item aotl = ItemService.gI().createNewItem(aoId);
                 RewardService.gI().initChiSoItem(aotl);
-                aotl.itemOptions.add(new ItemOption(30, 1));
+                aotl.itemOptions.add(new ItemOption(30, 0));
                 allPreInitializedItems.add(aotl);
 
                 Item wTl = ItemService.gI().createNewItem(quanId);
                 RewardService.gI().initChiSoItem(wTl);
-                wTl.itemOptions.add(new ItemOption(30, 1));
+                wTl.itemOptions.add(new ItemOption(30, 0));
                 allPreInitializedItems.add(wTl);
 
                 Item gTl = ItemService.gI().createNewItem(gangId);
                 RewardService.gI().initChiSoItem(gTl);
-                gTl.itemOptions.add(new ItemOption(30, 1));
+                gTl.itemOptions.add(new ItemOption(30, 0));
                 allPreInitializedItems.add(gTl);
 
                 Item jayTl = ItemService.gI().createNewItem(giayId);
                 RewardService.gI().initChiSoItem(jayTl);
-                jayTl.itemOptions.add(new ItemOption(30, 1));
+                jayTl.itemOptions.add(new ItemOption(30, 0));
                 allPreInitializedItems.add(jayTl);
 
                 Item RdTl = ItemService.gI().createNewItem(nhanId);
                 RewardService.gI().initChiSoItem(RdTl);
-                RdTl.itemOptions.add(new ItemOption(30, 1));
+                RdTl.itemOptions.add(new ItemOption(30, 0));
                 allPreInitializedItems.add(RdTl);
             }
 
             Random random = new Random();
             Item chosenItem = allPreInitializedItems.get(random.nextInt(allPreInitializedItems.size()));
-            InventoryService.gI().addItemBag(player, chosenItem);
             InventoryService.gI().subQuantityItemsBag(player, itemused, 1);
+            InventoryService.gI().addItemBag(player, chosenItem);
             InventoryService.gI().sendItemBags(player);
             Service.gI().sendThongBao(player, "Bạn vừa nhận được 1 " + chosenItem.template.name + " Thần linh!");
         } else {

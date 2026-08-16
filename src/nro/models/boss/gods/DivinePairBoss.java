@@ -93,8 +93,8 @@ public abstract class DivinePairBoss extends Boss {
     @Override
     protected void notifyJoinMap() {
         if (encounterLeader && zone != null) {
-            ServerNotify.gI().notify("BOSS " + encounterName()
-                    + " vừa xuất hiện tại " + zone.map.mapName);
+            ServerNotify.gI().notifyBoss("BOSS " + encounterName()
+                    + " vừa xuất hiện tại " + zone.map.mapName, 0, encounterName(), zone.map.mapName, "", false);
         }
     }
 

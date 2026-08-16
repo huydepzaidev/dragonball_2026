@@ -114,7 +114,7 @@ public abstract class WolfBoss extends Boss {
     @Override
     protected void notifyJoinMap() {
         if (memberIndex == 0) {
-            ServerNotify.gI().notify("BOSS Ba Con Sói Vô Tình vừa xuất hiện!");
+            ServerNotify.gI().notifyBoss("BOSS Ba Con Sói Vô Tình vừa xuất hiện tại " + this.zone.map.mapName, 0, "Ba Con Sói Vô Tình", this.zone.map.mapName, "", false);
         }
     }
 

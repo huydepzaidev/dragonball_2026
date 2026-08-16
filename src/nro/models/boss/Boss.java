@@ -73,8 +73,11 @@ public class Boss extends Player implements IBoss {
 
     protected Zone lastZone;
 
-    protected long lastTimeRest;
-    protected int secondsRest;
+    public long lastTimeRest;
+    public int secondsRest;
+    public String lastKillerName = "";
+    public String lastMapName = "";
+    public String[] stageKillers;
 
     protected long lastTimeChatS;
     protected int timeChatS;
@@ -132,6 +135,7 @@ public class Boss extends Player implements IBoss {
             throw new Exception("Dữ liệu boss không hợp lệ");
         }
         this.data = data;
+        this.stageKillers = new String[this.data.length];
         this.secondsRest = this.data[0].getSecondsRest();
         this.bossStatus = BossStatus.REST;
         BossManager.gI().addBoss(this);
@@ -159,6 +163,7 @@ public class Boss extends Player implements IBoss {
             throw new Exception("Dữ liệu boss không hợp lệ");
         }
         this.data = data;
+        this.stageKillers = new String[this.data.length];
         this.secondsRest = this.data[0].getSecondsRest();
         this.bossStatus = BossStatus.REST;
         switch (bossType) {
@@ -552,7 +557,7 @@ public class Boss extends Player implements IBoss {
 
     protected void notifyJoinMap() {
         if (canSendNotify()) {
-            ServerNotify.gI().notify("BOSS " + this.name + " vừa xuất hiện tại " + this.zone.map.mapName);
+            ServerNotify.gI().notifyBoss("BOSS " + this.name + " vừa xuất hiện tại " + this.zone.map.mapName, 0, this.name, this.zone.map.mapName, "", false);
         }
     }
 
@@ -673,6 +678,16 @@ public class Boss extends Player implements IBoss {
     @Override
     public void die(Player plKill) {
 
+        if (plKill != null) {
+            this.lastKillerName = plKill.name;
+            if (this.stageKillers != null && this.currentLevel >= 0 && this.currentLevel < this.stageKillers.length) {
+                this.stageKillers[this.currentLevel] = plKill.name;
+            }
+        }
+        if (this.zone != null && this.zone.map != null) {
+            this.lastMapName = this.zone.map.mapName;
+        }
+
         if (plKill != null
                 && (this.zone.map.mapId != 140 || !MapService.gI().isMapMaBu(this.zone.map.mapId)
                 || !MapService.gI().isMapDoanhTrai(this.zone.map.mapId)
@@ -680,7 +695,8 @@ public class Boss extends Player implements IBoss {
             if (!plKill.isBot) {
                 reward(plKill);
             }
-            ServerNotify.gI().notify(plKill.name + ": Đã tiêu diệt được " + this.name + " mọi người đều ngưỡng mộ.");
+            int remainingSecs = this.secondsRest > 0 ? this.secondsRest : 600;
+            ServerNotify.gI().notifyBoss(plKill.name + " vừa tiêu diệt được " + this.name + " mọi người đều ngưỡng mộ | " + remainingSecs, remainingSecs, this.name, (this.zone != null && this.zone.map != null) ? this.zone.map.mapName : "", plKill.name, true);
             this.changeStatus(BossStatus.DIE);
         } else {
             if (plKill != null && !plKill.isBot) {

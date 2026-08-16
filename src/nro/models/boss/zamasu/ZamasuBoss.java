@@ -85,7 +85,7 @@ public final class ZamasuBoss extends Boss {
 
     @Override
     protected void notifyJoinMap() {
-        ServerNotify.gI().notify("BOSS Zamasu vừa xuất hiện!");
+        ServerNotify.gI().notifyBoss("BOSS Zamasu vừa xuất hiện tại " + this.zone.map.mapName, 0, "Zamasu", this.zone.map.mapName, "", false);
     }
 
     @Override

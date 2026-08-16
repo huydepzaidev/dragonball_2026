@@ -141,138 +141,69 @@ public class SummonDragonNamek {
         }
     }
 
+    private void grantWishItem(short itemId, int quantity, boolean isLock) {
+        if (this.playerSummonShenron == null) {
+            return;
+        }
+        if (this.playerSummonShenron.clan != null) {
+            this.playerSummonShenron.clan.members.forEach(m -> {
+                Player p = Client.gI().getPlayer(m.id);
+                if (p != null) {
+                    Item it = ItemService.gI().createNewItem(itemId);
+                    it.quantity = quantity;
+                    if (isLock) {
+                        it.itemOptions.add(new Item.ItemOption(30, 0));
+                    }
+                    InventoryService.gI().addItemBag(p, it);
+                    InventoryService.gI().sendItemBags(p);
+                } else {
+                    Player offPlayer = MrBlue.loadById(m.id);
+                    if (offPlayer != null) {
+                        Item it = ItemService.gI().createNewItem(itemId);
+                        it.quantity = quantity;
+                        if (isLock) {
+                            it.itemOptions.add(new Item.ItemOption(30, 0));
+                        }
+                        InventoryService.gI().addItemBag(offPlayer, it);
+                        PlayerDAO.updatePlayer(offPlayer);
+                    }
+                }
+            });
+        } else {
+            Item it = ItemService.gI().createNewItem(itemId);
+            it.quantity = quantity;
+            if (isLock) {
+                it.itemOptions.add(new Item.ItemOption(30, 0));
+            }
+            InventoryService.gI().addItemBag(this.playerSummonShenron, it);
+            InventoryService.gI().sendItemBags(this.playerSummonShenron);
+        }
+    }
+
     public void confirmWish() {
         switch (this.menuShenron) {
             case ConstNpc.SHOW_SHENRON_NAMEK_CONFIRM:
                 try {
-                switch (select) {
-                    case 0:
-                        if (playerSummonShenron.clan != null) {
-                            playerSummonShenron.clan.members.forEach(m -> {
-                                if (Client.gI().getPlayer(m.id) != null) {
-                                    Player p = Client.gI().getPlayer(m.id);
-                                    Item it = ItemService.gI().createNewItem((short) 16);
-                                    it.quantity = Util.nextInt(1, 20);
-                                    InventoryService.gI().addItemBag(p, it);
-                                    InventoryService.gI().sendItemBags(p);
-                                } else {
-                                    Player p = MrBlue.loadById(m.id);
-                                    if (p != null) {
-                                        Item it = ItemService.gI().createNewItem((short) 16);
-                                        it.quantity = Util.nextInt(1, 20);
-                                        InventoryService.gI().addItemBag(p, it);
-                                        PlayerDAO.updatePlayer(p);
-                                    }
-                                }
-                            });
-                        } else {
-                            Item it = ItemService.gI().createNewItem((short) 16);
-                            it.quantity = Util.nextInt(1, 20);
-                            InventoryService.gI().addItemBag(playerSummonShenron, it);
-                            InventoryService.gI().sendItemBags(playerSummonShenron);
-                        }
-                        break;
-                    case 1:
-                        if (playerSummonShenron.clan != null) {
-                            playerSummonShenron.clan.members.forEach(m -> {
-                                if (Client.gI().getPlayer(m.id) != null) {
-                                    Player p = Client.gI().getPlayer(m.id);
-                                    byte[] option = {77, 80, 81, 103, 50, 94, 5};
-                                    byte[] option_v2 = {14, 16, 17, 19, 27, 28, 5, 47, 87}; //77 %hp // 80 //81 //103 //50 //94 //5 % sdcm
-                                    byte optionid = 0;
-                                    byte optionid_v2 = 0;
-                                    byte param = 0;
-                                    Item it = ItemService.gI().createNewItem((short) 942);
-                                    it.itemOptions.clear();
-                                    optionid = option[Util.nextInt(0, 6)];
-                                    param = (byte) Util.nextInt(5, 10);
-                                    it.itemOptions.add(new Item.ItemOption(optionid, param));
-                                    if (Util.isTrue(20, 100)) {
-                                        optionid_v2 = option_v2[Util.nextInt(option_v2.length)];
-                                        it.itemOptions.add(new Item.ItemOption(optionid_v2, param));
-                                    }
-                                    it.itemOptions.add(new Item.ItemOption(30, 0));
-                                    it.quantity = 1;
-                                    InventoryService.gI().addItemBag(p, it);
-                                    InventoryService.gI().sendItemBags(p);
-                                } else {
-                                    Player p = MrBlue.loadById(m.id);
-                                    if (p != null) {
-                                        byte[] option = {77, 80, 81, 103, 50, 94, 5};
-                                        byte[] option_v2 = {14, 16, 17, 19, 27, 28, 5, 47, 87}; //77 %hp // 80 //81 //103 //50 //94 //5 % sdcm
-                                        byte optionid = 0;
-                                        byte optionid_v2 = 0;
-                                        byte param = 0;
-                                        Item it = ItemService.gI().createNewItem((short) 942);
-                                        it.itemOptions.clear();
-                                        optionid = option[Util.nextInt(0, 6)];
-                                        param = (byte) Util.nextInt(5, 10);
-                                        it.itemOptions.add(new Item.ItemOption(optionid, param));
-                                        if (Util.isTrue(20, 100)) {
-                                            optionid_v2 = option_v2[Util.nextInt(option_v2.length)];
-                                            it.itemOptions.add(new Item.ItemOption(optionid_v2, param));
-                                        }
-                                        it.itemOptions.add(new Item.ItemOption(30, 0));
-                                        it.quantity = 1;
-                                        InventoryService.gI().addItemBag(p, it);
-                                        PlayerDAO.updatePlayer(p);
-                                    }
-                                }
-                            });
-                        } else {
-                            byte[] option = {77, 80, 81, 103, 50, 94, 5};
-                            byte[] option_v2 = {14, 16, 17, 19, 27, 28, 5, 47, 87}; //77 %hp // 80 //81 //103 //50 //94 //5 % sdcm
-                            byte optionid = 0;
-                            byte optionid_v2 = 0;
-                            byte param = 0;
-                            Item it = ItemService.gI().createNewItem((short) 942);
-                            it.itemOptions.clear();
-                            optionid = option[Util.nextInt(0, 6)];
-                            param = (byte) Util.nextInt(5, 10);
-                            it.itemOptions.add(new Item.ItemOption(optionid, param));
-                            if (Util.isTrue(20, 100)) {
-                                optionid_v2 = option_v2[Util.nextInt(option_v2.length)];
-                                it.itemOptions.add(new Item.ItemOption(optionid_v2, param));
-                            }
-                            it.itemOptions.add(new Item.ItemOption(30, 0));
-                            it.quantity = 1;
-                            InventoryService.gI().addItemBag(playerSummonShenron, it);
-                            InventoryService.gI().sendItemBags(playerSummonShenron);
-                        }
-                        break;
-                    case 2:
-                        if (playerSummonShenron.clan != null) {
-                            playerSummonShenron.clan.members.forEach(m -> {
-                                if (Client.gI().getPlayer(m.id) != null) {
-                                    Player p = Client.gI().getPlayer(m.id);
-                                    Item it = ItemService.gI().createNewItem((short) 2053);
-                                    it.quantity = 99;
-                                    InventoryService.gI().addItemBag(p, it);
-                                    InventoryService.gI().sendItemBags(p);
-                                } else {
-                                    Player p = MrBlue.loadById(m.id);
-                                    if (p != null) {
-                                        Item it = ItemService.gI().createNewItem((short) 2053);
-                                        it.quantity = 99;
-                                        InventoryService.gI().addItemBag(p, it);
-                                        PlayerDAO.updatePlayer(p);
-                                    }
-                                }
-                            });
-                        } else {
-                            Item it = ItemService.gI().createNewItem((short) 2053);
-                            it.quantity = 99;
-                            InventoryService.gI().addItemBag(playerSummonShenron, it);
-                            InventoryService.gI().sendItemBags(playerSummonShenron);
-                        }
-                        break;
-                    default:
-                        break;
+                    switch (select) {
+                        case 0:
+                            // 1 Hộp đồ thần (Khóa)
+                            grantWishItem((short) 1775, 1, true);
+                            break;
+                        case 1:
+                            // 1 Capsule kích hoạt 1 món (Khóa)
+                            grantWishItem((short) 1655, 1, true);
+                            break;
+                        case 2:
+                            // 1 Rương Naruto (Khóa)
+                            grantWishItem((short) 2041, 1, true);
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            break;
+                break;
         }
         shenronLeave(this.playerSummonShenron, WISHED);
     }
@@ -285,13 +216,13 @@ public class SummonDragonNamek {
             case ConstNpc.SHOW_SHENRON_NAMEK_CONFIRM:
                 switch (select) {
                     case 0:
-                        wish = "1-20 viên ngọc rồng 3 sao";
+                        wish = "1 Hộp đồ thần";
                         break;
                     case 1:
-                        wish = "pet hổ sẽ béo";
+                        wish = "1 Capsule kích hoạt 1 món";
                         break;
                     case 2:
-                        wish = "x99 bột mỳ";
+                        wish = "1 Rương Naruto";
                         break;
                 }
                 break;
@@ -300,7 +231,7 @@ public class SummonDragonNamek {
     }
 
     public void sendBlackGokuhesNamec(Player pl) {
-        NpcService.gI().createMenuRongThieng(pl, ConstNpc.SHOW_SHENRON_NAMEK_CONFIRM, "Ta sẽ ban cho cả bang hội ngươi 1 điều ước, ngươi có 5 phút, hãy suy nghĩ thật kỹ trước khi quyết định", "1-20 viên ngọc rồng 3 sao", "pet hổ sẽ béo", "x99 bột mỳ");
+        NpcService.gI().createMenuRongThieng(pl, ConstNpc.SHOW_SHENRON_NAMEK_CONFIRM, "Ta sẽ ban cho cả bang hội ngươi 1 điều ước, ngươi có 5 phút, hãy suy nghĩ thật kỹ trước khi quyết định", "1 Hộp đồ thần", "1 Capsule kích hoạt 1 món", "1 Rương Naruto");
     }
 
     public void shenronLeave(Player pl, byte type) {

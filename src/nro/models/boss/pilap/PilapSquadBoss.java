@@ -108,8 +108,8 @@ public abstract class PilapSquadBoss extends Boss {
     @Override
     protected void notifyJoinMap() {
         if (memberIndex == 0 && zone != null) {
-            ServerNotify.gI().notify("BOSS Tiểu Đội Pilap vừa xuất hiện tại "
-                    + zone.map.mapName);
+            ServerNotify.gI().notifyBoss("BOSS Tiểu Đội Pilap vừa xuất hiện tại "
+                    + zone.map.mapName, 0, "Tiểu Đội Pilap", zone.map.mapName, "", false);
         }
     }
 
