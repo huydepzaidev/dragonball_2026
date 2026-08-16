@@ -739,7 +739,7 @@ public class BossesData {
             ConstPlayer.XAYDA,
             new short[]{234, 235, 236, -1, -1, -1},
             40000,
-            new int[]{1_000_000_000},
+            new int[]{500_000_000},
             new int[]{103},
             new int[][]{
                 {Skill.KAMEJOKO, 7, 5000},

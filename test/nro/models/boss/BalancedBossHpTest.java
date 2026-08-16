@@ -26,7 +26,7 @@ public final class BalancedBossHpTest {
         progression(new BossData[]{BossesData.XEN_BO_HUNG_1, BossesData.XEN_BO_HUNG_2,
             BossesData.XEN_BO_HUNG_3}, 250_000_000, 375_000_000, 500_000_000);
         progression(new BossData[]{BossesData.SIEU_BO_HUNG_1, BossesData.SIEU_BO_HUNG_2},
-                300_000_000, 1_000_000_000);
+                300_000_000, 500_000_000);
         progression(new BossData[]{BossesData.XEN_CON_1, BossesData.XEN_CON_2,
             BossesData.XEN_CON_3, BossesData.XEN_CON_4, BossesData.XEN_CON_5,
             BossesData.XEN_CON_6, BossesData.XEN_CON_7},

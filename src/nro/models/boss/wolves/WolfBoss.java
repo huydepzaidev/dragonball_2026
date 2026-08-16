@@ -24,7 +24,7 @@ public abstract class WolfBoss extends Boss {
 
     /** Legacy boss rule: -1 means every successful attack removes exactly 1 HP. */
     public static final long DAMAGE_LIMIT = -1L;
-    static final int BLUE_GRAY_MAX_HP = 10_000;
+    static final int BLUE_GRAY_MAX_HP = 2_000;
 
     private static final long STANDBY_CHAT_INTERVAL_MS = 7_000L;
     private static final int[] SPAWN_MAP_IDS = {

@@ -3,8 +3,6 @@ package nro.models.services.shenron;
 import nro.models.services.shenron.SummonDragon;
 import nro.models.network.Message;
 import nro.models.consts.ConstNpc;
-import nro.models.database.MrBlue;
-import nro.models.database.PlayerDAO;
 import nro.models.item.Item;
 import java.util.List;
 import nro.models.map.Zone;
@@ -156,17 +154,7 @@ public class SummonDragonNamek {
                     }
                     InventoryService.gI().addItemBag(p, it);
                     InventoryService.gI().sendItemBags(p);
-                } else {
-                    Player offPlayer = MrBlue.loadById(m.id);
-                    if (offPlayer != null) {
-                        Item it = ItemService.gI().createNewItem(itemId);
-                        it.quantity = quantity;
-                        if (isLock) {
-                            it.itemOptions.add(new Item.ItemOption(30, 0));
-                        }
-                        InventoryService.gI().addItemBag(offPlayer, it);
-                        PlayerDAO.updatePlayer(offPlayer);
-                    }
+                    Service.gI().sendThongBao(p, "Bạn nhận được " + it.template.name + " từ điều ước Rồng Namek của bang!");
                 }
             });
         } else {
@@ -177,6 +165,7 @@ public class SummonDragonNamek {
             }
             InventoryService.gI().addItemBag(this.playerSummonShenron, it);
             InventoryService.gI().sendItemBags(this.playerSummonShenron);
+            Service.gI().sendThongBao(this.playerSummonShenron, "Bạn nhận được " + it.template.name + " từ điều ước Rồng Namek!");
         }
     }
 

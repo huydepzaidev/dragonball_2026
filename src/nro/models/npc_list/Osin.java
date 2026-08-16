@@ -89,6 +89,7 @@ public class Osin extends Npc {
                     if (player.fightMabu.pointMabu >= player.fightMabu.POINT_MAX && this.mapId != 120) {
                         menuAL.add("Xuống\nTầng dưới");
                     }
+                    menuAL.add("Về\nĐại Hội\nVõ Thuật");
                     String[] menus = menuAL.toArray(new String[0]);
                     this.createOtherMenu(player, ConstNpc.GO_UPSTAIRS_MENU, npcSay, menus);
                 }
@@ -185,60 +186,71 @@ public class Osin extends Npc {
                             ChangeMapService.gI().changeMap(player, 165, -1, Util.nextInt(100, 500), 312);
                         }
                     }
+                }
+            }
 
-                    case 114, 115, 117, 118, 119, 120 -> {
-                        if (player.cFlag != 9) {
-                            return;
-                        }
-
-                        switch (select) {
-                            case 0 ->
-                                NpcService.gI().createTutorial(player, tempId, 4388, ConstNpc.HUONG_DAN_MAP_MA_BU);
-                            case 1 -> {
-                                if (!player.itemTime.isUseGTPT) {
-                                    player.itemTime.lastTimeUseGTPT = System.currentTimeMillis();
-                                    player.itemTime.isUseGTPT = true;
-                                    ItemTimeService.gI().sendAllItemTime(player);
-                                    Service.gI().sendThongBao(player, "Phép thuật đã được giải trừ, sức đánh của bạn đã tăng theo điểm tích lũy");
-                                } else if (player.fightMabu.pointMabu >= player.fightMabu.POINT_MAX && mapId != 120) {
-                                    ChangeMapService.gI().changeMap(player, map.mapIdNextMabu((short) mapId), -1, cx, cy);
-                                }
-                            }
-                            case 2 -> {
-                                if (!player.itemTime.isUseGTPT && player.fightMabu.pointMabu >= player.fightMabu.POINT_MAX && mapId != 120) {
-                                    ChangeMapService.gI().changeMap(player, map.mapIdNextMabu((short) mapId), -1, cx, cy);
-                                }
-                            }
-                        }
+            case 114, 115, 117, 118, 119, 120 -> {
+                if (indexMenu == ConstNpc.GO_UPSTAIRS_MENU) {
+                    if (player.cFlag != 9) {
+                        return;
                     }
 
-                    case 127 -> {
-                        switch (select) {
-                            case 0 -> {
-                                if (!player.isPhuHoMapMabu) {
-                                    if (player.inventory.getGem() < 10) {
-                                        Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
-                                    } else {
-                                        player.inventory.subGem(10);
-                                        player.isPhuHoMapMabu = true;
-                                        player.nPoint.calPoint();
-                                        player.nPoint.setHp((int) player.nPoint.hpMax);
-                                        player.nPoint.setMp((int) player.nPoint.mpMax);
-                                        Service.gI().point(player);
-                                        Service.gI().Send_Info_NV(player);
-                                        Service.gI().Send_Caitrang(player);
-                                    }
+                    switch (select) {
+                        case 0 ->
+                            NpcService.gI().createTutorial(player, tempId, 4388, ConstNpc.HUONG_DAN_MAP_MA_BU);
+                        case 1 -> {
+                            if (!player.itemTime.isUseGTPT) {
+                                player.itemTime.lastTimeUseGTPT = System.currentTimeMillis();
+                                player.itemTime.isUseGTPT = true;
+                                ItemTimeService.gI().sendAllItemTime(player);
+                                Service.gI().sendThongBao(player, "Phép thuật đã được giải trừ, sức đánh của bạn đã tăng theo điểm tích lũy");
+                            } else if (player.fightMabu.pointMabu >= player.fightMabu.POINT_MAX && mapId != 120) {
+                                ChangeMapService.gI().changeMap(player, map.mapIdNextMabu((short) mapId), -1, cx, cy);
+                            } else {
+                                ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
+                            }
+                        }
+                        case 2 -> {
+                            if (!player.itemTime.isUseGTPT && player.fightMabu.pointMabu >= player.fightMabu.POINT_MAX && mapId != 120) {
+                                ChangeMapService.gI().changeMap(player, map.mapIdNextMabu((short) mapId), -1, cx, cy);
+                            } else {
+                                ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
+                            }
+                        }
+                        case 3 -> {
+                            ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
+                        }
+                    }
+                }
+            }
+
+            case 127 -> {
+                if (player.idMark.isBaseMenu()) {
+                    switch (select) {
+                        case 0 -> {
+                            if (!player.isPhuHoMapMabu) {
+                                if (player.inventory.getGem() < 10) {
+                                    Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
+                                } else {
+                                    player.inventory.subGem(10);
+                                    player.isPhuHoMapMabu = true;
+                                    player.nPoint.calPoint();
+                                    player.nPoint.setHp((int) player.nPoint.hpMax);
+                                    player.nPoint.setMp((int) player.nPoint.mpMax);
+                                    Service.gI().point(player);
+                                    Service.gI().Send_Info_NV(player);
+                                    Service.gI().Send_Caitrang(player);
                                 }
                             }
-                            case 1 -> {
-                                if (player.isPhuHoMapMabu) {
-                                    ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
-                                }
+                        }
+                        case 1 -> {
+                            if (player.isPhuHoMapMabu) {
+                                ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
                             }
-                            case 2 -> {
-                                if (!player.isPhuHoMapMabu) {
-                                    ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
-                                }
+                        }
+                        case 2 -> {
+                            if (!player.isPhuHoMapMabu) {
+                                ChangeMapService.gI().changeMap(player, 52, -1, Util.nextInt(100, 300), 336);
                             }
                         }
                     }
