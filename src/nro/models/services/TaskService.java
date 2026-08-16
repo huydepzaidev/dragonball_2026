@@ -70,6 +70,10 @@ public class TaskService {
     }
 
     public void sendTaskMain(Player player) {
+        if (player != null && player.nPoint != null) {
+            checkDoneTaskPower(player, player.nPoint.power);
+            checkDoneTaskNangCS(player);
+        }
         Message msg = null;
         try {
             msg = new Message(40);
@@ -116,6 +120,10 @@ public class TaskService {
             default:
                 player.playerTask.taskMain = TaskService.gI().getTaskMainById(player, player.playerTask.taskMain.id + 1);
                 break;
+        }
+        if (player.nPoint != null) {
+            checkDoneTaskPower(player, player.nPoint.power);
+            checkDoneTaskNangCS(player);
         }
         sendTaskMain(player);
         Service.gI().sendThongBao(player, "Nhiệm vụ tiếp theo của bạn là "
@@ -265,34 +273,41 @@ public class TaskService {
     }
 
     public void checkDoneTaskPower(Player player, long power) {
-        if (!player.isBoss && !player.isBot && !player.isPet) {
-            if (power >= 16000) {
-                doneTask(player, ConstTask.TASK_7_0);
-            }
-            if (power >= 40000) {
-                doneTask(player, ConstTask.TASK_8_0);
-            }
-            if (power >= 200000) {
-                doneTask(player, ConstTask.TASK_10_0);
-            }
-            if (power >= 600000000) {
-                doneTask(player, ConstTask.TASK_20_0);
-            }
-            if (power >= 2000000000L) {
-                doneTask(player, ConstTask.TASK_21_0);
-            }
-            if (power >= 40000) {
-                doneTask(player, ConstTask.TASK_11_0);
-            }
-            if (power >= 500000) {
-                doneTask(player, ConstTask.TASK_11_0);
-            }
-            if (power >= 550000) {
-                doneTask(player, ConstTask.TASK_11_1);
-            }
-            if (power >= 600000L) {
-                doneTask(player, ConstTask.TASK_11_2);
-            }
+        if (player != null && !player.isBoss && !player.isBot && !player.isPet
+                && player.playerTask != null && player.playerTask.taskMain != null
+                && player.playerTask.taskMain.subTasks != null && !player.playerTask.taskMain.subTasks.isEmpty()) {
+            boolean checkAgain;
+            int maxLoop = 10;
+            do {
+                checkAgain = false;
+                int currentTaskId = getIdTask(player);
+                if (currentTaskId == ConstTask.TASK_7_0 && power >= 16000) {
+                    doneTask(player, ConstTask.TASK_7_0);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_8_0 && power >= 40000) {
+                    doneTask(player, ConstTask.TASK_8_0);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_10_0 && power >= 200000) {
+                    doneTask(player, ConstTask.TASK_10_0);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_11_0 && power >= 500000) {
+                    doneTask(player, ConstTask.TASK_11_0);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_11_1 && power >= 550000) {
+                    doneTask(player, ConstTask.TASK_11_1);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_11_2 && power >= 600000) {
+                    doneTask(player, ConstTask.TASK_11_2);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_20_0 && power >= 600000000L) {
+                    doneTask(player, ConstTask.TASK_20_0);
+                    checkAgain = true;
+                } else if (currentTaskId == ConstTask.TASK_21_0 && power >= 2000000000L) {
+                    doneTask(player, ConstTask.TASK_21_0);
+                    checkAgain = true;
+                }
+                maxLoop--;
+            } while (checkAgain && maxLoop > 0);
         }
     }
 
@@ -367,7 +382,9 @@ public class TaskService {
     }
 
     public void checkDoneTaskNangCS(Player player) {
-        if (!player.isBoss && !player.isBot && !player.isPet) {
+        if (player != null && !player.isBoss && !player.isBot && !player.isPet
+                && player.playerTask != null && player.playerTask.taskMain != null
+                && player.nPoint != null) {
             if (player.nPoint.dameg < 35000) {
                 return;
             }
