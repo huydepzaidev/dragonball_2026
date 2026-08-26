@@ -2,7 +2,7 @@
 cd /d "%~dp0"
 
 :: [DragonBall 2026] Server Runtime JAR
-set "JAR=dist\115-NgocRongOnline-20260826.jar"
+set "JAR=dist\122-NgocRongOnline-20260826.jar"
 
 :: Fallback kiem tra neu file khong ton tai
 if not exist "%JAR%" (

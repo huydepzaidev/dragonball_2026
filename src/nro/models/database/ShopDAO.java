@@ -28,6 +28,9 @@ public class ShopDAO {
                 shop.npcId = rs.getByte("npc_id");
                 shop.tagName = rs.getString("tag_name");
                 shop.typeShop = rs.getByte("type_shop");
+                if ("SATAN_RUBY".equals(shop.tagName)) {
+                    shop.typeShop = 3;
+                }
                 loadShopTab(con, shop);
                 list.add(shop);
             }
@@ -92,6 +95,9 @@ public class ShopDAO {
                 itemShop.cost = rs.getInt("cost");
                 itemShop.iconSpec = rs.getInt("icon_spec");
                 itemShop.typeSell = rs.getByte("type_sell");
+                if (("SATAN_RUBY".equals(tabShop.shop.tagName) || itemShop.typeSell == 3) && itemShop.iconSpec <= 0) {
+                    itemShop.iconSpec = 7743;
+                }
                 loadItemShopOption(con, itemShop);
                 tabShop.itemShops.add(itemShop);
             }

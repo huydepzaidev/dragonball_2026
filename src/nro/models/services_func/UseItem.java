@@ -63,6 +63,12 @@ import nro.models.utils.Logger;
  */
 public class UseItem {
 
+    public static final int WOOD_CHEST_DIVINE_ITEM_RATE_PERCENT = 1;
+    public static final int WOOD_CHEST_ACTIVATION_CAPSULE_RATE_PERCENT = 1;
+    public static final short[] WOOD_CHEST_DIVINE_ITEM_IDS = {
+        555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 565, 566, 567
+    };
+
     private static final int ITEM_BOX_TO_BODY_OR_BAG = 0;
     private static final int ITEM_BAG_TO_BOX = 1;
     private static final int ITEM_BODY_TO_BOX = 3;
@@ -1113,6 +1119,28 @@ public class UseItem {
                     player.itemsWoodChest.add(dnc);  // Thêm đá nâng cấp vào phần thưởng            
                 }
 
+                // Phần thưởng xác suất 1%: Trang bị Thần Linh (giao dịch được)
+                Item divineItemReward = null;
+                if (Util.isTrue(WOOD_CHEST_DIVINE_ITEM_RATE_PERCENT, 100)) {
+                    short randDivineId = WOOD_CHEST_DIVINE_ITEM_IDS[Util.nextInt(0, WOOD_CHEST_DIVINE_ITEM_IDS.length - 1)];
+                    divineItemReward = ItemService.gI().createNewItem(randDivineId);
+                    List<Item.ItemOption> ops = ItemService.gI().getListOptionItemShop(randDivineId);
+                    if (ops != null && !ops.isEmpty()) {
+                        divineItemReward.itemOptions.addAll(ops);
+                    }
+                    divineItemReward.quantity = 1;
+                    player.itemsWoodChest.add(divineItemReward);
+                }
+
+                // Phần thưởng xác suất 1%: Cápsule Kích hoạt 1 món (khóa giao dịch)
+                Item capsuleReward = null;
+                if (Util.isTrue(WOOD_CHEST_ACTIVATION_CAPSULE_RATE_PERCENT, 100)) {
+                    capsuleReward = ItemService.gI().createNewItem((short) ConstNpc.CAPSULE_KICH_HOAT);
+                    capsuleReward.quantity = 1;
+                    capsuleReward.itemOptions.add(new Item.ItemOption(30, 0)); // Khóa giao dịch
+                    player.itemsWoodChest.add(capsuleReward);
+                }
+
                 // Trừ 1 rương gỗ
                 InventoryService.gI().subQuantityItemsBag(player, ruongGo, 1);
                 InventoryService.gI().sendItemBags(player);
@@ -1122,6 +1150,14 @@ public class UseItem {
                     InventoryService.gI().addItemBag(player, it);
                 }
                 InventoryService.gI().sendItemBags(player);
+
+                // Gửi thông báo riêng khi trúng phần thưởng đặc biệt
+                if (divineItemReward != null) {
+                    Service.gI().sendThongBao(player, "Bạn nhận được " + divineItemReward.template.name + " từ Rương Gỗ!");
+                }
+                if (capsuleReward != null) {
+                    Service.gI().sendThongBao(player, "Bạn nhận được " + capsuleReward.template.name + " từ Rương Gỗ!");
+                }
 
                 // Cập nhật chỉ số rương gỗ
                 player.indexWoodChest = player.itemsWoodChest.size() - 1;
@@ -1194,6 +1230,9 @@ public class UseItem {
         // Tính đá nâng cấp (Số lượng 2 nếu level > 9)
         int dncCount = (level > 9) ? 2 : 1;
         requiredSlots += dncCount;
+
+        // Dự phòng tối đa 2 ô trống cho 2 phần thưởng xác suất (1 Đồ Thần Linh + 1 Capsule kích hoạt)
+        requiredSlots += 2;
 
         // Trả về tổng số ô trống cần thiết
         return requiredSlots;

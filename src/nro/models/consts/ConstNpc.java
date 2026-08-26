@@ -61,10 +61,11 @@ public class ConstNpc {
             + "Khỉ Bubbles: 320 sức mạnh mỗi phút\bThần Vũ Trụ: 640 sức mạnh mỗi phút\bTổ sư Kaio: 1280 sức mạnh mỗi phút\n"
             + "Có thể tặng ngọc để thắng mà không cần thách đấu\n"
             + "Nếu đăng ký tập thường xuyên mỗi khi Offline không cần phải đến đây vẫn tập luyện được";
-    public static final String THONG_TIN_DAI_HOI_VO_THUAT = "Lịch thi đấu trong ngày\bGiải Nhi đồng: 8,14,18h\bGiải Siêu cấp 1: 9,13,19h\bGiải Siêu Cấp 2: 10,15,20h\bGiải Siêu cấp 3: 11,16,21h\bGiải Ngoại hạng: 12,17,22,23h\n"
-            + "Giải thưởng khi thắng mỗi vòng\bGiải Nhi đồng: 2 ngọc\bGiải Siêu cấp 1: 4 ngọc\bGiải Siêu cấp 2: 6 ngọc\bGiải Siêu cấp 3: 8 ngọc\bGiải Ngoại hạng: 10.000 vàng\bVô địch: 5 viên đá nâng cấp\n"
-            + "Lệ phí đăng ký các giải đấu\bGiải Nhi đồng: 2 ngọc\bGiải Siêu cấp 1: 4 ngọc\bGiải Siêu cấp 2: 6 ngọc\bGiải Siêu cấp 3: 8 ngọc\bGiải Ngoại hạng: 10.000 vàng\n"
-            + "Vui lòng đến đúng giờ để đăng ký thi đấu";
+    public static final String THONG_TIN_DAI_HOI_VO_THUAT = "ĐẠI HỘI VÕ THUẬT - GIẢI NGOẠI HẠNG\n"
+            + "Lịch thi đấu trong ngày\bDiễn ra vào các khung giờ:\b9h, 11h, 13h, 15h, 17h, 19h, 21h, 23h\bMở đăng ký từ phút 00 đến 25\bBắt đầu thi đấu lúc phút 30\n"
+            + "Điều kiện tham gia\bHoàn thành nhiệm vụ Rambo\bSức mạnh tối thiểu: 40 tỷ\bLệ phí đăng ký: 100 Hồng Ngọc\n"
+            + "Cơ cấu giải thưởng\bThắng mỗi vòng: +1.000 Hồng Ngọc\bVô địch: +5.000 Hồng Ngọc + 50.000 Đá nâng cấp (5 loại x 10.000) + 10.000 Đá bảo vệ + 1 Hộp Đồ Thần (nhận qua Hòm Thư)\n"
+            + "Lưu ý\bGiải chỉ diễn ra khi có từ 11 đấu thủ hợp lệ trở lên\bNếu không đủ 11 người, giải sẽ bị hủy và hoàn lại 100 Hồng Ngọc qua Hòm Thư.";
     public static final String THONG_TIN_SIEU_HANG = "Giải đấu thể hiện đẳng cấp thực sự\bCác trận đấu diễn ra liên tục bất kể ngày đêm\bBạn hãy tham gia thi đấu để nâng hạng\bvà nhận giải thưởng khủng nhé\n"
             + "Cơ cấu giải thưởng như sau\b(chốt và trao giải ngẫu nhiên từ 20h-23h mỗi ngày)\bTop 1 thưởng 100 ngọc\bTop 2-10 thưởng 20 ngọc\bTop 11-100 thưởng 5 ngọc\bTop 101-1000 thưởng 1 ngọc\n"
             + "Mỗi ngày các bạn được tặng 1 vé tham dự miễn phí\b(tích lũy tối đa 3 vé) khi thua sẽ mất đi 1 vé\bKhi hết vé bạn phải trả 1 ngọc để đấu tiếp\b(trừ ngọc khi trận đấu kết thúc)\n"

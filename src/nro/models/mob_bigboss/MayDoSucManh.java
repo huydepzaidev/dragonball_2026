@@ -44,6 +44,11 @@ public class MayDoSucManh extends BigBoss {
     }
 
     @Override
+    public void update() {
+        effectSkill.update();
+    }
+
+    @Override
     public void injured(Player plAtt, long damage, boolean dieWhenHpFull) {
         if (isDie() || plAtt == null || damage <= 0) {
             return;

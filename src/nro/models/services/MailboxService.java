@@ -282,6 +282,58 @@ public final class MailboxService {
         }
     }
 
+    public static boolean sendSystemMailIdempotent(int accountId, long playerId, String title, String message,
+            String senderName, String rewardsJson, String idempotencyToken) {
+        if (accountId <= 0 || playerId <= 0 || title == null || rewardsJson == null) {
+            return false;
+        }
+        try {
+            parseRewards(rewardsJson);
+        } catch (Exception e) {
+            Logger.logException(MailboxService.class, e);
+            return false;
+        }
+
+        String searchTitle = (idempotencyToken != null && !idempotencyToken.isBlank())
+                ? title + " [" + idempotencyToken + "]"
+                : title;
+
+        String checkSql = "SELECT id FROM player_mailbox WHERE account_id=? AND player_id=? AND title=? "
+                + "AND status IN ('PENDING','PROCESSING','CLAIMED') LIMIT 1 FOR UPDATE";
+        String insertSql = "INSERT INTO player_mailbox (account_id, player_id, title, message, sender_name, rewards_json, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, 'PENDING')";
+
+        try (Connection con = LocalManager.getConnection()) {
+            con.setAutoCommit(false);
+            try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+                checkPs.setInt(1, accountId);
+                checkPs.setLong(2, playerId);
+                checkPs.setString(3, searchTitle);
+                try (ResultSet rs = checkPs.executeQuery()) {
+                    if (rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            try (PreparedStatement insertPs = con.prepareStatement(insertSql)) {
+                insertPs.setInt(1, accountId);
+                insertPs.setLong(2, playerId);
+                insertPs.setString(3, searchTitle);
+                insertPs.setString(4, message != null ? message : "");
+                insertPs.setString(5, senderName != null ? senderName : "Trọng Tài");
+                insertPs.setString(6, rewardsJson);
+                insertPs.executeUpdate();
+            }
+            con.commit();
+            return true;
+        } catch (Exception e) {
+            Logger.logException(MailboxService.class, e);
+            return false;
+        }
+    }
+
     static List<MailReward> parseRewards(String json) {
         Object parsed = JSONValue.parse(json);
         if (!(parsed instanceof JSONArray array) || array.isEmpty() || array.size() > 50) {

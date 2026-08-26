@@ -6,6 +6,7 @@ import nro.models.radar.RadarCard;
 import nro.models.data.LocalManager;
 import nro.models.consts.ConstPlayer;
 import nro.models.consts.ConstMap;
+import nro.models.consts.ConstMob;
 import nro.models.data.DataGame;
 import nro.models.database.ShopDAO;
 import nro.models.player_system.Template.*;
@@ -793,6 +794,13 @@ public final class Manager {
                 mobTemp.dartType = rs.getByte("dart_type");
                 mobTemp.percentDame = rs.getByte("percent_dame");
                 mobTemp.percentTiemNang = rs.getByte("percent_tiem_nang");
+                if (mobTemp.id == ConstMob.MAY_DO_SUC_MANH) {
+                    mobTemp.type = 0;
+                    mobTemp.rangeMove = 0;
+                    if (mobTemp.speed <= 0) {
+                        mobTemp.speed = 1;
+                    }
+                }
                 MOB_TEMPLATES.add(mobTemp);
             }
             Logger.success(Logger.PURPLE + "Successfully loaded mob template (" + MOB_TEMPLATES.size() + ")\n");

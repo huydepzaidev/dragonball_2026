@@ -155,6 +155,42 @@ if (-not $SkipTests) {
             }
         }
     }
+
+    $WmatTestFile = Join-Path $ProjectRoot "test/nro/models/matches/WorldMartialArtsTournamentNgoaiHangTest.java"
+    if (Test-Path $WmatTestFile) {
+        $WmatCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/matches/WorldMartialArtsTournamentNgoaiHangTest.java") -NoNewWindow -Wait -PassThru
+        if ($WmatCompileProc.ExitCode -eq 0) {
+            $WmatRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.matches.WorldMartialArtsTournamentNgoaiHangTest") -NoNewWindow -Wait -PassThru
+            if ($WmatRunProc.ExitCode -ne 0) {
+                Write-Host "[ERROR] Unit Test WorldMartialArtsTournamentNgoaiHangTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+                exit 1
+            }
+        }
+    }
+
+    $RubyShopTestFile = Join-Path $ProjectRoot "test/nro/models/shop/SatanRubyShopCurrencyTest.java"
+    if (Test-Path $RubyShopTestFile) {
+        $RubyShopCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/shop/SatanRubyShopCurrencyTest.java") -NoNewWindow -Wait -PassThru
+        if ($RubyShopCompileProc.ExitCode -eq 0) {
+            $RubyShopRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.SatanRubyShopCurrencyTest") -NoNewWindow -Wait -PassThru
+            if ($RubyShopRunProc.ExitCode -ne 0) {
+                Write-Host "[ERROR] Unit Test SatanRubyShopCurrencyTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+                exit 1
+            }
+        }
+    }
+
+    $WoodChestTestFile = Join-Path $ProjectRoot "test/nro/models/shop/WoodChestRewardAndPocoloHpTest.java"
+    if (Test-Path $WoodChestTestFile) {
+        $WoodChestCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/shop/WoodChestRewardAndPocoloHpTest.java") -NoNewWindow -Wait -PassThru
+        if ($WoodChestCompileProc.ExitCode -eq 0) {
+            $WoodChestRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.WoodChestRewardAndPocoloHpTest") -NoNewWindow -Wait -PassThru
+            if ($WoodChestRunProc.ExitCode -ne 0) {
+                Write-Host "[ERROR] Unit Test WoodChestRewardAndPocoloHpTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+                exit 1
+            }
+        }
+    }
     Write-Host "  -> Tests pass 100%!" -ForegroundColor Green
 } else {
     Write-Host "[4/7] Bo qua Tests theo yeu cau." -ForegroundColor Gray

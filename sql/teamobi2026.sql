@@ -7867,7 +7867,7 @@ INSERT INTO `mob_template` (`id`, `TYPE`, `NAME`, `hp`, `range_move`, `speed`, `
 (114, 1, 'Golem', 11, 50, 2, 11, 5, 10),
 (115, 1, 'Dazing Stone', 11, 50, 2, 11, 5, 10),
 (116, 1, 'Demon 2', 11, 50, 2, 11, 5, 10),
-(117, 1, 'Máy đo sức mạnh', 2000000000, 1, 1, 25, 5, 0),
+(117, 0, 'Máy đo sức mạnh', 2000000000, 0, 1, 25, 5, 0),
 (118, 1, 'Cadic M', 6000000, 33, 2, 66, 5, 10);
 
 -- --------------------------------------------------------
@@ -15371,7 +15371,44 @@ SET `TYPE`=2
 WHERE `id`=45
   AND `TYPE`<>2;
 
+-- BEGIN MIGRATION: 2026_08_26_1955_fix_may_do_suc_manh_static_direction.sql
+-- Configure May do suc manh (Mob Template 117) as static dummy (type = 0, range_move = 0, speed = 1)
+-- to prevent continuous random idle direction flipping and walking while retaining hit direction update.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `mob_template`
+SET `TYPE` = 0,
+    `range_move` = 0,
+    `speed` = 1
+WHERE `id` = 117;
+
 COMMIT;
--- END MIGRATION: 2026_08_26_1247_fix_item_45_glove_type.sql
+-- END MIGRATION: 2026_08_26_1955_fix_may_do_suc_manh_static_direction.sql
+
+-- BEGIN MIGRATION: 2026_08_26_2130_fix_satan_ruby_shop_currency_icon.sql
+-- Update Santa's Ruby Shop (SATAN_RUBY / Shop 37 / Tab 64) to SPEC_SHOP (type_shop = 3)
+-- and set icon_spec = 7743 (item 861 Hồng ngọc) so items display the red/pink ruby currency icon
+-- instead of green gem in both the shop item list and the purchase confirmation dialog.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+-- 1. Update shop type to SPEC_SHOP (3)
+UPDATE `shop`
+SET `type_shop` = 3
+WHERE `id` = 37 OR `tag_name` = 'SATAN_RUBY';
+
+-- 2. Update icon_spec = 7743 (Hồng ngọc icon) for all items in Tab 64 (Cửa hàng Hồng Ngọc)
+UPDATE `item_shop` AS `item`
+JOIN `tab_shop` AS `tab` ON `tab`.`id` = `item`.`tab_id`
+JOIN `shop` AS `shop` ON `shop`.`id` = `tab`.`shop_id`
+JOIN `item_template` AS `ruby` ON `ruby`.`id` = 861
+SET `item`.`type_sell` = 3,
+    `item`.`icon_spec` = `ruby`.`icon_id`
+WHERE `shop`.`tag_name` = 'SATAN_RUBY'
+   OR `tab`.`id` = 64;
+
+COMMIT;
+-- END MIGRATION: 2026_08_26_2130_fix_satan_ruby_shop_currency_icon.sql
 
 -- END CONSOLIDATED PROJECT MIGRATIONS
