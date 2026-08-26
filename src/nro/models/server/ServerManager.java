@@ -47,6 +47,7 @@ import nro.models.services.ClanService;
 import nro.models.services.TaskService;
 import nro.models.shop.ShopTab;
 import nro.models.shop_ky_gui.ConsignShopManager;
+import nro.models.server.control.ControlServer;
 
 /**
  *
@@ -149,6 +150,9 @@ public class ServerManager {
             new Thread(ConSoMayManGem.gI(), "ConSoMayManGemThread").start();
 
             startTopUpdater();
+
+            // Khởi động HuyDev - MadbroS Control Server
+            ControlServer.gI().start();
         } catch (Exception e) {
             Logger.logException(this.getClass(), e);
         }
@@ -285,6 +289,7 @@ public class ServerManager {
 
     public void close() {
         isRunning = false;
+        ControlServer.gI().stop();
         GameConfigService.gI().markOffline();
         try {
             ClanService.gI().close();

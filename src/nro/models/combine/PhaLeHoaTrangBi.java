@@ -13,7 +13,7 @@ import nro.models.utils.Util;
  */
 public class PhaLeHoaTrangBi {
 
-    // Ti le nhan truc tiep tu 1 den 9 sao trong moi lan dap (tong = 100%).
+    // Ti le thanh cong de tang dung mot sao o moi cap hien tai.
     private static final int[] STAR_RATES = {25, 20, 15, 10, 8, 7, 5, 5, 5};
 
     public static void showInfoCombine(Player player) {
@@ -77,16 +77,11 @@ public class PhaLeHoaTrangBi {
         return ratio;
     }
 
-    private static int randomTargetStar() {
-        int random = Util.nextInt(1, 100);
-        int cumulativeRate = 0;
-        for (int i = 0; i < STAR_RATES.length; i++) {
-            cumulativeRate += STAR_RATES[i];
-            if (random <= cumulativeRate) {
-                return i + 1;
-            }
+    public static int getNextStarOnSuccess(int currentStar) {
+        if (currentStar < 0 || currentStar >= CombineService.MAX_STAR_ITEM) {
+            return currentStar;
         }
-        return STAR_RATES.length;
+        return currentStar + 1;
     }
 
     public static void phaLeHoa(Player player, int... numm) {
@@ -107,15 +102,12 @@ public class PhaLeHoaTrangBi {
                 return;
             }
 
-            int num = 0;
             int star = 0;
             boolean success = false;
-            int fail = 0;
             Item item = null;
             Item.ItemOption optionStar = null;
 
             for (int i = 0; i < n; i++) {
-                num = i;
                 gold = player.combineNew.goldCombine;
                 gem = player.combineNew.gemCombine;
                 if (player.inventory.gem < gem || player.inventory.gold < gold) {
@@ -137,16 +129,13 @@ public class PhaLeHoaTrangBi {
                         player.combineNew.goldCombine = CombineSystem.getGoldPhaLeHoa(star);
                         player.combineNew.gemCombine = CombineSystem.getGemPhaLeHoa(star);
 
-                        int targetStar = randomTargetStar();
                         player.inventory.gold -= gold;
                         player.inventory.gem -= gem;
 
-                        if (targetStar > star) {
-                            star = targetStar;
+                        if (Util.isTrue(player.combineNew.ratioCombine, 100)) {
+                            star = getNextStarOnSuccess(star);
                             success = true;
                             break;
-                        } else {
-                            fail++;
                         }
                     }
                 } else {

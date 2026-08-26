@@ -39,6 +39,10 @@ public class InventoryService {
     private static final int COCONUT_ITEM_ID = 694;
     static final int DESTROY_ITEM_POWER_REQUIRE_BILLIONS = 50;
     static final long DESTROY_ITEM_POWER_REQUIRE = DESTROY_ITEM_POWER_REQUIRE_BILLIONS * 1_000_000_000L;
+    static final int ANGEL_ITEM_MIN_ID = 1048;
+    static final int ANGEL_ITEM_MAX_ID = 1065;
+    static final int ANGEL_ITEM_POWER_REQUIRE_BILLIONS = 70;
+    static final long ANGEL_ITEM_POWER_REQUIRE = ANGEL_ITEM_POWER_REQUIRE_BILLIONS * 1_000_000_000L;
     static final byte BACK_ACCESSORY_TYPE = 11;
     static final byte SPECIAL_SKILL_BOOK_TYPE = 25;
     static final int PET_BACK_ACCESSORY_SLOT = 7;
@@ -452,7 +456,6 @@ public class InventoryService {
             player.inventory.itemsBody.set(index, putItemBag(player, item));
             sendItemBags(player);
             sendItemBody(player);
-            Service.gI().player(player);
             player.zone.load_Me_To_Another(player);
             player.zone.load_Another_To_Me(player);
             Service.gI().Send_Caitrang(player);
@@ -597,9 +600,11 @@ public class InventoryService {
             for (int i = 0; i < player.inventory.itemsBag.size(); i++) {
                 Item item = player.inventory.itemsBag.get(i);
                 if (!item.isNotNullItem()) {
+                    msg.writer().writeShort(-1);
                     continue;
                 }
                 normalizeDestroyItemPowerRequirement(item);
+                normalizeAngelItemPowerRequirement(item);
                 msg.writer().writeShort(item.template.id);
                 msg.writer().writeInt(item.quantity);
                 msg.writer().writeUTF(item.getInfo());
@@ -643,6 +648,7 @@ public class InventoryService {
                     msg.writer().writeShort(-1);
                 } else {
                     normalizeDestroyItemPowerRequirement(item);
+                    normalizeAngelItemPowerRequirement(item);
                     msg.writer().writeShort(item.template.id);
                     msg.writer().writeInt(item.quantity);
                     msg.writer().writeUTF(item.getInfo());
@@ -686,6 +692,7 @@ public class InventoryService {
                 msg.writer().writeShort(it.isNotNullItem() ? it.template.id : -1);
                 if (it.isNotNullItem()) {
                     normalizeDestroyItemPowerRequirement(it);
+                    normalizeAngelItemPowerRequirement(it);
                     msg.writer().writeInt(it.quantity);
                     msg.writer().writeUTF(it.getInfo());
                     msg.writer().writeUTF(it.getContent());
@@ -1344,6 +1351,9 @@ public class InventoryService {
         if (item.isDHD()) {
             return DESTROY_ITEM_POWER_REQUIRE;
         }
+        if (isAngelEquipment(item)) {
+            return ANGEL_ITEM_POWER_REQUIRE;
+        }
         if (item.itemOptions != null) {
             for (Item.ItemOption option : item.itemOptions) {
                 if (option != null && option.optionTemplate != null && option.optionTemplate.id == 21) {
@@ -1373,6 +1383,34 @@ public class InventoryService {
         if (requirement == null) {
             item.itemOptions.add(new Item.ItemOption(21, DESTROY_ITEM_POWER_REQUIRE_BILLIONS));
         }
+    }
+
+    static void normalizeAngelItemPowerRequirement(Item item) {
+        if (!isAngelEquipment(item) || item.itemOptions == null) {
+            return;
+        }
+        Item.ItemOption requirement = null;
+        for (int index = item.itemOptions.size() - 1; index >= 0; index--) {
+            Item.ItemOption option = item.itemOptions.get(index);
+            if (option != null && option.optionTemplate != null && option.optionTemplate.id == 21) {
+                if (requirement == null) {
+                    requirement = option;
+                    requirement.param = ANGEL_ITEM_POWER_REQUIRE_BILLIONS;
+                } else {
+                    item.itemOptions.remove(index);
+                }
+            }
+        }
+        if (requirement == null) {
+            item.itemOptions.add(new Item.ItemOption(21, ANGEL_ITEM_POWER_REQUIRE_BILLIONS));
+        }
+    }
+
+    private static boolean isAngelEquipment(Item item) {
+        if (item == null || !item.isNotNullItem() || item.template == null) {
+            return false;
+        }
+        return item.template.id >= ANGEL_ITEM_MIN_ID && item.template.id <= ANGEL_ITEM_MAX_ID;
     }
 
     public Item findBillFood(Player player) {

@@ -77,6 +77,30 @@ public final class BillDestroyShopRequirementTest {
         InventoryService.normalizeDestroyItemPowerRequirement(destroyItem);
         check(explicitRequirement.param == 50, null);
 
+        Item angelItem = createItem(1048, 0, 15);
+        Item.ItemOption oldAngelRequirement = new Item.ItemOption();
+        oldAngelRequirement.optionTemplate = new Template.ItemOptionTemplate(21, null, 0);
+        oldAngelRequirement.param = 30;
+        angelItem.itemOptions.add(oldAngelRequirement);
+        check(InventoryService.getPowerRequirement(angelItem) == 70_000_000_000L,
+                "Angel equipment must require 70 billion power");
+        InventoryService.normalizeAngelItemPowerRequirement(angelItem);
+        check(oldAngelRequirement.param == 70,
+                "Existing Angel equipment must display the 70-billion requirement");
+
+        Item angelAvatar = createItem(1065, 5, 15);
+        Item.ItemOption oldAvatarRequirement = new Item.ItemOption();
+        oldAvatarRequirement.optionTemplate = new Template.ItemOptionTemplate(21, null, 0);
+        oldAvatarRequirement.param = 30;
+        angelAvatar.itemOptions.add(oldAvatarRequirement);
+        check(InventoryService.getPowerRequirement(angelAvatar) == 70_000_000_000L,
+                "Angel avatars must also require 70 billion power");
+        InventoryService.normalizeAngelItemPowerRequirement(angelAvatar);
+        check(angelAvatar.itemOptions.size() == 1
+                        && angelAvatar.itemOptions.get(0).optionTemplate.id == 21
+                        && angelAvatar.itemOptions.get(0).param == 70,
+                "Angel equipment without option 21 must receive the requirement");
+
         Item normalItem = createItem(1, 0, 1);
         normalItem.template.strRequire = 1_500_000;
         check(InventoryService.getPowerRequirement(normalItem) == 1_500_000L, null);

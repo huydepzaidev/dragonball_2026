@@ -20,6 +20,7 @@ import nro.models.map.service.NpcService;
 import nro.models.network.SessionManager;
 import nro.models.player.Pet;
 import nro.models.player.Player;
+import nro.models.services.ActivationRewardService;
 import nro.models.services.EffectSkillService;
 import nro.models.services.InventoryService;
 import nro.models.services.ItemService;
@@ -34,9 +35,12 @@ import nro.models.utils.Util;
 
 public final class Command {
 
+    static final byte ADMIN_BUFF_POWER = 0;
+    static final byte ADMIN_BUFF_POTENTIAL = 1;
+
     private static final Set<String> EXACT_ADMIN_COMMANDS = Set.of(
             "boss", "brl", "a", "item", "getitem", "hs", "kol", "d",
-            "toado", "1", "2", "b");
+            "toado", "1", "2", "b", "skhvip", "buffskh");
 
     private static Command instance;
 
@@ -70,6 +74,8 @@ public final class Command {
         adminCommands.put("1", this::openBotMenu);
         adminCommands.put("2", this::createAttackBot);
         adminCommands.put("b", player -> Input.gI().createFormSenditem1(player));
+        adminCommands.put("skhvip", ActivationRewardService.gI()::buffVipSetForAdmin);
+        adminCommands.put("buffskh", ActivationRewardService.gI()::buffVipSetForAdmin);
     }
 
     static void restoreAdminPlayer(Player player) {
@@ -159,6 +165,15 @@ public final class Command {
             }
         });
 
+        parameterizedCommands.put("sm", (player, argument) ->
+                buffAdminStat(player, argument, ADMIN_BUFF_POWER, "sm"));
+        parameterizedCommands.put("upsm", (player, argument) ->
+                buffAdminStat(player, argument, ADMIN_BUFF_POWER, "upsm"));
+        parameterizedCommands.put("tn", (player, argument) ->
+                buffAdminStat(player, argument, ADMIN_BUFF_POTENTIAL, "tn"));
+        parameterizedCommands.put("uptn", (player, argument) ->
+                buffAdminStat(player, argument, ADMIN_BUFF_POTENTIAL, "uptn"));
+
         parameterizedCommands.put("upp", (player, argument) -> {
             if (player.pet == null) {
                 Service.gI().sendThongBao(player, "Bạn chưa có đệ tử");
@@ -174,6 +189,56 @@ public final class Command {
         });
 
         parameterizedCommands.put("i", this::giveItem);
+        parameterizedCommands.put("skh", (player, argument) ->
+                ActivationRewardService.gI().handleAdminSKHCommand(player, argument));
+    }
+
+    private static void buffAdminStat(Player player, String argument, byte type, String command) {
+        try {
+            long requestedAmount = Long.parseLong(argument);
+            long addedAmount = applyAdminStatBuff(player, type, requestedAmount);
+            if (requestedAmount <= 0) {
+                Service.gI().sendThongBao(player,
+                        "Số buff phải lớn hơn 0. Dùng: " + command + " <số>");
+            } else if (addedAmount <= 0) {
+                Service.gI().sendThongBao(player,
+                        type == ADMIN_BUFF_POWER
+                                ? "Sức mạnh đã đạt giới hạn hiện tại."
+                                : "Tiềm năng đã đạt giới hạn dữ liệu.");
+            } else {
+                String statName = type == ADMIN_BUFF_POWER ? "sức mạnh" : "tiềm năng";
+                Service.gI().point(player);
+                Service.gI().sendThongBao(player,
+                        "Admin đã buff " + Util.numberToMoney(addedAmount) + " " + statName + ".");
+            }
+        } catch (NumberFormatException e) {
+            Service.gI().sendThongBao(player, "Sai cú pháp: " + command + " <số>");
+        }
+    }
+
+    static long applyAdminStatBuff(Player player, byte type, long requestedAmount) {
+        if (player == null || player.nPoint == null || requestedAmount <= 0
+                || (type != ADMIN_BUFF_POWER && type != ADMIN_BUFF_POTENTIAL)) {
+            return 0;
+        }
+
+        long before = type == ADMIN_BUFF_POWER
+                ? player.nPoint.power : player.nPoint.tiemNang;
+        long amount = Math.min(requestedAmount, Long.MAX_VALUE - before);
+        if (amount <= 0) {
+            return 0;
+        }
+
+        if (type == ADMIN_BUFF_POWER) {
+            Service.gI().addSMTN(player, ADMIN_BUFF_POWER, amount, false);
+        } else {
+            player.nPoint.tiemNangUp(amount);
+            PlayerService.gI().sendTNSM(player, ADMIN_BUFF_POTENTIAL, amount);
+        }
+
+        long after = type == ADMIN_BUFF_POWER
+                ? player.nPoint.power : player.nPoint.tiemNang;
+        return after - before;
     }
 
     private void openAdminMenu(Player player) {
@@ -183,7 +248,7 @@ public final class Command {
                 + "\n Sessions: " + SessionManager.gI().getNumSession()
                 + "\nThreads: " + Thread.activeCount()
                 + " luồng\n" + SystemMetrics.ToString(),
-                "Ngọc rồng", "Đệ tử", "Bảo trì", "Tìm kiếm\nngười chơi", "Boss", "Đóng");
+                "Ngọc rồng", "Đệ tử", "Bảo trì", "Tìm kiếm\nngười chơi", "Boss", "Buff SKH VIP", "Đóng");
     }
 
     private void openBotMenu(Player player) {
@@ -365,12 +430,17 @@ public final class Command {
 
         String name = parts[0];
         String argument = parts[1].trim();
-        if (Set.of("m", "n", "dm", "hp", "ki", "up", "upp").contains(name)) {
+        if (Set.of("m", "n", "dm", "hp", "ki", "up", "upp",
+                "sm", "upsm", "tn", "uptn").contains(name)) {
             return argument.matches("[+-]?\\d+")
                     ? new ParsedCommand(name, argument) : null;
         }
         if (name.equals("i")
                 && argument.matches("\\d+(?:\\s+\\d+)?(?:\\s+\\d+:-?\\d+)*")) {
+            return new ParsedCommand(name, argument);
+        }
+        if (name.equals("skh")
+                && argument.matches("[a-zA-Z0-9_]+(?:\\s+[+-]?\\d+){0,2}")) {
             return new ParsedCommand(name, argument);
         }
         return null;

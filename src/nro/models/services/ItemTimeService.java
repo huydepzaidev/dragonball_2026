@@ -99,7 +99,7 @@ public class ItemTimeService {
         if (player.itemTime.isUseNuocMia2) {
             sendItemTime(player, 13463, (int) ((TIME_NUOC_MIA2 - (System.currentTimeMillis() - player.itemTime.lastTimeUseNuocMia2)) / 1000));
         }
-        if (player.itemTime.isUseNuocMia2) {
+        if (player.itemTime.isUseNuocMia3) {
             sendItemTime(player, 13464, (int) ((TIME_NUOC_MIA3 - (System.currentTimeMillis() - player.itemTime.lastTimeUseNuocMia3)) / 1000));
         }
         if (player.itemTime.isUseKilis) {
@@ -120,17 +120,24 @@ public class ItemTimeService {
             sendItemTime(player, 6574, (int) (player.itemTime.getRemainingTraiDuaTime() / 1000));
         }
         if (player.itemTime.isEatMeal) {
-            sendItemTime(player, player.itemTime.iconMeal, (int) ((TIME_EAT_MEAL - (System.currentTimeMillis() - player.itemTime.lastTimeEatMeal)) / 1000));
+            sendItemTime(player, player.itemTime.iconMeal,
+                    (int) (player.itemTime.getRemainingMealTime() / 1000));
         }
         if (player.itemTime.isEatMeal2) {
             sendItemTime(player, player.itemTime.iconMeal2,
                     (int) (player.itemTime.getRemainingMeal2Time() / 1000));
         }
         if (player.itemTime.isUseTDLT) {
-            sendItemTime(player, 4387, player.itemTime.timeTDLT / 1000);
+            int remainingTdlt = (int) Math.max(0,
+                    (player.itemTime.timeTDLT
+                    - (System.currentTimeMillis() - player.itemTime.lastTimeUseTDLT)) / 1000);
+            sendItemTime(player, 4387, remainingTdlt);
         }
         if (player.itemTime.isUseRX) {
-            sendItemTime(player, 8579, player.itemTime.timeRX / 1000);
+            int remainingRx = (int) Math.max(0,
+                    (player.itemTime.timeRX
+                    - (System.currentTimeMillis() - player.itemTime.lastTimeUseRX)) / 1000);
+            sendItemTime(player, 8579, remainingRx);
         }
     }
 

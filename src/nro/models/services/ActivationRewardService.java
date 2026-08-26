@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import nro.models.data.LocalManager;
 import nro.models.item.Item;
 import nro.models.player.Player;
@@ -59,6 +61,50 @@ public final class ActivationRewardService {
         {25, 25, 25, 900, 25}
     };
 
+    private static final Map<String, Integer> SET_NAME_TO_OPTION = Map.ofEntries(
+            Map.entry("kaio", 245),
+            Map.entry("kaiovip", 245),
+            Map.entry("kaio_vip", 245),
+            Map.entry("thanvutrukaio", 245),
+            Map.entry("nail", 237),
+            Map.entry("nailvip", 237),
+            Map.entry("nail_vip", 237),
+            Map.entry("nailchienbinh", 237),
+            Map.entry("cadicm", 241),
+            Map.entry("cadic_m", 241),
+            Map.entry("cadicmvip", 241),
+            Map.entry("vegetam", 241),
+            Map.entry("vegeta_m", 241),
+            Map.entry("gohan", 233),
+            Map.entry("songoku", 129),
+            Map.entry("goku", 129),
+            Map.entry("kirin", 128),
+            Map.entry("krillin", 128),
+            Map.entry("thenxinhang", 127),
+            Map.entry("tien", 127),
+            Map.entry("kakarot", 133),
+            Map.entry("nappa", 135),
+            Map.entry("cadic", 134),
+            Map.entry("vegeta", 134),
+            Map.entry("pikkoro", 132),
+            Map.entry("pikkorodaimao", 132),
+            Map.entry("daimao", 132),
+            Map.entry("octieu", 131),
+            Map.entry("oc_tieu", 131),
+            Map.entry("lienhoan", 131),
+            Map.entry("lien_hoan", 131),
+            Map.entry("kamejoko", 129),
+            Map.entry("thaiduonghasan", 128),
+            Map.entry("tdhs", 128),
+            Map.entry("damdragon", 133),
+            Map.entry("galick", 134),
+            Map.entry("bienkhi", 135),
+            Map.entry("tusat", 135),
+            Map.entry("piccolo", 130),
+            Map.entry("picolo", 130),
+            Map.entry("pic", 130)
+    );
+
     private static ActivationRewardService instance;
 
     private ActivationRewardService() {
@@ -71,12 +117,214 @@ public final class ActivationRewardService {
         return instance;
     }
 
+    public static int getVipOptionByPlanet(int planet) {
+        return switch (normalizePlanet(planet)) {
+            case 0 -> 245; // Set Thần Vũ Trụ Kaio
+            case 1 -> 237; // Set Nail Chiến Binh
+            case 2 -> 241; // Set Cađic M
+            default -> 245;
+        };
+    }
+
+    public static int getNativePlanetForOption(int optionId) {
+        return switch (optionId) {
+            case 127, 128, 129, 245 -> 0; // Trái Đất
+            case 130, 131, 132, 237 -> 1; // Namếc
+            case 133, 134, 135, 241 -> 2; // Xayda
+            default -> 0;
+        };
+    }
+
+    public static boolean isOptionAllowedForPlanet(int optionId, int planet) {
+        int norm = normalizePlanet(planet);
+        return contains(DEFAULT_OPTIONS[norm], optionId);
+    }
+
+    public static int resolvePlanetForOption(int optionId, int preferredPlanet) {
+        int norm = normalizePlanet(preferredPlanet);
+        if (isOptionAllowedForPlanet(optionId, norm)) {
+            return norm;
+        }
+        return getNativePlanetForOption(optionId);
+    }
+
+    public static int resolveActivationOption(String input) {
+        if (input == null || input.isBlank()) {
+            return -1;
+        }
+        String clean = input.trim().toLowerCase(Locale.ROOT);
+        try {
+            int id = Integer.parseInt(clean);
+            if (isAnyActivationOption(id)) {
+                return id;
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        return SET_NAME_TO_OPTION.getOrDefault(clean, -1);
+    }
+
+    public static String getSetName(int activationOption) {
+        return switch (activationOption) {
+            case 245 -> "Set Thần Vũ Trụ Kaio (VIP)";
+            case 237 -> "Set Nail Chiến Binh (VIP)";
+            case 241 -> "Set Cađic M (VIP)";
+            case 233 -> "Set Gohan";
+            case 129 -> "Set Sôngôku";
+            case 128 -> "Set Kirin";
+            case 127 -> "Set Thên Xin Hăng";
+            case 133 -> "Set Kakarot";
+            case 135 -> "Set Nappa";
+            case 134 -> "Set Ca Đíc";
+            case 132 -> "Set Pikkoro Daimao";
+            case 131 -> "Set Ốc Tiêu";
+            case 130 -> "Set Picolo";
+            default -> "Set Kích Hoạt #" + activationOption;
+        };
+    }
+
     public void openSetBox(Player player, Item box) {
         open(player, box, true);
     }
 
     public void openSingleCapsule(Player player, Item capsule) {
         open(player, capsule, false);
+    }
+
+    public void buffVipSetForAdmin(Player player) {
+        if (player == null || !player.isAdmin()) {
+            return;
+        }
+        int planet = normalizePlanet(player.gender);
+        int vipOption = getVipOptionByPlanet(planet);
+        buffActivationSet(player, planet, vipOption, 12);
+    }
+
+    public void handleAdminSKHCommand(Player player, String argument) {
+        if (player == null || !player.isAdmin()) {
+            return;
+        }
+        if (argument == null || argument.isBlank()) {
+            buffVipSetForAdmin(player);
+            return;
+        }
+
+        String[] tokens = argument.trim().split("\\s+");
+        int activationOption = resolveActivationOption(tokens[0]);
+        if (activationOption == -1) {
+            Service.gI().sendThongBao(player, "Không tìm thấy Set kích hoạt: " + tokens[0]);
+            return;
+        }
+
+        int tier = 12;
+        if (tokens.length >= 2) {
+            try {
+                tier = Integer.parseInt(tokens[1]);
+                if (tier < 1 || tier > 12) {
+                    Service.gI().sendThongBao(player, "Cấp đồ (tier) phải từ 1 đến 12.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                Service.gI().sendThongBao(player, "Cấp đồ (tier) phải là số từ 1 đến 12.");
+                return;
+            }
+        }
+
+        int gender = resolvePlanetForOption(activationOption, player.gender);
+        if (tokens.length >= 3) {
+            try {
+                gender = Integer.parseInt(tokens[2]);
+                if (gender < 0 || gender > 2) {
+                    Service.gI().sendThongBao(player, "Hành tinh (gender) phải từ 0 đến 2.");
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                Service.gI().sendThongBao(player, "Hành tinh (gender) phải là số từ 0 đến 2.");
+                return;
+            }
+        }
+
+        buffActivationSet(player, gender, activationOption, tier);
+    }
+
+    public boolean buffActivationSet(Player player, int planet, int activationOption, int tier) {
+        if (player == null || !player.isAdmin()) {
+            return false;
+        }
+
+        if (planet < 0 || planet > 2) {
+            Service.gI().sendThongBao(player, "Hành tinh không hợp lệ (0: Trái Đất, 1: Namếc, 2: Xayda).");
+            return false;
+        }
+
+        if (tier < 1 || tier > 12) {
+            Service.gI().sendThongBao(player, "Cấp đồ (tier) phải từ 1 đến 12.");
+            return false;
+        }
+
+        if (!isAnyActivationOption(activationOption)) {
+            Service.gI().sendThongBao(player, "Set kích hoạt không hợp lệ: " + activationOption);
+            return false;
+        }
+
+        int rewardCount = 5;
+        if (InventoryService.gI().getCountEmptyBag(player) < rewardCount) {
+            Service.gI().sendThongBao(player,
+                    "Cần ít nhất " + rewardCount + " ô trống trong hành trang để nhận Set kích hoạt.");
+            return false;
+        }
+
+        try {
+            ActivationConfig config = loadConfig(planet);
+            List<Item> rewards = createSpecificRewards(planet, activationOption, config.bonusOptions, tier);
+            if (rewards.size() != rewardCount) {
+                throw new IllegalStateException("Không thể tạo đủ 5 món Set kích hoạt.");
+            }
+
+            for (Item reward : rewards) {
+                if (!InventoryService.gI().addItemBag(player, reward)) {
+                    throw new IllegalStateException("Không thể thêm trang bị Set kích hoạt vào hành trang.");
+                }
+            }
+
+            InventoryService.gI().sendItemBags(player);
+            String setName = getSetName(activationOption);
+            Service.gI().sendThongBao(player,
+                    "Admin đã nhận đủ 5 món " + setName + " (Cấp " + tier + ").");
+            return true;
+        } catch (Exception e) {
+            Logger.logException(ActivationRewardService.class, e);
+            Service.gI().sendThongBao(player, "Không thể buff Set kích hoạt lúc này.");
+            return false;
+        }
+    }
+
+    public List<Item> createSpecificRewards(int planet, int activationOption,
+            List<BonusOption> bonusOptions, int tier) {
+        int normalizedPlanet = normalizePlanet(planet);
+        int clampedTier = Math.max(1, Math.min(12, tier));
+        List<Item> rewards = new ArrayList<>();
+        for (int slot = 0; slot < ITEM_IDS[normalizedPlanet].length; slot++) {
+            int[] candidates = ITEM_IDS[normalizedPlanet][slot];
+            int tierIndex = Math.min(clampedTier - 1, candidates.length - 1);
+            int itemId = candidates[Math.max(0, tierIndex)];
+            Item reward = ItemService.gI().createItemSKH(itemId, activationOption);
+            if (reward == null || reward.template == null) {
+                throw new IllegalStateException("Item SKH không tồn tại: " + itemId);
+            }
+            removeCrystalStarOptions(reward);
+            if (bonusOptions != null) {
+                for (BonusOption bonus : bonusOptions) {
+                    if (!isCrystalStarOption(bonus.id)) {
+                        upsertOption(reward, bonus.id, bonus.param);
+                    }
+                }
+            }
+            removeCrystalStarOptions(reward);
+            reward.content = reward.getContent();
+            reward.info = reward.getInfo();
+            rewards.add(reward);
+        }
+        return rewards;
     }
 
     private void open(Player player, Item container, boolean fullSet) {

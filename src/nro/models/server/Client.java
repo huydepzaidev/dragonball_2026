@@ -176,14 +176,14 @@ public class Client implements Runnable {
         return false;
     }
 
-    private synchronized List<Player> snapshotPlayers() {
+    public synchronized List<Player> snapshotPlayers() {
         return new ArrayList<>(players);
     }
 
     public record MaintenanceKickResult(int targeted, int kicked, int failed) {
     }
 
-    public Player getPlayer(long playerId) {
+    public synchronized Player getPlayer(long playerId) {
         return this.players_id.get(playerId);
     }
 

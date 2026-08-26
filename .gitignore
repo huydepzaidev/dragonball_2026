@@ -2,3 +2,12 @@
 /removed-control-panel-*/
 /ui-backup-*/
 /jar-backups/
+/jar-backup/
+/*.jar
+!dist/NgocRongOnline.jar
+!lib/*.jar
+debug.log
+*.log
+sources.txt
+build/
+

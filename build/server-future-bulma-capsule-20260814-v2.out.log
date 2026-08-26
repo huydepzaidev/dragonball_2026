@@ -1,8 +1,0 @@
-[0;33mError in class: [0m[0;31mnro.models.server.ServerManager[0m[0;33m - in method: [0m[0;31mmain
-[0m[0;31mSuccessfully loaded file properties!
-[0m[0;33mError details:
-[0m[0;31mjava.util.NoSuchElementException: No line found
-[0m[0;31m	at java.base/java.util.Scanner.nextLine(Scanner.java:1660)
-[0m[0;31m	at nro.models.server.ServerManager.activeCommandLine(ServerManager.java:310)
-[0m[0;31m	at nro.models.server.ServerManager.main(ServerManager.java:96)
-[0m--------------------------------------------------------

@@ -15236,5 +15236,142 @@ ALTER TABLE `settings`
 COMMIT;
 -- END MIGRATION: 2026_08_16_1110_expand_download_links_settings.sql
 
--- END CONSOLIDATED PROJECT MIGRATIONS
+-- BEGIN MIGRATION: 2026_08_24_2124_default_manual_top_rewards.sql
+-- Add safe defaults for manual rankings that have never been configured.
+-- Existing reward rows are preserved exactly as they are.
 
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+INSERT INTO `top_reward_config`
+    (`ranking_key`, `rank_position`, `title`, `message`, `sender_name`, `rewards_json`, `updated_by`)
+SELECT
+    rankings.`ranking_key`,
+    ranks.`rank_position`,
+    CASE
+        WHEN ranks.`rank_position` BETWEEN 1 AND 3
+            THEN CONCAT('Quà Top ', ranks.`rank_position`)
+        ELSE 'Quà Top 4–10'
+    END,
+    CASE
+        WHEN ranks.`rank_position` BETWEEN 1 AND 3
+            THEN CONCAT('Chúc mừng bạn đã đạt thứ hạng ', ranks.`rank_position`, ' trong sự kiện.')
+        ELSE 'Chúc mừng bạn đã đạt thứ hạng cao trong sự kiện.'
+    END,
+    'Admin',
+    CASE
+        WHEN ranks.`rank_position` = 1
+            THEN '[{"id":1538,"quantity":2,"options":[{"id":30,"param":0}]}]'
+        WHEN ranks.`rank_position` = 2
+            THEN '[{"id":1538,"quantity":1,"options":[{"id":30,"param":0}]}]'
+        WHEN ranks.`rank_position` = 3
+            THEN '[{"id":1559,"quantity":5,"options":[{"id":30,"param":0}]}]'
+        ELSE '[{"id":1559,"quantity":1,"options":[{"id":30,"param":0}]}]'
+    END,
+    NULL
+FROM (
+    SELECT 'childrens_day' AS `ranking_key`
+    UNION ALL SELECT 'sugarcane'
+    UNION ALL SELECT 'fruit_ice_cream'
+    UNION ALL SELECT 'top_up'
+) AS rankings
+CROSS JOIN (
+    SELECT 1 AS `rank_position`
+    UNION ALL SELECT 2
+    UNION ALL SELECT 3
+    UNION ALL SELECT 4
+    UNION ALL SELECT 5
+    UNION ALL SELECT 6
+    UNION ALL SELECT 7
+    UNION ALL SELECT 8
+    UNION ALL SELECT 9
+    UNION ALL SELECT 10
+) AS ranks
+LEFT JOIN `top_reward_config` existing
+    ON existing.`ranking_key` = rankings.`ranking_key`
+    AND existing.`rank_position` = ranks.`rank_position`
+WHERE existing.`id` IS NULL;
+
+COMMIT;
+-- END MIGRATION: 2026_08_24_2124_default_manual_top_rewards.sql
+
+-- BEGIN MIGRATION: 2026_08_26_1026_fix_item_time_round_trip.sql
+-- Version player item-time data and repair the shifted account 1111 snapshot.
+-- Re-runnable: recovery only targets the known impossible TDLT signature and
+-- the version marker is appended only to unversioned 33-field arrays.
+
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `player` p
+JOIN `account` a ON a.`id`=p.`account_id`
+SET p.`data_item_time`=JSON_SET(
+        p.`data_item_time`,
+        '$[15]', CASE
+            WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[15]')), '0') AS UNSIGNED)=0
+                 AND CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[16]')), '0') AS UNSIGNED) BETWEEN 1 AND 600000
+                THEN CAST(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[16]')) AS UNSIGNED)
+            WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[15]')), '0') AS UNSIGNED)=0
+                THEN 570155
+            ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[15]')) AS UNSIGNED)
+        END,
+        '$[16]', CASE
+            WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[15]')), '0') AS UNSIGNED)=0
+                THEN 6327
+            ELSE CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[16]')), '0') AS UNSIGNED)
+        END,
+        '$[17]', 0,
+        '$[22]', CASE
+            WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[22]')), '0') AS UNSIGNED)=0
+                THEN 1776335
+            ELSE CAST(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[22]')) AS UNSIGNED)
+        END,
+        '$[23]', CASE
+            WHEN CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[22]')), '0') AS UNSIGNED)=0
+                THEN 8060
+            ELSE CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[23]')), '0') AS UNSIGNED)
+        END
+    )
+WHERE a.`username`='1111'
+  AND JSON_VALID(p.`data_item_time`)
+  AND JSON_TYPE(p.`data_item_time`)='ARRAY'
+  AND JSON_LENGTH(p.`data_item_time`)=33
+  AND CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(p.`data_item_time`, '$[17]')), '0') AS UNSIGNED)>500;
+
+UPDATE `player`
+SET `data_item_time`=JSON_SET(`data_item_time`, '$[17]', 0)
+WHERE JSON_VALID(`data_item_time`)
+  AND JSON_TYPE(`data_item_time`)='ARRAY'
+  AND JSON_LENGTH(`data_item_time`)>=18
+  AND CAST(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(`data_item_time`, '$[17]')), '0') AS UNSIGNED)>500;
+
+UPDATE `player`
+SET `data_item_time`=JSON_ARRAY_APPEND(`data_item_time`, '$', 0, '$', 2)
+WHERE JSON_VALID(`data_item_time`)
+  AND JSON_TYPE(`data_item_time`)='ARRAY'
+  AND JSON_LENGTH(`data_item_time`)=32;
+
+UPDATE `player`
+SET `data_item_time`=JSON_ARRAY_APPEND(`data_item_time`, '$', 2)
+WHERE JSON_VALID(`data_item_time`)
+  AND JSON_TYPE(`data_item_time`)='ARRAY'
+  AND JSON_LENGTH(`data_item_time`)=33;
+
+COMMIT;
+-- END MIGRATION: 2026_08_26_1026_fix_item_time_round_trip.sql
+
+-- BEGIN MIGRATION: 2026_08_26_1247_fix_item_45_glove_type.sql
+-- Restore Găng thun Pico to the normal glove equipment type.
+-- Re-runnable: fresh databases already use type 2, while drifted databases converge to it.
+SET NAMES utf8mb4;
+START TRANSACTION;
+
+UPDATE `item_template`
+SET `TYPE`=2
+WHERE `id`=45
+  AND `TYPE`<>2;
+
+COMMIT;
+-- END MIGRATION: 2026_08_26_1247_fix_item_45_glove_type.sql
+
+-- END CONSOLIDATED PROJECT MIGRATIONS

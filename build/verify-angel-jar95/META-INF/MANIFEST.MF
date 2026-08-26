@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: nro.models.server.ServerManager
-Created-By: 21.0.12 (Oracle Corporation)
-

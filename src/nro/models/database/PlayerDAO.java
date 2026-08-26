@@ -1,9 +1,8 @@
 package nro.models.database;
 
 import nro.models.data.LocalManager;
-import nro.models.consts.ConstItem;
 import nro.models.item.Item;
-import nro.models.item.ItemTime;
+import nro.models.item.ItemTimeDataCodec;
 import nro.models.player.Friend;
 import nro.models.player.Fusion;
 import nro.models.player.Inventory;
@@ -310,29 +309,7 @@ public class PlayerDAO {
             String intrinsic = dataArray.toJSONString();
             dataArray.clear();
 
-            dataArray.add(0); //bổ huyết
-            dataArray.add(0); //bổ khí
-            dataArray.add(0); //giáp xên
-            dataArray.add(0); //cuồng nộ
-            dataArray.add(0); //ẩn danh
-            dataArray.add(0); //bổ huyết
-            dataArray.add(0); //bổ khí
-            dataArray.add(0); //giáp xên
-            dataArray.add(0); //cuồng nộ
-            dataArray.add(0); //ẩn danh
-            dataArray.add(0); //mở giới hạn sức mạnh
-            dataArray.add(0); //máy dò
-            dataArray.add(0); //thức ăn cold
-            dataArray.add(0); //icon thức ăn cold
-            dataArray.add(0); //
-            dataArray.add(0); //
-            dataArray.add(0); //
-            dataArray.add(0); //
-            dataArray.add(0); //
-            dataArray.add(0); //
-            dataArray.add(0); //
-            String itemTime = dataArray.toJSONString();
-            dataArray.clear();
+            String itemTime = ItemTimeDataCodec.emptyData().toJSONString();
             int taskIndex = (Manager.TEST) ? 28 : 0;
             dataArray.add(taskIndex); //id nhiệm vụ
             dataArray.add(0); //index nhiệm vụ con
@@ -699,42 +676,9 @@ public class PlayerDAO {
                 dataArray.clear();
 
                 //data item time
-                dataArray.add((player.itemTime.isUseBoHuyet ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoHuyet)) : 0));
-                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.BO_HUYET_2));
-                dataArray.add((player.itemTime.isUseBoKhi ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeBoKhi)) : 0));
-                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.BO_KHI_2));
-                dataArray.add((player.itemTime.isUseGiapXen ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeGiapXen)) : 0));
-                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.GIAP_XEN_BO_HUNG_2));
-                dataArray.add((player.itemTime.isUseCuongNo ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeCuongNo)) : 0));
-                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.CUONG_NO_2));
-                dataArray.add((player.itemTime.isUseAnDanh ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeAnDanh)) : 0));
-                dataArray.add(player.itemTime.getRemainingSuperItemTime(ConstItem.AN_DANH_2));
-                dataArray.add((player.itemTime.isOpenPower ? (ItemTime.TIME_OPEN_POWER - (System.currentTimeMillis() - player.itemTime.lastTimeOpenPower)) : 0));
-                dataArray.add(player.itemTime.getRemainingMayDoTime());
-                dataArray.add((player.itemTime.isUseCoBonLa ? (ItemTime.TIME_CO_BON_LA - (System.currentTimeMillis() - player.itemTime.lastTimeUseCoBonLa)) : 0));
-                dataArray.add((player.itemTime.isUseKhoBauX2 ? (ItemTime.TIME_MAY_DO2 - (System.currentTimeMillis() - player.itemTime.lastTimeUseKhoBauX2)) : 0));
-                dataArray.add((player.itemTime.isUseBuaSanta ? (ItemTime.TIME_BUA_SANTA - (System.currentTimeMillis() - player.itemTime.lastTimeBuaSanta)) : 0));
-
-                dataArray.add((player.itemTime.isEatMeal ? (ItemTime.TIME_EAT_MEAL - (System.currentTimeMillis() - player.itemTime.lastTimeEatMeal)) : 0));
-                dataArray.add(player.itemTime.iconMeal);
-                dataArray.add((player.itemTime.isUseTDLT ? ((player.itemTime.timeTDLT - (System.currentTimeMillis() - player.itemTime.lastTimeUseTDLT)) / 60 / 1000) : 0));
-                dataArray.add((player.itemTime.isUseCMS ? (ItemTime.TIME_CMS - (System.currentTimeMillis() - player.itemTime.lastTimeUseCMS)) : 0));
-                dataArray.add((player.itemTime.isUseGTPT ? (ItemTime.TIME_ITEM - (System.currentTimeMillis() - player.itemTime.lastTimeUseGTPT)) : 0));
-                dataArray.add((player.itemTime.isUseDK ? (ItemTime.TIME_DK - (System.currentTimeMillis() - player.itemTime.lastTimeUseDK)) : 0));
-                dataArray.add((player.itemTime.isUseRX ? ((player.itemTime.timeRX - (System.currentTimeMillis() - player.itemTime.lastTimeUseRX)) / 60 / 1000) : 0));
-                dataArray.add(player.itemTime.getRemainingMeal2Time());
-                dataArray.add(player.itemTime.iconMeal2);
-                dataArray.add(0);
-                dataArray.add((player.itemTime.isUseNCD ? (ItemTime.TIME_NCD - (System.currentTimeMillis() - player.itemTime.lastTimeUseNCD)) : 0));
-                dataArray.add((player.itemTime.isUseNuocMia1 ? (ItemTime.TIME_NUOC_MIA1 - (System.currentTimeMillis() - player.itemTime.lastTimeUseNuocMia1)) : 0));
-                dataArray.add((player.itemTime.isUseNuocMia2 ? (ItemTime.TIME_NUOC_MIA2 - (System.currentTimeMillis() - player.itemTime.lastTimeUseNuocMia2)) : 0));
-                dataArray.add((player.itemTime.isUseNuocMia3 ? (ItemTime.TIME_NUOC_MIA3 - (System.currentTimeMillis() - player.itemTime.lastTimeUseNuocMia3)) : 0));
-                dataArray.add((player.itemTime.isUseKilis ? (ItemTime.TIME_KILIS - (System.currentTimeMillis() - player.itemTime.lastTimeUseKilis)) : 0));
-                dataArray.add(0);
-                dataArray.add(0);
-                dataArray.add(player.itemTime.getRemainingTraiDuaTime());
-                String itemTime = dataArray.toJSONString();
-                dataArray.clear();
+                String itemTime = ItemTimeDataCodec
+                        .encode(player.itemTime, System.currentTimeMillis())
+                        .toJSONString();
 
                 //data nhiệm vụ
                 dataArray.add(player.playerTask.taskMain.id);

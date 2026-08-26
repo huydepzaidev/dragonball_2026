@@ -34,6 +34,8 @@ public class ItemTime {
     public static final long TIME_TRAI_DUA_PER_USE = 30 * 60 * 1000L;
     public static final long MAX_TIME_TRAI_DUA = 500 * 60 * 1000L;
     public static final int TIME_EAT_MEAL = 600000;
+    public static final long TIME_MEAL_PER_USE = TIME_EAT_MEAL;
+    public static final long MAX_TIME_MEAL = 120 * 60 * 1000L;
     public static final long TIME_MEAL2_PER_USE = TIME_EAT_MEAL;
     public static final long MAX_TIME_MEAL2 = 120 * 60 * 1000L;
     public static final int TIME_CMS = 3600000;
@@ -130,8 +132,10 @@ public class ItemTime {
 
     public void update() {
         if (isEatMeal) {
-            if (Util.canDoWithTime(lastTimeEatMeal, TIME_EAT_MEAL)) {
+            if (getRemainingMealTime() <= 0) {
                 isEatMeal = false;
+                iconMeal = 0;
+                lastTimeEatMeal = 0;
                 Service.gI().point(player);
             }
         }
@@ -250,13 +254,13 @@ public class ItemTime {
             }
         }
         if (isUseNuocMia2) {
-            if (Util.canDoWithTime(lastTimeUseNuocMia1, TIME_NUOC_MIA2)) {
+            if (Util.canDoWithTime(lastTimeUseNuocMia2, TIME_NUOC_MIA2)) {
                 isUseNuocMia2 = false;
                 Service.gI().point(player);
             }
         }
         if (isUseNuocMia3) {
-            if (Util.canDoWithTime(lastTimeUseNuocMia1, TIME_NUOC_MIA3)) {
+            if (Util.canDoWithTime(lastTimeUseNuocMia3, TIME_NUOC_MIA3)) {
                 isUseNuocMia3 = false;
                 Service.gI().point(player);
             }
@@ -382,6 +386,45 @@ public class ItemTime {
         }
     }
 
+    public long getRemainingMealTime() {
+        return getRemainingMealTime(System.currentTimeMillis());
+    }
+
+    public long getRemainingMealTime(long now) {
+        if (!isEatMeal) {
+            return 0;
+        }
+        return Math.max(0, MAX_TIME_MEAL - (now - lastTimeEatMeal));
+    }
+
+    /**
+     * Adds one 10-minute serving from the Bill divine-equipment food group.
+     * All five foods share the same +10% damage effect, so their time can mix.
+     *
+     * @return time added, or zero when another full serving would exceed 120 minutes
+     */
+    public long addMealTime(int iconId, long now) {
+        long remaining = getRemainingMealTime(now);
+        if (remaining > MAX_TIME_MEAL - TIME_MEAL_PER_USE) {
+            return 0;
+        }
+        setMealRemainingTime(iconId, remaining + TIME_MEAL_PER_USE, now);
+        return TIME_MEAL_PER_USE;
+    }
+
+    public void restoreMealTime(int iconId, long remaining, long now) {
+        setMealRemainingTime(iconId,
+                Math.max(0, Math.min(MAX_TIME_MEAL, remaining)), now);
+    }
+
+    private void setMealRemainingTime(int iconId, long remaining, long now) {
+        isEatMeal = remaining > 0 && iconId > 0;
+        iconMeal = isEatMeal ? iconId : 0;
+        lastTimeEatMeal = isEatMeal
+                ? now - (MAX_TIME_MEAL - remaining)
+                : 0;
+    }
+
     public long getRemainingMeal2Time() {
         return getRemainingMeal2Time(System.currentTimeMillis());
     }
@@ -481,6 +524,14 @@ public class ItemTime {
         return newRemaining;
     }
 
+    public void restoreBuaSantaTime(long remaining, long now) {
+        long safeRemaining = Math.max(0, remaining);
+        isUseBuaSanta = safeRemaining > 0;
+        lastTimeBuaSanta = isUseBuaSanta
+                ? now - (TIME_BUA_SANTA - safeRemaining)
+                : 0;
+    }
+
     public long getRemainingTraiDuaTime() {
         return getRemainingTraiDuaTime(System.currentTimeMillis());
     }
@@ -505,5 +556,12 @@ public class ItemTime {
             timeLengthTraiDua = newRemaining;
         }
         return added;
+    }
+
+    public void restoreTraiDuaTime(long remaining, long now) {
+        long safeRemaining = Math.max(0, Math.min(MAX_TIME_TRAI_DUA, remaining));
+        isUseTraiDua = safeRemaining > 0;
+        lastTimeUseTraiDua = isUseTraiDua ? now : 0;
+        timeLengthTraiDua = safeRemaining;
     }
 }

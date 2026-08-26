@@ -1,6 +1,7 @@
 package nro.models.server;
 
 import nro.models.services.Service;
+import nro.models.utils.Functions;
 import nro.models.utils.Logger;
 
 /**
@@ -38,7 +39,9 @@ public class Maintenance implements Runnable {
         GameConfigService.gI().markAdminOnlyMode(true);
         String message = "Server bắt đầu bảo trì. Dữ liệu sẽ được lưu và "
                 + "người chơi sẽ bị ngắt kết nối; chỉ admin được phép đăng nhập.";
+        Service.gI().sendMessageServer(message);
         Service.gI().sendThongBaoAllPlayer(message);
+        Functions.sleep(300);
         Logger.log(Logger.YELLOW, message + "\n");
         Client.MaintenanceKickResult result
                 = Client.gI().kickAllNonAdminForMaintenance();

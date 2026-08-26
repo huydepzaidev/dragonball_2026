@@ -1760,10 +1760,21 @@ public class UseItem {
             case 665: //kem dâu
             case 666: //mì ly
             case 667: //sushi
-                pl.itemTime.lastTimeEatMeal = System.currentTimeMillis();
-                pl.itemTime.isEatMeal = true;
-                ItemTimeService.gI().removeItemTime(pl, pl.itemTime.iconMeal);
-                pl.itemTime.iconMeal = item.template.iconID;
+                int previousMealIcon = pl.itemTime.iconMeal;
+                long addedMealTime = pl.itemTime.addMealTime(
+                        item.template.iconID, System.currentTimeMillis());
+                if (addedMealTime <= 0) {
+                    Service.gI().sendThongBao(pl,
+                            "Thời gian " + item.template.name + " đã đạt tối đa 120 phút");
+                    return;
+                }
+                if (previousMealIcon > 0 && previousMealIcon != item.template.iconID) {
+                    ItemTimeService.gI().removeItemTime(pl, previousMealIcon);
+                }
+                long remainingMealMinutes = Math.max(1,
+                        pl.itemTime.getRemainingMealTime() / 60_000);
+                Service.gI().sendThongBao(pl,
+                        item.template.name + " còn " + remainingMealMinutes + " phút");
                 break;
             case ConstItem.CUA_RANG_ME:
             case ConstItem.BACH_TUOC_NUONG:

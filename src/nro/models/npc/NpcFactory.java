@@ -55,6 +55,7 @@ import nro.models.npc_list.DauThan;
 import nro.models.npc_list.OngMoori;
 import nro.models.npc_list.DaiThienSu;
 import nro.models.npc_list.GokuSSJ2;
+import nro.models.services.ActivationRewardService;
 import nro.models.services.ClanService;
 import nro.models.services.Service;
 import nro.models.services.ItemService;
@@ -521,6 +522,11 @@ public class NpcFactory {
                                 Input.gI().createFormFindPlayer(player);
                             case 4 ->
                                 BossManager.gI().showListBoss(player);
+                            case 5 -> {
+                                if (player.isAdmin()) {
+                                    ActivationRewardService.gI().buffVipSetForAdmin(player);
+                                }
+                            }
                         }
                     }
                     case ConstNpc.CONFIRM_DISSOLUTION_CLAN -> {

@@ -5,14 +5,13 @@ import nro.models.radar.OptionCard;
 import nro.models.radar.Card;
 import nro.models.data.LocalManager;
 import nro.models.consts.ConstPlayer;
-import nro.models.consts.ConstItem;
 import nro.models.data.DataGame;
 import nro.models.clan.Clan;
 import nro.models.clan.ClanMember;
 import nro.models.daily_Giftcode.DailyGiftData;
 import nro.models.daily_Giftcode.DailyGiftService;
 import nro.models.item.Item;
-import nro.models.item.ItemTime;
+import nro.models.item.ItemTimeDataCodec;
 import nro.models.npc.MabuEgg;
 import nro.models.npc.MagicTree;
 import nro.models.player.Enemy;
@@ -569,153 +568,10 @@ public class MrBlue {
             dataArray.clear();
 
             //data item time
-            dataArray = (JSONArray) JSONValue.parse(rs.getString("data_item_time"));
-            int timeUseTDLT = 0;
-            int timeOpenPower = 0;
-            int timeMayDo = 0;
-            long timeCoBonLa= 0;
-            int timeKhoBauX2 = 0;
-            int timeBuaSanta = 0;
-            int timeMeal = 0;
-            int iconMeal = 0;
-            int timeUseCMS = 0;
-            int timeUseGTPT = 0;
-            int timeUseDK = 0;
-            int timeUseRX = 0;
-            long timeMeal2 = 0;
-            int iconMeal2 = 0;
-            int timeUseNCD = 0;
-            long timeKilis = 0;
-            long timeNuocMia1 = 0;
-            long timeNuocMia2 = 0;
-            long timeNuocMia3 = 0;
-            long timeTraiDua = 0;
-            int timeBoHuyet = Integer.parseInt(String.valueOf(dataArray.get(0)));
-            int timeBoHuyet2 = Integer.parseInt(String.valueOf(dataArray.get(1)));
-            int timeBoKhi = Integer.parseInt(String.valueOf(dataArray.get(2)));
-            int timeBoKhi2 = Integer.parseInt(String.valueOf(dataArray.get(3)));
-            int timeGiapXen = Integer.parseInt(String.valueOf(dataArray.get(4)));
-            int timeGiapXen2 = Integer.parseInt(String.valueOf(dataArray.get(5)));
-            int timeCuongNo = Integer.parseInt(String.valueOf(dataArray.get(6)));
-            int timeCuongNo2 = Integer.parseInt(String.valueOf(dataArray.get(7)));
-            int timeAnDanh = Integer.parseInt(String.valueOf(dataArray.get(8)));
-            int timeAnDanh2 = Integer.parseInt(String.valueOf(dataArray.get(9)));
-            if (dataArray.size() > 10) {
-                timeOpenPower = Integer.parseInt(String.valueOf(dataArray.get(10)));
-            }
-            if (dataArray.size() > 11) {
-                timeMayDo = Integer.parseInt(String.valueOf(dataArray.get(11)));
-            }
-            if (dataArray.size() > 12) {
-                timeCoBonLa = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(12))));
-            }
-            if (dataArray.size() > 13) {
-                timeKhoBauX2 = Integer.parseInt(String.valueOf(dataArray.get(13)));
-            }
-            if (dataArray.size() > 14) {
-                timeMeal = Integer.parseInt(String.valueOf(dataArray.get(14)));
-            }
-            if (dataArray.size() > 15) {
-                iconMeal = Integer.parseInt(String.valueOf(dataArray.get(15)));
-            }
-            if (dataArray.size() > 16) {
-                timeUseTDLT = Integer.parseInt(String.valueOf(dataArray.get(16)));
-            }
-            if (dataArray.size() > 17) {
-                timeUseCMS = Integer.parseInt(String.valueOf(dataArray.get(17)));
-            }
-            if (dataArray.size() > 18) {
-                timeUseGTPT = Integer.parseInt(String.valueOf(dataArray.get(18)));
-            }
-            if (dataArray.size() > 19) {
-                timeUseDK = Integer.parseInt(String.valueOf(dataArray.get(19)));
-            }
-            if (dataArray.size() > 20) {
-                timeUseRX = Integer.parseInt(String.valueOf(dataArray.get(20)));
-            }
-            if (dataArray.size() > 21) {
-                timeMeal2 = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(21))));
-            }
-            if (dataArray.size() > 22) {
-                iconMeal2 = Integer.parseInt(String.valueOf(dataArray.get(22)));
-            }
-            if (dataArray.size() > 23) {
-            }
-            if (dataArray.size() > 24) {
-                timeUseNCD = Integer.parseInt(String.valueOf(dataArray.get(24)));
-            }
-            if (dataArray.size() > 25) {
-                timeBuaSanta = Integer.parseInt(String.valueOf(dataArray.get(25)));
-            }
-            if (dataArray.size() > 26) {
-                timeKilis = (int) Long.parseLong(String.valueOf(dataArray.get(26)));
-            }
-            if (dataArray.size() > 27) {
-                timeNuocMia1 = (int) Long.parseLong(String.valueOf(dataArray.get(27)));
-            }
-            if (dataArray.size() > 28) {
-                timeNuocMia2 = (int) Long.parseLong(String.valueOf(dataArray.get(28)));
-            }
-            if (dataArray.size() > 29) {
-                timeNuocMia3 = (int) Long.parseLong(String.valueOf(dataArray.get(28)));
-            }
-            if (dataArray.size() > 30) {
-            }
-            if (dataArray.size() > 32) {
-                timeTraiDua = Math.max(0, Long.parseLong(String.valueOf(dataArray.get(32))));
-            }
-
-            player.itemTime.lastTimeBoHuyet = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeBoHuyet);
-            player.itemTime.lastTimeBoKhi = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeBoKhi);
-            player.itemTime.lastTimeGiapXen = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeGiapXen);
-            player.itemTime.lastTimeCuongNo = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeCuongNo);
-            player.itemTime.lastTimeAnDanh = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeAnDanh);
-            long superItemRestoreTime = System.currentTimeMillis();
-            player.itemTime.restoreSuperItemTime(ConstItem.BO_HUYET_2, timeBoHuyet2, superItemRestoreTime);
-            player.itemTime.restoreSuperItemTime(ConstItem.BO_KHI_2, timeBoKhi2, superItemRestoreTime);
-            player.itemTime.restoreSuperItemTime(ConstItem.GIAP_XEN_BO_HUNG_2, timeGiapXen2, superItemRestoreTime);
-            player.itemTime.restoreSuperItemTime(ConstItem.CUONG_NO_2, timeCuongNo2, superItemRestoreTime);
-            player.itemTime.restoreSuperItemTime(ConstItem.AN_DANH_2, timeAnDanh2, superItemRestoreTime);
-            player.itemTime.lastTimeOpenPower = System.currentTimeMillis() - (ItemTime.TIME_OPEN_POWER - timeOpenPower);
-            player.itemTime.restoreMayDoTime(timeMayDo, System.currentTimeMillis());
-            player.itemTime.lastTimeUseCoBonLa = System.currentTimeMillis() - (ItemTime.TIME_CO_BON_LA - timeCoBonLa);
-            player.itemTime.lastTimeUseKhoBauX2 = System.currentTimeMillis() - (ItemTime.TIME_MAY_DO2 - timeKhoBauX2);
-            player.itemTime.lastTimeBuaSanta = System.currentTimeMillis() - (ItemTime.TIME_BUA_SANTA - timeBuaSanta);
-            player.itemTime.lastTimeEatMeal = System.currentTimeMillis() - (ItemTime.TIME_EAT_MEAL - timeMeal);
-            player.itemTime.timeTDLT = timeUseTDLT * 60 * 1000;
-            player.itemTime.lastTimeUseTDLT = System.currentTimeMillis();
-            player.itemTime.lastTimeUseCMS = System.currentTimeMillis() - (ItemTime.TIME_CMS - timeUseCMS);
-            player.itemTime.lastTimeUseGTPT = System.currentTimeMillis() - (ItemTime.TIME_ITEM - timeUseGTPT);
-            player.itemTime.lastTimeUseDK = System.currentTimeMillis() - (ItemTime.TIME_DK - timeUseDK);
-            player.itemTime.timeRX = timeUseRX * 60 * 1000;
-            player.itemTime.lastTimeUseRX = System.currentTimeMillis();
-            player.itemTime.lastTimeUseNCD = System.currentTimeMillis() - (ItemTime.TIME_NCD - timeUseNCD);
-            player.itemTime.lastTimeUseTraiDua = System.currentTimeMillis();
-            player.itemTime.timeLengthTraiDua = Math.min(ItemTime.MAX_TIME_TRAI_DUA, timeTraiDua);
-
-            player.itemTime.iconMeal = iconMeal;
-            player.itemTime.isEatMeal = timeMeal != 0;
-            player.itemTime.isUseBoHuyet = timeBoHuyet != 0;
-            player.itemTime.isUseBoKhi = timeBoKhi != 0;
-            player.itemTime.isUseGiapXen = timeGiapXen != 0;
-            player.itemTime.isUseCuongNo = timeCuongNo != 0;
-            player.itemTime.isUseAnDanh = timeAnDanh != 0;
-            player.itemTime.isOpenPower = timeOpenPower != 0;
-            player.itemTime.isUseCoBonLa = timeCoBonLa > 0;
-            player.itemTime.isUseKhoBauX2 = timeKhoBauX2 != 0;
-            player.itemTime.isUseBuaSanta = timeBuaSanta != 0;
-            player.itemTime.isUseTDLT = timeUseTDLT != 0;
-            player.itemTime.isUseCMS = timeUseCMS != 0;
-            player.itemTime.isUseGTPT = timeUseGTPT != 0;
-            player.itemTime.isUseDK = timeUseDK != 0;
-            player.itemTime.isUseRX = timeUseRX != 0;
-            player.itemTime.restoreMeal2Time(iconMeal2, timeMeal2, System.currentTimeMillis());
-            player.itemTime.isUseNCD = timeUseNCD != 0;
-            player.itemTime.isUseKilis = timeKilis != 0;
-            player.itemTime.isUseNuocMia1 = timeNuocMia1 != 0;
-            player.itemTime.isUseNuocMia2 = timeNuocMia2 != 0;
-            player.itemTime.isUseNuocMia3 = timeNuocMia3 != 0;
-            player.itemTime.isUseTraiDua = timeTraiDua > 0;
+            Object rawItemTime = JSONValue.parse(rs.getString("data_item_time"));
+            dataArray = rawItemTime instanceof JSONArray
+                    ? (JSONArray) rawItemTime : new JSONArray();
+            ItemTimeDataCodec.restore(player.itemTime, dataArray, System.currentTimeMillis());
             dataArray.clear();
 
             //data nhiệm vụ
