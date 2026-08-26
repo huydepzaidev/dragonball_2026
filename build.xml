@@ -70,4 +70,11 @@
     nbproject/build-impl.xml file. 
 
     -->
+    <target name="-post-jar">
+        <exec executable="cmd.exe" failonerror="false">
+            <arg value="/c"/>
+            <arg value="build.bat"/>
+            <arg value="-SkipTests"/>
+        </exec>
+    </target>
 </project>
