@@ -248,10 +248,12 @@ public class Input {
                                     ServerLog.logAdmin(pBuffItem.name, slItemBuff);
                                     break;
                                 case -3:
-                                    pBuffItem.inventory.ruby = Math.min(pBuffItem.inventory.ruby + slItemBuff, 2000000000);
-                                    txtBuff += slItemBuff + " ngọc khóa\b";
-                                    Service.gI().sendMoney(pBuffItem);
-                                    ServerLog.logAdmin(pBuffItem.name, slItemBuff);
+                                    synchronized (pBuffItem) {
+                                        pBuffItem.inventory.ruby = Math.min(pBuffItem.inventory.ruby + slItemBuff, 2000000000);
+                                        txtBuff += slItemBuff + " ngọc khóa\b";
+                                        Service.gI().sendMoney(pBuffItem);
+                                        ServerLog.logAdmin(pBuffItem.name, slItemBuff);
+                                    }
                                     break;
                                 default:
                                     Item itemBuffTemplate = ItemService.gI().createNewItem((short) idItemBuff);
@@ -541,19 +543,25 @@ public class Input {
                     Player pl = Client.gI().getPlayer(text[0]);
                     int numruby = Integer.parseInt((text[1]));
                     if (pl != null) {
-                        if (numruby > 0 && player.inventory.ruby >= numruby) {
-                            Item item = InventoryService.gI().findItemBag(player, 2002);
-                            player.inventory.subGem(numruby);
-                            PlayerService.gI().sendInfoHpMpMoney(player);
-                            pl.inventory.ruby += numruby;
-                            PlayerService.gI().sendInfoHpMpMoney(pl);
-                            Service.gI().sendThongBao(player, "Tặng ngọc thành công");
-                            Service.gI().sendThongBao(pl,
-                                    "Bạn được " + player.name + " tặng " + numruby + " ngọc xanh");
-                            InventoryService.gI().subQuantityItemsBag(player, item, 1);
-                            InventoryService.gI().sendItemBags(player);
-                        } else {
-                            Service.gI().sendThongBao(player, "Không đủ ngọc xanh để tặng");
+                        Player firstLock = player.id < pl.id ? player : pl;
+                        Player secondLock = player.id < pl.id ? pl : player;
+                        synchronized (firstLock) {
+                            synchronized (secondLock) {
+                                if (numruby > 0 && player.inventory.ruby >= numruby) {
+                                    Item item = InventoryService.gI().findItemBag(player, 2002);
+                                    player.inventory.subGem(numruby);
+                                    PlayerService.gI().sendInfoHpMpMoney(player);
+                                    pl.inventory.ruby += numruby;
+                                    PlayerService.gI().sendInfoHpMpMoney(pl);
+                                    Service.gI().sendThongBao(player, "Tặng ngọc thành công");
+                                    Service.gI().sendThongBao(pl,
+                                            "Bạn được " + player.name + " tặng " + numruby + " ngọc xanh");
+                                    InventoryService.gI().subQuantityItemsBag(player, item, 1);
+                                    InventoryService.gI().sendItemBags(player);
+                                } else {
+                                    Service.gI().sendThongBao(player, "Không đủ ngọc xanh để tặng");
+                                }
+                            }
                         }
                     } else {
                         Service.gI().sendThongBao(player, "Người chơi không tồn tại hoặc đang offline");

@@ -435,8 +435,9 @@ public class PlayerDAO {
 
     public static boolean updatePlayer(Player player) {
         if (player != null && player.idMark.isLoadedAllDataPlayer()) {
-            long st = System.currentTimeMillis();
-            try {
+            synchronized (player) {
+                long st = System.currentTimeMillis();
+                try {
                 JSONArray dataArray = new JSONArray();
 
                 //data kim lượng
@@ -1117,7 +1118,8 @@ public class PlayerDAO {
             } catch (Exception e) {
                 Logger.logException(PlayerDAO.class, e, "Lỗi save player " + player.name);
             }
-            return false;
+                return false;
+            }
         }
         return false;
     }

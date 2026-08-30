@@ -15,40 +15,49 @@ import nro.models.task.BadgesTaskTemplate;
 public class BadgesTaskService {
 
     public static void createAndResetTask(Player player) {
-        player.dataTaskBadges.clear();
-        for (BadgesTaskTemplate BTT : Manager.TASKS_BADGES_TEMPLATE) {
-            BadgesTask data = new BadgesTask();
-            data.id = BTT.id;
-            data.count = 0;
-            data.countMax = BTT.count;
-            data.idBadgesReward = BTT.idbadgesReward;
-            player.dataTaskBadges.add(data);
+        if (player == null) return;
+        synchronized (player) {
+            player.dataTaskBadges.clear();
+            for (BadgesTaskTemplate BTT : Manager.TASKS_BADGES_TEMPLATE) {
+                BadgesTask data = new BadgesTask();
+                data.id = BTT.id;
+                data.count = 0;
+                data.countMax = BTT.count;
+                data.idBadgesReward = BTT.idbadgesReward;
+                player.dataTaskBadges.add(data);
+            }
         }
     }
 
     public static void updateDoneTask(Player player) {
-        for (BadgesTask data : player.dataTaskBadges) {
-            if (data.isDone()) {
-                for (BadgesData bg : player.dataBadges) {
-                    if (bg.idBadGes == data.idBadgesReward) {
-                        return;
+        if (player == null) return;
+        synchronized (player) {
+            for (BadgesTask data : player.dataTaskBadges) {
+                if (data.isDone()) {
+                    for (BadgesData bg : player.dataBadges) {
+                        if (bg.idBadGes == data.idBadgesReward) {
+                            return;
+                        }
                     }
+                    BadgesData danhHieu = new BadgesData(player, data.idBadgesReward, 30);
+                    player.dataBadges.add(danhHieu);
+                    data.count = 0;
                 }
-                BadgesData danhHieu = new BadgesData(player, data.idBadgesReward, 30);
-                player.dataBadges.add(danhHieu);
-                data.count = 0;
             }
         }
     }
 
     public static void updateCountBagesTask(Player player, int id, int amount) {
-        for (BadgesTask data : player.dataTaskBadges) {
-            if (data.id == id) {
-                data.count += amount;
-                if (data.count > data.countMax) {
-                    data.count = data.countMax;
+        if (player == null) return;
+        synchronized (player) {
+            for (BadgesTask data : player.dataTaskBadges) {
+                if (data.id == id) {
+                    data.count += amount;
+                    if (data.count > data.countMax) {
+                        data.count = data.countMax;
+                    }
+                    break;
                 }
-                break;
             }
         }
     }

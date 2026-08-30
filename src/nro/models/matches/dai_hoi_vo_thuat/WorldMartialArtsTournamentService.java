@@ -160,15 +160,17 @@ public class WorldMartialArtsTournamentService extends ConstTournament {
                 }
 
                 // 3. Kiểm tra phí 100 Hồng Ngọc
-                if (player.inventory.ruby < REG_RUBY_COST) {
-                    NpcService.gI().createTutorial(player, npc.tempId, npc.avartar,
-                            "Bạn không đủ Hồng Ngọc, còn thiếu " + (REG_RUBY_COST - player.inventory.ruby) + " Hồng Ngọc nữa.");
-                    return;
-                }
+                synchronized (player) {
+                    if (player.inventory.ruby < REG_RUBY_COST) {
+                        NpcService.gI().createTutorial(player, npc.tempId, npc.avartar,
+                                "Bạn không đủ Hồng Ngọc, còn thiếu " + (REG_RUBY_COST - player.inventory.ruby) + " Hồng Ngọc nữa.");
+                        return;
+                    }
 
-                // Trừ phí đăng ký
-                player.inventory.ruby -= REG_RUBY_COST;
-                Service.gI().sendMoney(player);
+                    // Trừ phí đăng ký
+                    player.inventory.ruby -= REG_RUBY_COST;
+                    Service.gI().sendMoney(player);
+                }
 
                 // Ghi nhận đăng ký
                 WorldMartialArtsTournamentManager.gI().registerPlayer(player);

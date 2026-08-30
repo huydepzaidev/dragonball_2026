@@ -50,6 +50,9 @@ public class ShopService {
     private static final byte NORMAL_SHOP = 0;
     private static final byte SPEC_SHOP = 3;
     private static final byte KINANG_SHOP = 1;
+    public static final byte WHERE_BODY = 0;
+    public static final byte WHERE_BAG = 1;
+    public static final byte WHERE_PET_BODY = 2;
     private int eventPointPrice;
 
     private static ShopService I;
@@ -509,39 +512,46 @@ public class ShopService {
     }
 
     private boolean subMoneyByItemShop(Player player, ItemShop is) {
-        int gold = 0;
-        int gem = 0;
-        int ruby = 0;
-        int coupon = 0;
-        switch (is.typeSell) {
-            case COST_GOLD ->
-                gold = is.cost;
-            case COST_GEM ->
-                gem = is.cost;
-            case COST_RUBY ->
-                ruby = is.cost;
-            case COST_COUPON ->
-                coupon = is.cost;
+        return subMoney(player, is);
+    }
+
+    private boolean subMoney(Player player, ItemShop is) {
+        if (player == null) return false;
+        synchronized (player) {
+            int gold = 0;
+            int gem = 0;
+            int ruby = 0;
+            int coupon = 0;
+            switch (is.typeSell) {
+                case COST_GOLD ->
+                    gold = is.cost;
+                case COST_GEM ->
+                    gem = is.cost;
+                case COST_RUBY ->
+                    ruby = is.cost;
+                case COST_COUPON ->
+                    coupon = is.cost;
+            }
+            if (player.inventory.gold < gold) {
+                Service.gI().sendThongBao(player, "Bạn không có đủ vàng");
+                return false;
+            } else if (player.inventory.gem < gem) {
+                Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
+                return false;
+            } else if (player.inventory.ruby < ruby) {
+                Service.gI().sendThongBao(player, "Bạn không có đủ Hồng Ngọc");
+                return false;
+            } else if (player.inventory.coupon < coupon) {
+                Service.gI().sendThongBao(player, "Bạn không có đủ điểm");
+                return false;
+            }
+            player.inventory.gold -= gold;
+            player.inventory.gem -= gem;
+            player.inventory.ruby -= ruby;
+            player.inventory.coupon -= coupon;
+            Service.gI().sendMoney(player);
+            return true;
         }
-        if (player.inventory.gold < gold) {
-            Service.gI().sendThongBao(player, "Bạn không có đủ vàng");
-            return false;
-        } else if (player.inventory.gem < gem) {
-            Service.gI().sendThongBao(player, "Bạn không có đủ ngọc");
-            return false;
-        } else if (player.inventory.ruby < ruby) {
-            Service.gI().sendThongBao(player, "Bạn không có đủ Hồng Ngọc");
-            return false;
-        } else if (player.inventory.coupon < coupon) {
-            Service.gI().sendThongBao(player, "Bạn không có đủ điểm");
-            return false;
-        }
-        player.inventory.gold -= gold;
-        player.inventory.gem -= gem;
-        player.inventory.ruby -= ruby;
-        player.inventory.coupon -= coupon;
-        Service.gI().sendMoney(player);
-        return true;
     }
 
     /**
@@ -1059,13 +1069,15 @@ public class ShopService {
                 }
                 break;
             case ConstItem.HONG_NGOC:
-                if (pl.inventory.ruby >= buySpec) {
-                    pl.inventory.ruby -= buySpec;
-                    isBuy = true;
-                } else {
-                    Service.gI().sendThongBao(pl,
-                            "B\u1ea1n kh\u00f4ng \u0111\u1ee7 H\u1ed3ng Ng\u1ecdc \u0111\u1ec3 mua v\u1eadt ph\u1ea9m");
-                    isBuy = false;
+                synchronized (pl) {
+                    if (pl.inventory.ruby >= buySpec) {
+                        pl.inventory.ruby -= buySpec;
+                        isBuy = true;
+                    } else {
+                        Service.gI().sendThongBao(pl,
+                                "B\u1ea1n kh\u00f4ng \u0111\u1ee7 H\u1ed3ng Ng\u1ecdc \u0111\u1ec3 mua v\u1eadt ph\u1ea9m");
+                        isBuy = false;
+                    }
                 }
                 break;
             default:
@@ -1086,17 +1098,43 @@ public class ShopService {
 
     public void showConfirmSellItem(Player pl, int where, int index) {
         Item item = null;
-        if (where == 0) {
-            if (index < 0) {
+        switch (where) {
+            case WHERE_BODY:
+                if (pl.idMark.getShopOpen() == null || pl.idMark.getTagNameShop() == null) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                if (index < 0 || index >= pl.inventory.itemsBody.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.inventory.itemsBody.get(index);
+                break;
+            case WHERE_BAG:
+                if (pl.idMark.getShopOpen() == null || pl.idMark.getTagNameShop() == null) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                if (pl.getSession().version < 220) {
+                    index -= (pl.inventory.itemsBody.size() - 7);
+                }
+                if (index < 0 || index >= pl.inventory.itemsBag.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.inventory.itemsBag.get(index);
+                break;
+            case WHERE_PET_BODY:
+                if (pl.pet == null || pl.pet.inventory == null || !PetService.isSecondDisciple(pl)
+                        || index < 0 || index >= pl.pet.inventory.itemsBody.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.pet.inventory.itemsBody.get(index);
+                break;
+            default:
                 Service.gI().sendThongBao(pl, "Không thể thực hiện");
                 return;
-            }
-            item = pl.inventory.itemsBody.get(index);
-        } else {
-            if (pl.getSession().version < 220) {
-                index -= (pl.inventory.itemsBody.size() - 7);
-            }
-            item = pl.inventory.itemsBag.get(index);
         }
         if (item != null && item.isNotNullItem()) {
             if (item.template.id == 570) {
@@ -1130,31 +1168,55 @@ public class ShopService {
                 msg.writer().writeUTF(text);
                 pl.sendMessage(msg);
             } catch (Exception e) {
-            e.printStackTrace();
+                e.printStackTrace();
             } finally {
                 if (msg != null) {
                     msg.cleanup();
                 }
             }
+        } else {
+            Service.gI().sendThongBao(pl, "Không thể thực hiện");
         }
     }
 
     public void sellItem(Player pl, int where, int index) {
-        if (pl.idMark.getShopOpen() == null || pl.idMark.getTagNameShop() == null) {
-            Service.gI().sendThongBao(pl, "Không thể thực hiện");
-            return;
-        }
-        if (index < 0) {
-            Service.gI().sendThongBao(pl, "Không thể thực hiện");
-            return;
-        }
         Item item = null;
-        if (where == 0) {
-            item = pl.inventory.itemsBody.get(index);
-        } else {
-            item = pl.inventory.itemsBag.get(index);
+        switch (where) {
+            case WHERE_BODY:
+                if (pl.idMark.getShopOpen() == null || pl.idMark.getTagNameShop() == null) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                if (index < 0 || index >= pl.inventory.itemsBody.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.inventory.itemsBody.get(index);
+                break;
+            case WHERE_BAG:
+                if (pl.idMark.getShopOpen() == null || pl.idMark.getTagNameShop() == null) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                if (index < 0 || index >= pl.inventory.itemsBag.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.inventory.itemsBag.get(index);
+                break;
+            case WHERE_PET_BODY:
+                if (pl.pet == null || pl.pet.inventory == null || !PetService.isSecondDisciple(pl)
+                        || index < 0 || index >= pl.pet.inventory.itemsBody.size()) {
+                    Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                    return;
+                }
+                item = pl.pet.inventory.itemsBody.get(index);
+                break;
+            default:
+                Service.gI().sendThongBao(pl, "Không thể thực hiện");
+                return;
         }
-        if (item != null) {
+        if (item != null && item.isNotNullItem()) {
             if (item.template.id == 570) {
                 Service.gI().sendThongBao(pl, "Bạn không thể bán vật phẩm này");
                 return;
@@ -1189,17 +1251,33 @@ public class ShopService {
             if (item.template.id != 457) {
                 BuyBackService.gI().addItem(pl, item);
             }
-            if (where == 0) {
-                InventoryService.gI().subQuantityItemsBody(pl, item, quantity);
-                InventoryService.gI().sendItemBody(pl);
-                Service.gI().Send_Caitrang(pl);
-            } else {
-                InventoryService.gI().subQuantityItemsBag(pl, item, quantity);
-                InventoryService.gI().sendItemBags(pl);
+            switch (where) {
+                case WHERE_BODY:
+                    InventoryService.gI().subQuantityItemsBody(pl, item, quantity);
+                    InventoryService.gI().sendItemBody(pl);
+                    Service.gI().Send_Caitrang(pl);
+                    break;
+                case WHERE_BAG:
+                    InventoryService.gI().subQuantityItemsBag(pl, item, quantity);
+                    InventoryService.gI().sendItemBags(pl);
+                    break;
+                case WHERE_PET_BODY:
+                    InventoryService.gI().subQuantityItemsBody(pl.pet, item, quantity);
+                    Service.gI().showInfoPet(pl);
+                    if (pl.pet.zone != null) {
+                        Service.gI().sendFlagBag(pl.pet);
+                    }
+                    Service.gI().Send_Caitrang(pl.pet);
+                    Service.gI().Send_Caitrang(pl);
+                    Service.gI().point(pl);
+                    if (pl.pet.setClothes != null) {
+                        pl.pet.setClothes.setup();
+                    }
+                    break;
             }
-            if ("BUNMA".equals(pl.idMark.getTagNameShop())
+            if (pl.idMark != null && ("BUNMA".equals(pl.idMark.getTagNameShop())
                     || "DENDE".equals(pl.idMark.getTagNameShop())
-                    || "APPULE".equals(pl.idMark.getTagNameShop())) {
+                    || "APPULE".equals(pl.idMark.getTagNameShop()))) {
                 AchievementService.gI().checkDoneTask(pl, ConstAchievement.TRUM_NHAT_VE_CHAI);
             }
         } else {
@@ -1341,16 +1419,18 @@ public class ShopService {
                 return;
             }
 
-            player.inventory.ruby -= DESTROY_ITEM_RUBY_COST;
-            InventoryService.gI().subQuantityItemsBag(player, food, DESTROY_ITEM_FOOD_COST);
-            InventoryService.gI().subQuantityItemsBody(player, divineItem, 1);
+            synchronized (player) {
+                player.inventory.ruby -= DESTROY_ITEM_RUBY_COST;
+                InventoryService.gI().subQuantityItemsBag(player, food, DESTROY_ITEM_FOOD_COST);
+                InventoryService.gI().subQuantityItemsBody(player, divineItem, 1);
 
-            Service.gI().sendMoney(player);
-            InventoryService.gI().sendItemBags(player);
-            InventoryService.gI().sendItemBody(player);
-            Service.gI().point(player);
-            Service.gI().Send_Caitrang(player);
-            Service.gI().sendThongBao(player, "Mua thành công " + is.temp.name);
+                Service.gI().sendMoney(player);
+                InventoryService.gI().sendItemBags(player);
+                InventoryService.gI().sendItemBody(player);
+                Service.gI().point(player);
+                Service.gI().Send_Caitrang(player);
+                Service.gI().sendThongBao(player, "Mua thành công " + is.temp.name);
+            }
         }
     }
 

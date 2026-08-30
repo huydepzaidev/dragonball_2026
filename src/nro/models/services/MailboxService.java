@@ -3,6 +3,9 @@ package nro.models.services;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import nro.models.consts.ConstNpc;
@@ -279,6 +282,84 @@ public final class MailboxService {
             ps.executeUpdate();
         } catch (Exception e) {
             Logger.logException(MailboxService.class, e);
+        }
+    }
+
+    public record SendMailResult(long mailboxId, boolean created, boolean alreadyExisted, String status, String errorMessage) {}
+
+    public static SendMailResult sendSystemMailWithIdempotencyKey(int accountId, long playerId, String title, String message,
+            String senderName, String rewardsJson, String idempotencyKey) {
+        if (accountId <= 0 || playerId <= 0 || title == null || rewardsJson == null) {
+            return new SendMailResult(0, false, false, "FAILED", "Invalid arguments");
+        }
+        try {
+            parseRewards(rewardsJson);
+        } catch (Exception e) {
+            Logger.logException(MailboxService.class, e);
+            return new SendMailResult(0, false, false, "FAILED", "Invalid rewards json");
+        }
+
+        String checkSql = "SELECT id, status FROM player_mailbox WHERE idempotency_key = ? LIMIT 1 FOR UPDATE";
+        String insertSql = "INSERT INTO player_mailbox (account_id, player_id, title, message, sender_name, rewards_json, idempotency_key, status) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')";
+
+        try (Connection con = LocalManager.getConnection()) {
+            con.setAutoCommit(false);
+            if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                try (PreparedStatement checkPs = con.prepareStatement(checkSql)) {
+                    checkPs.setString(1, idempotencyKey);
+                    try (ResultSet rs = checkPs.executeQuery()) {
+                        if (rs.next()) {
+                            long existingId = rs.getLong("id");
+                            String status = rs.getString("status");
+                            con.rollback();
+                            return new SendMailResult(existingId, false, true, status, null);
+                        }
+                    }
+                }
+            }
+
+            long newId = 0;
+            try (PreparedStatement insertPs = con.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                insertPs.setInt(1, accountId);
+                insertPs.setLong(2, playerId);
+                insertPs.setString(3, title);
+                insertPs.setString(4, message != null ? message : "");
+                insertPs.setString(5, senderName != null ? senderName : "Trọng Tài");
+                insertPs.setString(6, rewardsJson);
+                if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                    insertPs.setString(7, idempotencyKey);
+                } else {
+                    insertPs.setNull(7, Types.VARCHAR);
+                }
+                int affected = insertPs.executeUpdate();
+                if (affected == 1) {
+                    try (ResultSet rs = insertPs.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            newId = rs.getLong(1);
+                        }
+                    }
+                }
+            }
+
+            con.commit();
+            return new SendMailResult(newId, true, false, "PENDING", null);
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 1062 && idempotencyKey != null) {
+                // Duplicate key occurred concurrently -> retrieve existing id
+                try (Connection con2 = LocalManager.getConnection();
+                     PreparedStatement checkPs2 = con2.prepareStatement("SELECT id, status FROM player_mailbox WHERE idempotency_key = ?")) {
+                    checkPs2.setString(1, idempotencyKey);
+                    try (ResultSet rs2 = checkPs2.executeQuery()) {
+                        if (rs2.next()) {
+                            return new SendMailResult(rs2.getLong("id"), false, true, rs2.getString("status"), null);
+                        }
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            Logger.logException(MailboxService.class, e);
+            return new SendMailResult(0, false, false, "FAILED", e.getMessage());
         }
     }
 

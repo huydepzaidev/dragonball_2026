@@ -35,6 +35,8 @@ public class GiftCodeService {
     }
 
     private void redeemGiftCode(Player player, String code, GiftCodeManager giftCodeManager) {
+        if (player == null) return;
+        synchronized (player) {
         GiftCode giftcode = giftCodeManager.checkUseGiftCode(player, code);
         if (giftcode == null) {
 //            int itemId = 190;
@@ -107,6 +109,7 @@ public class GiftCodeService {
             }
             InventoryService.gI().sendItemBags(player);
             NpcService.gI().createTutorial(player, 1139, textGift);
+        }
         }
     }
 

@@ -175,26 +175,39 @@ public final class SuperRank implements Runnable {
         Player winner = SuperRankService.gI().loadPlayer(playerWon ? playerId : rivalId);
         Player loser = SuperRankService.gI().loadPlayer(playerWon ? rivalId : playerId);
 
-        winner.superRank.win++;
-        loser.superRank.lose++;
-
-        if (!playerWon && loser.superRank.ticket > 0) {
-            loser.superRank.ticket--;
-        } else if (!playerWon && loser.inventory.getGem() > 0) {
-            loser.inventory.subGem(3);
-            Service.gI().sendMoney(loser);
-        } else if (playerWon && winner.superRank.ticket == 0 && winner.inventory.getGem() > 0) {
-            winner.inventory.subGem(2);
+        if (winner == null || loser == null) {
+            return;
         }
 
-        winner.superRank.rank = rankWin;
-        loser.superRank.rank = rankLose;
+        Player firstLock = winner.id < loser.id ? winner : loser;
+        Player secondLock = winner.id < loser.id ? loser : winner;
 
-        winner.superRank.history("Hạ " + loser.name + "[" + rankLose + "]", System.currentTimeMillis());
-        loser.superRank.history("Thua " + winner.name + "[" + rankWin + "]", System.currentTimeMillis());
+        synchronized (firstLock) {
+            synchronized (secondLock) {
+                winner.superRank.win++;
+                loser.superRank.lose++;
 
-        SuperRankDAO.updatePlayer(winner);
-        SuperRankDAO.updatePlayer(loser);
+                if (!playerWon && loser.superRank.ticket > 0) {
+                    loser.superRank.ticket--;
+                } else if (!playerWon && loser.inventory.getGem() > 0) {
+                    loser.inventory.subGem(3);
+                    Service.gI().sendMoney(loser);
+                } else if (playerWon && winner.superRank.ticket == 0 && winner.inventory.getGem() > 0) {
+                    winner.inventory.subGem(2);
+                }
+
+                winner.superRank.rank = rankWin;
+                loser.superRank.rank = rankLose;
+
+                winner.superRank.history("Hạ " + loser.name + "[" + rankLose + "]", System.currentTimeMillis());
+                loser.superRank.history("Thua " + winner.name + "[" + rankWin + "]", System.currentTimeMillis());
+
+                SuperRankRewardEngine.runWithRankLock(15, con -> {
+                    SuperRankDAO.updatePlayer(con, winner);
+                    SuperRankDAO.updatePlayer(con, loser);
+                });
+            }
+        }
 
         if (playerWon) {
             if (rankWin <= 10) {

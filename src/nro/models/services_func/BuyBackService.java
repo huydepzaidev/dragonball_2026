@@ -30,7 +30,7 @@ public class BuyBackService {
         }
         Item itemmua = ItemService.gI().copyItem(item);
         player.inventory.itemsDaBan.add(itemmua);
-        if (player.idMark != null && player.idMark.getTagNameShop().equals("ITEMS_DABAN")) {
+        if (player.idMark != null && "ITEMS_DABAN".equals(player.idMark.getTagNameShop())) {
             ShopService.gI().opendShop(player, "ITEMS_DABAN", true);
         }
     }

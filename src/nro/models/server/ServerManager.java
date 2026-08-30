@@ -114,6 +114,7 @@ public class ServerManager {
             // Gửi các nhiệm vụ cập nhật theo từng dịch vụ
             new Thread(NgocRongNamecService.gI(), "Update NRNM").start();
             new Thread(SuperRankManager.gI(), "Update Super Rank").start();
+            new Thread(nro.models.matches.dai_hoi_vo_thuat.SuperRankRewardScheduler.gI(), "Update Super Rank Rewards").start();
             new Thread(The23rdMartialArtCongressManager.gI(), "Update DHVT23").start();
             new Thread(DeathOrAliveArenaManager.gI(), "Update Võ Đài Sinh Tử").start();
             new Thread(WorldMartialArtsTournamentManager.gI(), "Update WMAT").start();

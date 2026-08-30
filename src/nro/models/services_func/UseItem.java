@@ -1002,23 +1002,26 @@ public class UseItem {
     }
 
     private void openRubyCapsule(Player player, Item capsule) {
-        int reward = rubyCapsuleRewardForRoll(Util.nextInt(1000));
-        int rubyBefore = player.inventory.ruby;
-        int rubyAfter = (int) Math.min(Integer.MAX_VALUE, (long) rubyBefore + reward);
-        if (rubyAfter == rubyBefore) {
-            return;
-        }
+        if (player == null) return;
+        synchronized (player) {
+            int reward = rubyCapsuleRewardForRoll(Util.nextInt(1000));
+            int rubyBefore = player.inventory.ruby;
+            int rubyAfter = (int) Math.min(2_000_000_000L, (long) rubyBefore + reward);
+            if (rubyAfter == rubyBefore) {
+                return;
+            }
 
-        player.inventory.ruby = rubyAfter;
-        InventoryService.gI().subQuantityItemsBag(player, capsule, 1);
-        InventoryService.gI().sendItemBags(player);
-        Service.gI().sendMoney(player);
-        Service.gI().sendThongBao(player, new StringBuilder()
-                .append('+')
-                .append(rubyAfter - rubyBefore)
-                .append(' ')
-                .append(ItemService.gI().getTemplate((short) 861).name)
-                .toString());
+            player.inventory.ruby = rubyAfter;
+            InventoryService.gI().subQuantityItemsBag(player, capsule, 1);
+            InventoryService.gI().sendItemBags(player);
+            Service.gI().sendMoney(player);
+            Service.gI().sendThongBao(player, new StringBuilder()
+                    .append('+')
+                    .append(rubyAfter - rubyBefore)
+                    .append(' ')
+                    .append(ItemService.gI().getTemplate((short) 861).name)
+                    .toString());
+        }
     }
 
     public void openRuongGo(Player player) {

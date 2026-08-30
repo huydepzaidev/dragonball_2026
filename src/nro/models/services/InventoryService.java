@@ -812,13 +812,15 @@ public class InventoryService {
                 Service.gI().sendMoney(player);
                 return true;
             case 34:
-                long ruby = (long) player.inventory.ruby + (long) item.quantity;
-                if (ruby > Integer.MAX_VALUE) {
-                    ruby = Integer.MAX_VALUE;
+                synchronized (player) {
+                    long ruby = (long) player.inventory.ruby + (long) item.quantity;
+                    if (ruby > 2000000000L) {
+                        ruby = 2000000000L;
+                    }
+                    player.inventory.ruby = (int) ruby;
+                    Service.gI().sendMoney(player);
+                    return true;
                 }
-                player.inventory.ruby = (int) ruby;
-                Service.gI().sendMoney(player);
-                return true;
         }
 
         //mở rộng hành trang - rương đồ

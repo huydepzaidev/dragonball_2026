@@ -391,21 +391,23 @@ public final class PlayerHandler {
                         return;
                     }
 
-                    long oldGold = onlinePl.inventory.gold;
-                    int oldGem = onlinePl.inventory.gem;
-                    int oldRuby = onlinePl.inventory.ruby;
-                    onlinePl.inventory.gold += gold;
-                    onlinePl.inventory.gem += (int) gemValue;
-                    onlinePl.inventory.ruby += (int) rubyValue;
+                    synchronized (onlinePl) {
+                        long oldGold = onlinePl.inventory.gold;
+                        int oldGem = onlinePl.inventory.gem;
+                        int oldRuby = onlinePl.inventory.ruby;
+                        onlinePl.inventory.gold += gold;
+                        onlinePl.inventory.gem += (int) gemValue;
+                        onlinePl.inventory.ruby += (int) rubyValue;
 
-                    if (!PlayerDAO.updatePlayer(onlinePl)) {
-                        onlinePl.inventory.gold = oldGold;
-                        onlinePl.inventory.gem = oldGem;
-                        onlinePl.inventory.ruby = oldRuby;
-                        JsonResponse.serverError(exchange, "Không thể lưu số dư người chơi vào database");
-                        return;
+                        if (!PlayerDAO.updatePlayer(onlinePl)) {
+                            onlinePl.inventory.gold = oldGold;
+                            onlinePl.inventory.gem = oldGem;
+                            onlinePl.inventory.ruby = oldRuby;
+                            JsonResponse.serverError(exchange, "Không thể lưu số dư người chơi vào database");
+                            return;
+                        }
+                        Service.gI().sendMoney(onlinePl);
                     }
-                    Service.gI().sendMoney(onlinePl);
                 }
                 AuditLogService.gI().log(user, "ADD_CURRENCY_ONLINE", "PLAYER", (int) playerId, "{\"gold\":" + gold + ",\"gem\":" + gemValue + ",\"ruby\":" + rubyValue + "}", clientIp);
                 JsonResponse.ok(exchange, null, "Đã cộng và lưu tiền tệ cho " + onlinePl.name);

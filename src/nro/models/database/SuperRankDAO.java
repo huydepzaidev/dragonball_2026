@@ -1,5 +1,7 @@
 package nro.models.database;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -134,9 +136,30 @@ public class SuperRankDAO {
 
     public static void updatePlayer(Player player) {
         if (player != null && player.idMark.isLoadedAllDataPlayer()) {
-            try {
-                JSONArray dataArray = new JSONArray();
+            synchronized (player) {
+                try {
+                    JSONArray dataArray = new JSONArray();
+                    dataArray.add(player.inventory.gold);
+                    dataArray.add(player.inventory.gem);
+                    dataArray.add(player.inventory.ruby);
+                    dataArray.add(player.inventory.coupon);
+                    dataArray.add(player.inventory.event);
+                    String inventory = dataArray.toJSONString();
+                    dataArray.clear();
+                    updateData(player);
+                    String query = "UPDATE player SET data_inventory = ? WHERE id = ?";
+                    LocalManager.executeUpdate(query, inventory, player.id);
+                } catch (Exception e) {
+                    Logger.logException(SuperRankDAO.class, e);
+                }
+            }
+        }
+    }
 
+    public static void updatePlayer(Connection con, Player player) throws Exception {
+        if (player != null && player.idMark.isLoadedAllDataPlayer()) {
+            synchronized (player) {
+                JSONArray dataArray = new JSONArray();
                 dataArray.add(player.inventory.gold);
                 dataArray.add(player.inventory.gem);
                 dataArray.add(player.inventory.ruby);
@@ -144,11 +167,13 @@ public class SuperRankDAO {
                 dataArray.add(player.inventory.event);
                 String inventory = dataArray.toJSONString();
                 dataArray.clear();
-                updateData(player);
+                updateData(con, player);
                 String query = "UPDATE player SET data_inventory = ? WHERE id = ?";
-                LocalManager.executeUpdate(query, inventory, player.id);
-            } catch (Exception e) {
-                Logger.logException(SuperRankDAO.class, e);
+                try (PreparedStatement ps = con.prepareStatement(query)) {
+                    ps.setString(1, inventory);
+                    ps.setLong(2, player.id);
+                    ps.executeUpdate();
+                }
             }
         }
     }
@@ -209,6 +234,10 @@ public class SuperRankDAO {
     }
 
     public static void insertData(Player player) {
+        nro.models.matches.dai_hoi_vo_thuat.SuperRankRewardEngine.runWithRankLock(15, con -> insertData(con, player));
+    }
+
+    public static void insertData(Connection con, Player player) throws Exception {
         JSONArray historyList = new JSONArray();
         for (int i = 0; i < player.superRank.history.size(); i++) {
             JSONObject history = new JSONObject();
@@ -223,26 +252,29 @@ public class SuperRankDAO {
         info.put("hp", player.nPoint.hpMax);
         info.put("dame", player.nPoint.dame);
         info.put("def", player.nPoint.def);
-        try {
-            LocalManager.executeUpdate("INSERT INTO `super_rank` (`player_id`, `rank`, `name`, `info`, `last_pk_time`, `last_reward_time`, `ticket`, `win`, `lose`, `history`)"
-                    + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    player.id,
-                    player.superRank.rank,
-                    player.name,
-                    info.toString(),
-                    player.superRank.lastPKTime,
-                    player.superRank.lastRewardTime,
-                    player.superRank.ticket,
-                    player.superRank.win,
-                    player.superRank.lose,
-                    historyList.toString());
+        String sql = "INSERT INTO `super_rank` (`player_id`, `rank`, `name`, `info`, `last_pk_time`, `last_reward_time`, `ticket`, `win`, `lose`, `history`)"
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setLong(1, player.id);
+            ps.setInt(2, player.superRank.rank);
+            ps.setString(3, player.name);
+            ps.setString(4, info.toString());
+            ps.setLong(5, player.superRank.lastPKTime);
+            ps.setLong(6, player.superRank.lastRewardTime);
+            ps.setInt(7, player.superRank.ticket);
+            ps.setInt(8, player.superRank.win);
+            ps.setInt(9, player.superRank.lose);
+            ps.setString(10, historyList.toString());
+            ps.executeUpdate();
             Logger.successln(player.name + ": Data inserted successfully....");
-        } catch (Exception e) {
-            Logger.logException(SuperRankDAO.class, e);
         }
     }
 
     public static void updateData(Player player) {
+        nro.models.matches.dai_hoi_vo_thuat.SuperRankRewardEngine.runWithRankLock(15, con -> updateData(con, player));
+    }
+
+    public static void updateData(Connection con, Player player) throws Exception {
         JSONArray historyList = new JSONArray();
         for (int i = 0; i < player.superRank.history.size(); i++) {
             JSONObject history = new JSONObject();
@@ -257,22 +289,21 @@ public class SuperRankDAO {
         info.put("hp", player.nPoint.hpMax);
         info.put("dame", player.nPoint.dame);
         info.put("def", player.nPoint.def);
-        try {
-            LocalManager.executeUpdate("UPDATE `super_rank` SET `rank` = ?, `name` = ?, `info` = ?,"
-                    + "last_pk_time = ?, last_reward_time = ?, `ticket` = ?, `win` = ?, `lose` = ?, `history` = ? WHERE `player_id` = ?",
-                    player.superRank.rank,
-                    player.name,
-                    info.toString(),
-                    player.superRank.lastPKTime,
-                    player.superRank.lastRewardTime,
-                    player.superRank.ticket,
-                    player.superRank.win,
-                    player.superRank.lose,
-                    historyList.toString(),
-                    player.id);
+        String sql = "UPDATE `super_rank` SET `rank` = ?, `name` = ?, `info` = ?,"
+                + "last_pk_time = ?, last_reward_time = ?, `ticket` = ?, `win` = ?, `lose` = ?, `history` = ? WHERE `player_id` = ?";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, player.superRank.rank);
+            ps.setString(2, player.name);
+            ps.setString(3, info.toString());
+            ps.setLong(4, player.superRank.lastPKTime);
+            ps.setLong(5, player.superRank.lastRewardTime);
+            ps.setInt(6, player.superRank.ticket);
+            ps.setInt(7, player.superRank.win);
+            ps.setInt(8, player.superRank.lose);
+            ps.setString(9, historyList.toString());
+            ps.setLong(10, player.id);
+            ps.executeUpdate();
             Logger.successln(Logger.PURPLE + player.name + ": Data update successfully....");
-        } catch (Exception e) {
-            Logger.logException(SuperRank.class, e);
         }
     }
 }

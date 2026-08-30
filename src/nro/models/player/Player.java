@@ -606,12 +606,6 @@ public class Player implements Runnable {
                         BadgesTaskService.updateDoneTask(this);
                     }
 
-                    if (this.isPl() && this.superRank != null) {
-                        if (Util.isAfterMidnight(this.superRank.lastRewardTime)) {
-                            this.superRank.reward();
-                        }
-                    }
-
                     if (this.isPl() && this.zone != null && MapService.gI().isMapMaBu(this.zone.map.mapId) && this.cFlag != 9 && this.cFlag != 10) {
                         Service.gI().changeFlag(this, Util.nextInt(9, 10));
                     }

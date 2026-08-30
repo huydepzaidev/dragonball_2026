@@ -1237,9 +1237,10 @@ public class MrBlue {
                 player.getSession().actived = false;
                 player.getSession().vnd = 0;
             }
+            player.idMark.setLoadedAllDataPlayer(true);
+            nro.models.matches.dai_hoi_vo_thuat.SuperRankRewardDAO.claimPendingRewardOnLogin(player);
             player.nPoint.hp = plHp;
             player.nPoint.mp = plMp;
-            player.idMark.setLoadedAllDataPlayer(true);
         } catch (Exception e) {
             if (player != null) {
                 player.dispose();

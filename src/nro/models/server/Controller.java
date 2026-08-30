@@ -83,56 +83,8 @@ public class Controller implements IMessageHandler {
             byte cmd = _msg.command;
             switch (cmd) {
                 case -100:
-                    if (player == null) {
-                        return;
-                    }
-                    if (TransactionService.gI().check(player)) {
-                        Service.gI().sendThongBao(player, "Không thể thực hiện");
-                        return;
-                    }
-                    if (player.baovetaikhoan) {
-                        Service.gI().sendThongBao(player, "Chức năng bảo vệ đã được bật. Bạn vui lòng kiểm tra lại");
-                        return;
-                    }
-                    byte action = _msg.reader().readByte();
-                    switch (action) {
-                        case 0:
-                            short idItem = _msg.reader().readShort();
-                            byte moneyType = _msg.reader().readByte();
-                            int money = _msg.reader().readInt();
-                            int quantity;
-                            if (player.getSession().version >= 220) {
-                                quantity = _msg.reader().readInt();
-                            } else {
-                                quantity = _msg.reader().readByte();
-                            }
-                            if (quantity > 0) {
-                                ConsignShopService.gI().KiGui(player, idItem, money, moneyType, quantity);
-                            }
-                            break;
-                        case 1:
-                        case 2:
-                            idItem = _msg.reader().readShort();
-                            ConsignShopService.gI().claimOrDel(player, action, idItem);
-                            break;
-                        case 3:
-                            idItem = _msg.reader().readShort();
-                            _msg.reader().readByte();
-                            _msg.reader().readInt();
-                            ConsignShopService.gI().buyItem(player, idItem);
-                            break;
-                        case 4:
-                            moneyType = _msg.reader().readByte();
-                            money = _msg.reader().readByte();
-                            ConsignShopService.gI().openShopKyGui(player, moneyType, money);
-                            break;
-                        case 5:
-                            idItem = _msg.reader().readShort();
-                            ConsignShopService.gI().upItemToTop(player, idItem);
-                            break;
-                        default:
-                            Service.gI().sendThongBao(player, "Không thể thực hiện");
-                            break;
+                    if (player != null) {
+                        Service.gI().sendThongBao(player, "Chức năng ký gửi hiện đang tạm đóng");
                     }
                     break;
 
@@ -301,7 +253,7 @@ public class Controller implements IMessageHandler {
                             Service.gI().sendThongBao(player, "Chức năng bảo vệ đã được bật. Bạn vui lòng kiểm tra lại");
                             return;
                         }
-                        action = _msg.reader().readByte();
+                        byte action = _msg.reader().readByte();
                         if (action == 0) {
                             ShopService.gI().showConfirmSellItem(player, _msg.reader().readByte(),
                                     _msg.reader().readShort());

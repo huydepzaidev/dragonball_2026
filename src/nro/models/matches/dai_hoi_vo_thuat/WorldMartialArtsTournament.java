@@ -279,10 +279,12 @@ public final class WorldMartialArtsTournament implements Runnable {
 
             // Thưởng thắng vòng: +1.000 Hồng Ngọc
             if (plWin != null) {
-                long newRuby = (long) plWin.inventory.ruby + ConstTournament.REWARD_ROUND_RUBY;
-                plWin.inventory.ruby = (int) Math.min(newRuby, 2_000_000_000L);
-                Service.gI().sendMoney(plWin);
-                Service.gI().sendThongBao(plWin, "Bạn vừa nhận thưởng 1.000 Hồng Ngọc vì thắng vòng đấu!");
+                synchronized (plWin) {
+                    long newRuby = (long) plWin.inventory.ruby + ConstTournament.REWARD_ROUND_RUBY;
+                    plWin.inventory.ruby = (int) Math.min(newRuby, 2_000_000_000L);
+                    Service.gI().sendMoney(plWin);
+                    Service.gI().sendThongBao(plWin, "Bạn vừa nhận thưởng 1.000 Hồng Ngọc vì thắng vòng đấu!");
+                }
             }
 
             if (npc != null) {

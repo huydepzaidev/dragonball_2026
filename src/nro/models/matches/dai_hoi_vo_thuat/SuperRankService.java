@@ -39,6 +39,10 @@ public class SuperRankService {
         if (pl == null) {
             return;
         }
+        if (isLockedForReward) {
+            Service.gI().sendThongBao(player, "Giải Siêu Hạng đang chốt bảng xếp hạng 20h, vui lòng thử lại sau giây lát!");
+            return;
+        }
         if (SuperRankManager.gI().currentlyCompeting(player.id)) {
             Service.gI().sendThongBao(player, ConstSuperRank.TEXT_DANG_THI_DAU);
             return;
@@ -186,32 +190,36 @@ public class SuperRankService {
         return textReward(srb.getRank());
     }
 
+    private static volatile boolean isLockedForReward = false;
+
+    public boolean isLockedForReward() {
+        return isLockedForReward;
+    }
+
+    public void setLockedForReward(boolean locked) {
+        isLockedForReward = locked;
+    }
+
     public String textReward(int rank) {
         String text = "";
         if (rank == 1) {
-            text = "+100 ngọc/ ngày";
-        } else if (rank >= 2 && rank <= 10) {
-            text = "+20 ngọc/ ngày";
-        } else if (rank >= 11 && rank <= 100) {
-            text = "+5 ngọc/ ngày";
+            text = "+2.000 Hồng Ngọc & Capsule Kích Hoạt (Khóa) / ngày (20h)";
+        } else if (rank >= 2 && rank <= 5) {
+            text = "+1.000 Hồng Ngọc / ngày (20h)";
+        } else if (rank >= 6 && rank <= 10) {
+            text = "+500 Hồng Ngọc / ngày (20h)";
+        } else if (rank >= 11 && rank <= 50) {
+            text = "+200 Hồng Ngọc / ngày (20h)";
+        } else if (rank >= 51 && rank <= 100) {
+            text = "+100 Hồng Ngọc / ngày (20h)";
         } else if (rank >= 101 && rank <= 1000) {
-            text = "+1 ngọc/ ngày";
+            text = "+20 Hồng Ngọc / ngày (20h)";
         }
         return text;
     }
 
     public int reward(int rank) {
-        int rw = -1;
-        if (rank == 1) {
-            rw = 100;
-        } else if (rank >= 2 && rank <= 10) {
-            rw = 20;
-        } else if (rank >= 11 && rank <= 100) {
-            rw = 5;
-        } else if (rank >= 101 && rank <= 1000) {
-            rw = 1;
-        }
-        return rw;
+        return SuperRankRewardEngine.calculateRuby(rank);
     }
 
     public Zone getZone(int mapId) {
