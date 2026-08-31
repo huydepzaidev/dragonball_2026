@@ -16,6 +16,7 @@ import nro.models.server.control.auth.AuthManager;
 import nro.models.server.control.auth.UserRole;
 import nro.models.server.control.http.JsonResponse;
 import nro.models.services.Service;
+import nro.models.utils.PasswordHasher;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -315,7 +316,9 @@ public final class WebAdminHandler {
             try (Connection con = LocalManager.getConnection();
                  PreparedStatement ps = con.prepareStatement(sql.toString())) {
                 int idx = 1;
-                if (password != null && !password.trim().isEmpty()) ps.setString(idx++, password.trim());
+                if (password != null && !password.trim().isEmpty()) {
+                    ps.setString(idx++, PasswordHasher.hashPassword(password.trim()));
+                }
                 if (isAdmin != null) ps.setInt(idx++, isAdmin.intValue());
                 if (danaptong != null) ps.setInt(idx++, danaptong.intValue());
                 if (vnd != null) ps.setInt(idx++, vnd.intValue());
@@ -324,7 +327,12 @@ public final class WebAdminHandler {
                 ps.executeUpdate();
 
                 String clientIp = exchange.getRemoteAddress().getAddress().getHostAddress();
-                AuditLogService.gI().log(user, "UPDATE_ACCOUNT", "ACCOUNT", accountId, req.toJSONString(), clientIp);
+                JSONObject logReq = new JSONObject();
+                logReq.putAll(req);
+                if (logReq.containsKey("password")) {
+                    logReq.put("password", "******");
+                }
+                AuditLogService.gI().log(user, "UPDATE_ACCOUNT", "ACCOUNT", accountId, logReq.toJSONString(), clientIp);
                 JsonResponse.ok(exchange, null, "Cập nhật tài khoản ID " + accountId + " thành công");
             } catch (SQLException e) {
                 JsonResponse.serverError(exchange, "Lỗi DB: " + e.getMessage());

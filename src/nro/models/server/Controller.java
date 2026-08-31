@@ -19,6 +19,8 @@ import nro.models.services.TaskService;
 import nro.models.map.service.ItemMapService;
 import nro.models.services.FriendAndEnemyService;
 import nro.models.data.LocalManager;
+import nro.models.services.AccountRegisterService;
+import nro.models.services.RegisterRateLimiter;
 import nro.models.consts.ConstIgnoreName;
 import nro.models.consts.ConstMap;
 import nro.models.utils.Util;
@@ -688,6 +690,9 @@ public class Controller implements IMessageHandler {
                     case 0:
                         session.login(msg.reader().readUTF(), msg.reader().readUTF());
                         break;
+                    case 1:
+                        handleRegister(session, msg);
+                        break;
                     case 2:
                         Service.gI().setClientType(session, msg);
                         break;
@@ -699,6 +704,22 @@ public class Controller implements IMessageHandler {
 //                Logger.logException(Controller.class, e);
             }
         }
+    }
+
+    private void handleRegister(MySession session, Message msg) {
+        AccountRegisterService.RegisterPacket packet = AccountRegisterService.parseRegisterPacket(msg.reader());
+        if (!packet.valid()) {
+            Service.gI().sendThongBaoOK(session, packet.error());
+            return;
+        }
+
+        if (!RegisterRateLimiter.gI().tryAcquire(session.ipAddress)) {
+            Service.gI().sendThongBaoOK(session, "Bạn thao tác quá nhanh, vui lòng thử lại sau.");
+            return;
+        }
+
+        AccountRegisterService.RegisterResult result = AccountRegisterService.gI().register(session, packet.username(), packet.password());
+        Service.gI().sendThongBaoOK(session, (result != null && result.message() != null) ? result.message() : "Đăng ký thất bại.");
     }
 
     public void messageNotMap(MySession _session, Message _msg) {

@@ -5,6 +5,7 @@ import nro.models.map.service.NpcService;
 import nro.models.map.phoban.PotaufeuPolicy;
 import nro.models.services_dungeon.PotaufeuService;
 import nro.models.utils.Functions;
+import nro.models.utils.PasswordHasher;
 import nro.models.data.LocalManager;
 import nro.models.consts.ConstNpc;
 import nro.models.consts.ConstPlayer;
@@ -29,6 +30,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import nro.models.Bot.BotAttackplayer;
+import nro.models.database.AccountDAO;
 import nro.models.database.PlayerDAO;
 import nro.models.managers.MyClanTopBanDoKhoBau;
 import nro.models.managers.TopBanDoKhoBau;
@@ -1808,26 +1810,45 @@ public class Service {
     }
 
     public void changePassword(Player player, String oldPass, String newPass, String rePass) {
-        if (player.getSession().pp.equals(oldPass)) {
-            if (newPass.length() >= 6) {
-                if (newPass.equals(rePass)) {
-                    player.getSession().pp = newPass;
-                    try {
-                        LocalManager.executeUpdate("update account set password = ? where id = ? and username = ?",
-                                rePass, player.getSession().userId, player.getSession().uu);
-                        Service.gI().sendThongBao(player, "Đổi mật khẩu thành công!");
-                    } catch (Exception ex) {
-                        Service.gI().sendThongBao(player, "Đổi mật khẩu thất bại!");
-                        Logger.logException(Service.class, ex);
-                    }
-                } else {
-                    Service.gI().sendThongBao(player, "Mật khẩu nhập lại không đúng!");
-                }
-            } else {
-                Service.gI().sendThongBao(player, "Mật khẩu ít nhất 6 ký tự!");
-            }
-        } else {
+        if (player == null || player.getSession() == null) {
+            return;
+        }
+        if (oldPass == null || !PasswordHasher.checkPassword(oldPass, player.getSession().pp)) {
             Service.gI().sendThongBao(player, "Mật khẩu cũ không đúng!");
+            return;
+        }
+        if (newPass == null || newPass.length() < 6) {
+            Service.gI().sendThongBao(player, "Mật khẩu ít nhất 6 ký tự!");
+            return;
+        }
+        if (newPass.length() > 64) {
+            Service.gI().sendThongBao(player, "Mật khẩu tối đa 64 ký tự!");
+            return;
+        }
+        if (!newPass.equals(rePass)) {
+            Service.gI().sendThongBao(player, "Mật khẩu nhập lại không đúng!");
+            return;
+        }
+        for (int i = 0; i < newPass.length(); i++) {
+            char c = newPass.charAt(i);
+            if (Character.isISOControl(c) || Character.isWhitespace(c)) {
+                Service.gI().sendThongBao(player, "Mật khẩu không được chứa khoảng trắng hoặc ký tự điều khiển!");
+                return;
+            }
+        }
+
+        try {
+            String hashed = PasswordHasher.hashPassword(newPass);
+            boolean updated = AccountDAO.updatePassword(player.getSession().userId, player.getSession().uu, hashed);
+            if (updated) {
+                player.getSession().pp = newPass;
+                Service.gI().sendThongBao(player, "Đổi mật khẩu thành công!");
+            } else {
+                Service.gI().sendThongBao(player, "Đổi mật khẩu thất bại!");
+            }
+        } catch (Exception ex) {
+            Service.gI().sendThongBao(player, "Đổi mật khẩu thất bại!");
+            Logger.logException(Service.class, ex);
         }
     }
 

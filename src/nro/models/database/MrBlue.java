@@ -26,6 +26,7 @@ import nro.models.server.Maintenance;
 import nro.models.server.Manager;
 import nro.models.network.MySession;
 import nro.models.player_system.AntiLogin;
+import nro.models.services.AccountAuthService;
 import nro.models.services.ClanService;
 import nro.models.services.IntrinsicService;
 import nro.models.services.InventoryService;
@@ -35,6 +36,7 @@ import nro.models.services.Service;
 import nro.models.services.TaskService;
 import nro.models.services_dungeon.SnakeWayAvailability;
 import nro.models.utils.Logger;
+import nro.models.utils.PasswordHasher;
 import nro.models.utils.SkillUtil;
 import nro.models.utils.TimeUtil;
 import java.sql.Timestamp;
@@ -65,8 +67,16 @@ public class MrBlue {
         LocalResultSet rs = null;
         Player plInGame;
         try {
-            rs = LocalManager.executeQuery("select * from account where username = ? and password = ?", session.uu, session.pp);
+            rs = LocalManager.executeQuery("select * from account where username = ? limit 1", session.uu);
             if (rs.first()) {
+                AccountAuthService.AuthResult auth = AccountAuthService.authenticateAndRehash(session.uu, session.pp);
+                if (!auth.authenticated()) {
+                    Service.gI().sendThongBaoOK(session, auth.errorMessage());
+                    Service.gI().sendLoginFail(session, false);
+                    al.wrong();
+                    return null;
+                }
+
                 session.userId = rs.getInt("account.id");
                 session.isAdmin = rs.getBoolean("is_admin");
                 if (Maintenance.isLoginRestricted() && !session.isAdmin) {

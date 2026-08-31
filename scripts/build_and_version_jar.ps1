@@ -147,51 +147,92 @@ if (-not $SkipTests) {
     $TestFile = Join-Path $ProjectRoot "test/nro/models/server/AdminSKHCommandTest.java"
     if (Test-Path $TestFile) {
         $TestCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/server/AdminSKHCommandTest.java") -NoNewWindow -Wait -PassThru
-        if ($TestCompileProc.ExitCode -eq 0) {
-            $TestRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.server.AdminSKHCommandTest") -NoNewWindow -Wait -PassThru
-            if ($TestRunProc.ExitCode -ne 0) {
-                Write-Host "[ERROR] Unit Test AdminSKHCommandTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
-                exit 1
-            }
+        if ($TestCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test AdminSKHCommandTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $TestRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.server.AdminSKHCommandTest") -NoNewWindow -Wait -PassThru
+        if ($TestRunProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Unit Test AdminSKHCommandTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
         }
     }
 
     $WmatTestFile = Join-Path $ProjectRoot "test/nro/models/matches/WorldMartialArtsTournamentNgoaiHangTest.java"
     if (Test-Path $WmatTestFile) {
         $WmatCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/matches/WorldMartialArtsTournamentNgoaiHangTest.java") -NoNewWindow -Wait -PassThru
-        if ($WmatCompileProc.ExitCode -eq 0) {
-            $WmatRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.matches.WorldMartialArtsTournamentNgoaiHangTest") -NoNewWindow -Wait -PassThru
-            if ($WmatRunProc.ExitCode -ne 0) {
-                Write-Host "[ERROR] Unit Test WorldMartialArtsTournamentNgoaiHangTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
-                exit 1
-            }
+        if ($WmatCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test WorldMartialArtsTournamentNgoaiHangTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $WmatRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.matches.WorldMartialArtsTournamentNgoaiHangTest") -NoNewWindow -Wait -PassThru
+        if ($WmatRunProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Unit Test WorldMartialArtsTournamentNgoaiHangTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
         }
     }
 
     $RubyShopTestFile = Join-Path $ProjectRoot "test/nro/models/shop/SatanRubyShopCurrencyTest.java"
     if (Test-Path $RubyShopTestFile) {
         $RubyShopCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/shop/SatanRubyShopCurrencyTest.java") -NoNewWindow -Wait -PassThru
-        if ($RubyShopCompileProc.ExitCode -eq 0) {
-            $RubyShopRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.SatanRubyShopCurrencyTest") -NoNewWindow -Wait -PassThru
-            if ($RubyShopRunProc.ExitCode -ne 0) {
-                Write-Host "[ERROR] Unit Test SatanRubyShopCurrencyTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
-                exit 1
-            }
+        if ($RubyShopCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test SatanRubyShopCurrencyTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $RubyShopRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.SatanRubyShopCurrencyTest") -NoNewWindow -Wait -PassThru
+        if ($RubyShopRunProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Unit Test SatanRubyShopCurrencyTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
         }
     }
 
     $WoodChestTestFile = Join-Path $ProjectRoot "test/nro/models/shop/WoodChestRewardAndPocoloHpTest.java"
     if (Test-Path $WoodChestTestFile) {
         $WoodChestCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/shop/WoodChestRewardAndPocoloHpTest.java") -NoNewWindow -Wait -PassThru
-        if ($WoodChestCompileProc.ExitCode -eq 0) {
-            $WoodChestRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.WoodChestRewardAndPocoloHpTest") -NoNewWindow -Wait -PassThru
-            if ($WoodChestRunProc.ExitCode -ne 0) {
-                Write-Host "[ERROR] Unit Test WoodChestRewardAndPocoloHpTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
-                exit 1
-            }
+        if ($WoodChestCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test WoodChestRewardAndPocoloHpTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $WoodChestRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.shop.WoodChestRewardAndPocoloHpTest") -NoNewWindow -Wait -PassThru
+        if ($WoodChestRunProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Unit Test WoodChestRewardAndPocoloHpTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
         }
     }
-    Write-Host "  -> Tests pass 100%!" -ForegroundColor Green
+
+    $AuthTestFile = Join-Path $ProjectRoot "test/nro/models/account/AccountRegistrationAndAuthTest.java"
+    if (Test-Path $AuthTestFile) {
+        $AuthCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/account/AccountRegistrationAndAuthTest.java") -NoNewWindow -Wait -PassThru
+        if ($AuthCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test AccountRegistrationAndAuthTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $AuthRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.account.AccountRegistrationAndAuthTest") -NoNewWindow -Wait -PassThru
+        if ($AuthRunProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Unit Test AccountRegistrationAndAuthTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+    }
+
+    $AuthDbTestFile = Join-Path $ProjectRoot "test/nro/models/account/AccountRegistrationDBIntegrationTest.java"
+    if (Test-Path $AuthDbTestFile) {
+        $AuthDbCompileProc = Start-Process -FilePath $JavacPath -ArgumentList @("-encoding", "UTF-8", "-cp", "lib/*;build/classes;src", "-d", "build/test/classes", "test/nro/models/account/AccountRegistrationDBIntegrationTest.java") -NoNewWindow -Wait -PassThru
+        if ($AuthDbCompileProc.ExitCode -ne 0) {
+            Write-Host "[ERROR] Bien dich test AccountRegistrationDBIntegrationTest that bai! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+            exit 1
+        }
+        $AuthDbRunProc = Start-Process -FilePath "java" -ArgumentList @("-cp", "build/test/classes;build/classes;lib/*", "nro.models.account.AccountRegistrationDBIntegrationTest") -NoNewWindow -Wait -PassThru
+        if ($env:RUN_DB_INTEGRATION -eq "1" -or $env:RUN_DB_INTEGRATION -eq "true") {
+            if ($AuthDbRunProc.ExitCode -ne 0) {
+                Write-Host "[ERROR] Database Integration Test that bai (RUN_DB_INTEGRATION=1)! Giu nguyen JAR cu va run.bat." -ForegroundColor Red
+                exit 1
+            }
+            Write-Host "  -> DB Integration Tests: PASSED (MariaDB validated)" -ForegroundColor Green
+        } else {
+            Write-Host "  -> DB Integration Tests: SKIPPED (Set RUN_DB_INTEGRATION=1 to run)" -ForegroundColor Gray
+        }
+    }
+    Write-Host "  -> Unit Regression Tests: PASS 100%!" -ForegroundColor Green
 } else {
     Write-Host "[4/7] Bo qua Tests theo yeu cau." -ForegroundColor Gray
 }
@@ -265,13 +306,8 @@ if ($OldJarPath) {
 
         $BackupFilePath = Join-Path $BackupDir $BackupTargetName
         try {
-            if ($OldName -ne "NgocRongOnline.jar" -and (Split-Path $ResolvedOldJar -Parent) -eq $DistDir) {
-                Move-Item -Path $ResolvedOldJar -Destination $BackupFilePath -Force
-                Write-Host "  -> Da chuyen: $OldName => jar-backup/$BackupTargetName" -ForegroundColor Green
-            } else {
-                Copy-Item -Path $ResolvedOldJar -Destination $BackupFilePath -Force
-                Write-Host "  -> Da sao luu: $OldName => jar-backup/$BackupTargetName" -ForegroundColor Green
-            }
+            Copy-Item -Path $ResolvedOldJar -Destination $BackupFilePath -Force
+            Write-Host "  -> Da sao luu: $OldName => jar-backup/$BackupTargetName" -ForegroundColor Green
         } catch {
             Write-Host "  -> [WARN] Khong the luu JAR cu sang backup: $($_.Exception.Message)" -ForegroundColor Yellow
         }

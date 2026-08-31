@@ -15,6 +15,7 @@ import javax.crypto.spec.SecretKeySpec;
 import nro.models.data.LocalManager;
 import nro.models.server.control.ControlConfig;
 import nro.models.utils.Logger;
+import nro.models.utils.PasswordHasher;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -138,9 +139,19 @@ public final class AuthManager {
                 }
 
                 String dbPassword = rs.getString("password");
-                if (!verifyPassword(password, dbPassword)) {
+                if (!PasswordHasher.checkPassword(password, dbPassword)) {
                     recordFailedAttempt(ip);
                     return AuthResult.fail("Tài khoản hoặc mật khẩu không chính xác.");
+                }
+
+                if (PasswordHasher.needsRehash(dbPassword)) {
+                    String newHash = PasswordHasher.hashPassword(password);
+                    try (PreparedStatement upgradePs = con.prepareStatement("UPDATE account SET password = ? WHERE id = ?")) {
+                        upgradePs.setString(1, newHash);
+                        upgradePs.setInt(2, rs.getInt("id"));
+                        upgradePs.executeUpdate();
+                    } catch (SQLException ignored) {
+                    }
                 }
 
                 clearFailedAttempts(ip);
@@ -274,47 +285,14 @@ public final class AuthManager {
     }
 
     public static boolean verifyPassword(String inputPassword, String dbPassword) {
-        if (inputPassword == null || dbPassword == null) return false;
-        if (inputPassword.equals(dbPassword)) return true;
-
-        String md5 = hashMD5(inputPassword);
-        if (md5 != null && md5.equalsIgnoreCase(dbPassword)) return true;
-
-        String sha256 = hashSHA256(inputPassword);
-        if (sha256 != null && sha256.equalsIgnoreCase(dbPassword)) return true;
-
-        return false;
+        return PasswordHasher.checkPassword(inputPassword, dbPassword);
     }
 
     public static String hashMD5(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : messageDigest) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
+        return PasswordHasher.hashMD5(input);
     }
 
     public static String hashSHA256(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : messageDigest) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
+        return PasswordHasher.hashSHA256(input);
     }
 }
